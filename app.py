@@ -127,6 +127,8 @@ def init_state():
         "assigned": [],
         "values_map": {},
         "done": False,
+        "pdf_id": None,
+        "cache_saved": False,
     }
     for _, key in BLUETABLE_FIELDS:
         defaults[f"input_{key}"] = ""
@@ -164,10 +166,48 @@ if st.session_state.pdf_bytes is None:
 
         pdf_id, registry_dict, values_dict = process_pdf("temp_upload.pdf")
 
+        st.session_state.pdf_id = pdf_id
         st.session_state.values_map = values_dict
         entry = registry_dict.get(pdf_id, {})
         fields = entry.get("fields", [])
         st.session_state.all_fields = sorted(fields, key=sort_key)
+
+        cache_path = os.path.join("outputs", f"{pdf_id}_assignment.json")
+        if os.path.exists(cache_path):
+            with open(cache_path, "r", encoding="utf-8") as f:
+                cache = json.load(f)
+
+            # Helper to find label for bt_key
+            bt_labels = {key: label for label, key in BLUETABLE_FIELDS}
+
+            for field in st.session_state.all_fields:
+                fname = field.get("name", "?")
+                if fname in cache:
+                    bt_key = cache[fname]
+                    if bt_key == "SKIPPED":
+                        st.session_state.skipped.append(fname)
+                        st.session_state.field_idx += 1
+                    else:
+                        lbl = bt_labels.get(bt_key, bt_key)
+                        src_val = values_dict.get(fname, "")
+                        val_to_write = src_val if src_val and not src_val.startswith("/") else ""
+                        current = st.session_state.get(f"input_{bt_key}", "")
+                        new_val = f"{current}-{val_to_write}" if current else val_to_write
+
+                        st.session_state[f"input_{bt_key}"] = new_val
+                        st.session_state.bt_data[bt_key] = new_val
+                        st.session_state.assigned.append({
+                            "field_name": fname,
+                            "bt_key": bt_key,
+                            "bt_label": lbl,
+                            "value": new_val,
+                            "field_idx": st.session_state.field_idx,
+                        })
+                        st.session_state.field_idx += 1
+
+            if st.session_state.field_idx >= len(st.session_state.all_fields):
+                st.session_state.done = True
+
         st.rerun()
 
     st.info("👆 Upload a PDF to begin.")
@@ -183,6 +223,19 @@ idx = st.session_state.field_idx
 # ── 3. Done state ──────────────────────────────────────────────────────────
 if st.session_state.done or idx >= n_fields:
     st.success("✅ All fields processed!")
+
+    if not st.session_state.get("cache_saved") and st.session_state.pdf_id:
+        cache_data = {}
+        for item in st.session_state.assigned:
+            cache_data[item["field_name"]] = item["bt_key"]
+        for skipped_field in st.session_state.skipped:
+            cache_data[skipped_field] = "SKIPPED"
+
+        cache_path = os.path.join("outputs", f"{st.session_state.pdf_id}_assignment.json")
+        os.makedirs("outputs", exist_ok=True)
+        with open(cache_path, "w", encoding="utf-8") as f:
+            json.dump(cache_data, f, indent=4, ensure_ascii=False)
+        st.session_state.cache_saved = True
 
     col_res, col_dl = st.columns([3, 1])
     with col_res:
@@ -212,6 +265,8 @@ if st.session_state.done or idx >= n_fields:
                 "assigned",
                 "values_map",
                 "done",
+                "pdf_id",
+                "cache_saved",
             ]:
                 del st.session_state[k]
             for _, key in BLUETABLE_FIELDS:
