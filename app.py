@@ -235,10 +235,9 @@ st.caption(
 )
 st.progress(pct)
 
-# ── 6. Two-pane layout ─────────────────────────────────────────────────────
 st.divider()
 
-# ── 6. Three-pane layout ───────────────────────────────────────────────────
+# ── 6. Two-pane layout ─────────────────────────────────────────────────────
 left, mid, right = st.columns([5, 4, 1], gap="large")
 
 # ── LEFT: PDF preview ──────────────────────────────────────────────────────
@@ -252,7 +251,7 @@ with left:
         b64 = base64.b64encode(buf.getvalue()).decode()
         st.markdown(
             f"""
-            <div style="height:100vh; overflow-y:auto; border:1px solid #333; border-radius:6px;">
+            <div style="height:110vh; overflow-y:auto; border:1px solid #333; border-radius:6px;">
                 <img src="data:image/png;base64,{b64}" style="width:100%;">
             </div>
             """,
@@ -266,8 +265,7 @@ with left:
     )
     if source_value:
         st.code(source_value, language=None)
-
-# ── MIDDLE: BlueTable ──────────────────────────────────────────────────────
+# ── RIGHT: BlueTable ───────────────────────────────────────────────────────
 with mid:
     st.markdown("#### 🔵 BlueTable")
 
@@ -279,7 +277,9 @@ with mid:
     )
 
     st.divider()
+
     for label, key in BLUETABLE_FIELDS:
+        existing_val = st.session_state.bt_data.get(key, "")
         col_a, col_b = st.columns([4, 1])
 
         with col_a:
@@ -287,26 +287,28 @@ with mid:
                 f"<span style='color:white; font-size:0.85rem;'>{label}</span>",
                 unsafe_allow_html=True,
             )
-            st.text_input(
+            edited_val = st.text_input(
                 label,
+                value=existing_val,
                 key=f"input_{key}",
                 placeholder="—",
                 label_visibility="collapsed",
             )
+            # Keep bt_data live as user types
+            if edited_val != existing_val:
+                st.session_state.bt_data[key] = edited_val
 
         with col_b:
             st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
             if st.button("Assign", key=f"assign_{key}_{idx}"):
                 val_to_write = user_value or source_value
-                current = st.session_state.get(f"input_{key}", "")
-                new_val = f"{current}-{val_to_write}" if current else val_to_write
-                st.session_state[f"input_{key}"] = new_val
+                st.session_state.bt_data[key] = val_to_write
                 st.session_state.assigned.append(
                     {
                         "field_name": field_name,
                         "bt_key": key,
                         "bt_label": label,
-                        "value": new_val,
+                        "value": val_to_write,
                         "field_idx": idx,
                     }
                 )
@@ -315,8 +317,6 @@ with mid:
                     st.session_state.done = True
                 st.rerun()
 
-
-# ── RIGHT: Vertical navigation ─────────────────────────────────────────────
 with right:
     st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
     if st.button("⏮", disabled=(idx == 0), use_container_width=True, help="Previous"):
