@@ -1,0 +1,112 @@
+{
+    "87ba7613a963df438482bbcd8c1612a0": {
+        "pages": [
+            {
+                "page_num": 1,
+                "page_w": 595.28,
+                "page_h": 841.89
+            },
+            {
+                "page_num": 2,
+                "page_w": 595.28,
+                "page_h": 841.89
+            },
+            {
+                "page_num": 3,
+                "page_w": 595.28,
+                "page_h": 841.89
+            },
+            {
+                "page_num": 4,
+                "page_w": 595.28,
+                "page_h": 841.89
+            },
+            {
+                "page_num": 5,
+                "page_w": 595.28,
+                "page_h": 841.89
+            }
+        ],
+        "fields": [
+            {
+                "field_kind": "radio",
+                "name": "Group7",
+                "page": 3,
+                "states": [],
+                "widgets": [
+                    {
+                        "page": 3,
+                        "coords": {
+                            "x0": 494.37,
+                            "y0": 654.54,
+                            "x1": 506.5,
+                            "y1": 667.06,
+                            "width": 12.12,
+                            "height": 12.52,
+                            "canvas_top": 174.83,
+                            "canvas_bottom": 187.35
+                        }
+                    },
+                    {
+                        "page": 3,
+                        "coords": {
+                            "x0": 538.57,
+                            "y0": 654.15,
+                            "x1": 550.69,
+                            "y1": 666.67,
+                            "width": 12.12,
+                            "height": 12.52,
+                            "canvas_top": 175.22,
+                            "canvas_bottom": 187.74
+                        }
+                    }
+                ]
+            },
+            {
+                "field_kind": "text",
+                "name": "Text17",
+                "page": 1,
+                "coords": {
+                    "x0": 386.84,
+                    "y0": 509.38,
+                    "x1": 563.57,
+                    "y1": 522.47,
+                    "width": 176.73,
+                    "height": 13.09,
+                    "canvas_top": 319.42,
+                    "canvas_bottom": 332.51
+                }
+            },
+            {
+                "field_kind": "text",
+                "name": "Text18",
+                "page": 1,
+                "coords": {
+                    "x0": 64.8,
+                    "y0": 453.09,
+                    "x1": 563.57,
+                    "y1": 466.83,
+                    "width": 498.77,
+                    "height": 13.74,
+                    "canvas_top": 375.06,
+                    "canvas_bottom": 388.8
+                }
+            },
+            {
+                "field_kind": "text",
+                "name": "Text19",
+                "page": 1,
+                "coords": {
+                    "x0": 426.11,
+                    "y0": 90.47,
+                    "x1": 482.4,
+                    "y1": 107.49,
+                    "width": 56.29,
+                    "height": 17.02,
+                    "canvas_top": 734.4,
+                    "canvas_bottom": 751.42
+                }
+            }
+        ]
+    }
+}
