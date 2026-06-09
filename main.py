@@ -1,7 +1,7 @@
 from pypdf import PdfReader
 
 # Load your structured PDF application form
-reader = PdfReader("FilledApplication.pdf")
+reader = PdfReader("sources/FilledApplication.pdf")
 
 # Get all interactive form fields
 fields = reader.get_fields()
