@@ -202,21 +202,54 @@ if uploaded:
         st.session_state.done = False
 
         # Just read fields directly from the PDF, no registry needed
-        from pypdf import PdfReader
+        import fitz
         from io import BytesIO
 
-        reader = PdfReader(BytesIO(raw))
-        fields = reader.get_fields() or {}
-        st.session_state.all_fields = [
-            {
-                "name": k,
-                "field_kind": "text",
-                "page": 1,
-                "coords": None,
-                "value": str(v.get("/V", "")),
-            }
-            for k, v in fields.items()
-        ]
+        doc = fitz.open(stream=raw, filetype="pdf")
+        fields_list = []
+        for page_num in range(1, len(doc) + 1):
+            page = doc[page_num - 1]
+            for widget in page.widgets():
+                field_name = widget.field_name
+                rect = widget.rect
+                field_type = widget.field_type_string
+                field_value = widget.field_value
+
+                existing_field = next((f for f in fields_list if f["name"] == field_name), None)
+
+                if existing_field:
+                    if "widgets" not in existing_field:
+                        existing_field["widgets"] = [{
+                            "page": existing_field["page"],
+                            "coords": existing_field["coords"],
+                        }]
+                    existing_field["widgets"].append({
+                        "page": page_num,
+                        "coords": {
+                            "x0": rect.x0,
+                            "y0": rect.y0,
+                            "x1": rect.x1,
+                            "y1": rect.y1,
+                            "canvas_top": rect.y0
+                        }
+                    })
+                else:
+                    fields_list.append({
+                        "name": field_name,
+                        "field_kind": field_type,
+                        "page": page_num,
+                        "coords": {
+                            "x0": rect.x0,
+                            "y0": rect.y0,
+                            "x1": rect.x1,
+                            "y1": rect.y1,
+                            "canvas_top": rect.y0
+                        },
+                        "value": str(field_value),
+                    })
+
+        st.session_state.all_fields = fields_list
+        doc.close()
         st.rerun()
 
 
@@ -407,13 +440,16 @@ with right:
 
     # Jump-to control
     st.markdown("---")
+
+    # We use a distinct key based on idx so that Streamlit doesn't cache the old value
+    # when we programmatically change st.session_state.field_idx.
     jump_to = st.number_input(
         "Jump to field #",
         min_value=1,
         max_value=n_fields,
         value=idx + 1,
         step=1,
-        key="jump",
+        key=f"jump_{idx}",
     )
     if st.button("Go"):
         st.session_state.field_idx = jump_to - 1
