@@ -315,6 +315,20 @@ with mid:
             # Keep bt_data live as user types
             if edited_val != existing_val:
                 st.session_state.bt_data[key] = edited_val
+                found = False
+                for j in range(len(st.session_state.assigned) - 1, -1, -1):
+                    if st.session_state.assigned[j]["bt_key"] == key:
+                        st.session_state.assigned[j]["value"] = edited_val
+                        found = True
+                        break
+                if not found:
+                    st.session_state.assigned.append({
+                        "field_name": "Manual Edit",
+                        "bt_key": key,
+                        "bt_label": label,
+                        "value": edited_val,
+                        "field_idx": -1,
+                    })
 
         with col_b:
             st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
