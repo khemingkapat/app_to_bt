@@ -278,6 +278,24 @@ with left:
 with mid:
     st.markdown("#### 🔵 BlueTable")
 
+    def do_assign(k, i, src_val, f_name, lbl):
+        val_to_write = src_val if src_val and not src_val.startswith("/") else ""
+        current = st.session_state.get(f"input_{k}", "")
+        new_val = f"{current}-{val_to_write}" if current else val_to_write
+        st.session_state[f"input_{k}"] = new_val
+        st.session_state.assigned.append(
+            {
+                "field_name": f_name,
+                "bt_key": k,
+                "bt_label": lbl,
+                "value": new_val,
+                "field_idx": i,
+            }
+        )
+        st.session_state.field_idx += 1
+        if st.session_state.field_idx >= n_fields:
+            st.session_state.done = True
+
     st.divider()
     for label, key in BLUETABLE_FIELDS:
         col_a, col_b = st.columns([4, 1])
@@ -296,24 +314,12 @@ with mid:
 
         with col_b:
             st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-            if st.button("Assign", key=f"assign_{key}_{idx}"):
-                val_to_write = source_value if source_value and not source_value.startswith("/") else ""
-                current = st.session_state.get(f"input_{key}", "")
-                new_val = f"{current}-{val_to_write}" if current else val_to_write
-                st.session_state[f"input_{key}"] = new_val
-                st.session_state.assigned.append(
-                    {
-                        "field_name": field_name,
-                        "bt_key": key,
-                        "bt_label": label,
-                        "value": new_val,
-                        "field_idx": idx,
-                    }
-                )
-                st.session_state.field_idx += 1
-                if st.session_state.field_idx >= n_fields:
-                    st.session_state.done = True
-                st.rerun()
+            st.button(
+                "Assign",
+                key=f"assign_{key}_{idx}",
+                on_click=do_assign,
+                args=(key, idx, source_value, field_name, label),
+            )
 
 
 # ── RIGHT: Vertical navigation ─────────────────────────────────────────────
