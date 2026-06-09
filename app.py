@@ -128,6 +128,9 @@ def init_state():
         "values_map": {},
         "done": False,
     }
+    for _, key in BLUETABLE_FIELDS:
+        defaults[f"input_{key}"] = ""
+
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
@@ -185,8 +188,9 @@ if st.session_state.done or idx >= n_fields:
     with col_res:
         st.subheader("BlueTable Summary")
         for label, key in BLUETABLE_FIELDS:
-            val = st.session_state.bt_data.get(key, "")
+            val = st.session_state.get(f"input_{key}", "")
             if val:
+                st.session_state.bt_data[key] = val
                 st.markdown(f"**{label}**: {val}")
 
     with col_dl:
@@ -210,6 +214,9 @@ if st.session_state.done or idx >= n_fields:
                 "done",
             ]:
                 del st.session_state[k]
+            for _, key in BLUETABLE_FIELDS:
+                if f"input_{key}" in st.session_state:
+                    del st.session_state[f"input_{key}"]
             st.rerun()
 
     st.subheader("Assignment Log")
@@ -269,12 +276,23 @@ with left:
 with mid:
     st.markdown("#### 🔵 BlueTable")
 
-    user_value = st.text_input(
-        "Value to assign",
-        value=source_value if source_value and not source_value.startswith("/") else "",
-        key=f"val_input_{idx}",
-        placeholder="Type or confirm the value…",
-    )
+    def do_assign(k, i, src_val, f_name, lbl):
+        val_to_write = src_val if src_val and not src_val.startswith("/") else ""
+        current = st.session_state.get(f"input_{k}", "")
+        new_val = f"{current}-{val_to_write}" if current else val_to_write
+        st.session_state[f"input_{k}"] = new_val
+        st.session_state.assigned.append(
+            {
+                "field_name": f_name,
+                "bt_key": k,
+                "bt_label": lbl,
+                "value": new_val,
+                "field_idx": i,
+            }
+        )
+        st.session_state.field_idx += 1
+        if st.session_state.field_idx >= n_fields:
+            st.session_state.done = True
 
     st.divider()
 
@@ -300,22 +318,12 @@ with mid:
 
         with col_b:
             st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-            if st.button("Assign", key=f"assign_{key}_{idx}"):
-                val_to_write = user_value or source_value
-                st.session_state.bt_data[key] = val_to_write
-                st.session_state.assigned.append(
-                    {
-                        "field_name": field_name,
-                        "bt_key": key,
-                        "bt_label": label,
-                        "value": val_to_write,
-                        "field_idx": idx,
-                    }
-                )
-                st.session_state.field_idx += 1
-                if st.session_state.field_idx >= n_fields:
-                    st.session_state.done = True
-                st.rerun()
+            st.button(
+                "Assign",
+                key=f"assign_{key}_{idx}",
+                on_click=do_assign,
+                args=(key, idx, source_value, field_name, label),
+            )
 
 with right:
     st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
