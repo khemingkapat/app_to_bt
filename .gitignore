@@ -16,3 +16,4 @@ wheels/
 outputs/*
 !outputs/*.example.*
 
+streamlit.log
