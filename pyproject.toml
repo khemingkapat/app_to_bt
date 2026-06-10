@@ -19,3 +19,9 @@ package-dir = {"" = "src"}
 packages = [
     "pdf_processor"
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-playwright>=0.8.0",
+]
