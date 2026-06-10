@@ -129,6 +129,7 @@ def init_state():
         "done": False,
         "pdf_id": None,
         "cache_saved": False,
+        "field_mapping": {},
     }
     for _, key in BLUETABLE_FIELDS:
         defaults[f"input_{key}"] = ""
@@ -172,10 +173,16 @@ if st.session_state.pdf_bytes is None:
         fields = entry.get("fields", [])
         st.session_state.all_fields = sorted(fields, key=sort_key)
 
-        cache_path = os.path.join("outputs", f"{pdf_id}_assignment.json")
+        cache_path = os.path.join("outputs", "assignment_cache.json")
         if os.path.exists(cache_path):
-            with open(cache_path, "r", encoding="utf-8") as f:
-                cache = json.load(f)
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    global_cache = json.load(f)
+            except Exception:
+                global_cache = {}
+
+            cache = global_cache.get(pdf_id, {})
+            st.session_state.field_mapping = cache.copy()
 
             # Helper to find label for bt_key
             bt_labels = {key: label for label, key in BLUETABLE_FIELDS}
@@ -225,16 +232,20 @@ if st.session_state.done or idx >= n_fields:
     st.success("✅ All fields processed!")
 
     if not st.session_state.get("cache_saved") and st.session_state.pdf_id:
-        cache_data = {}
-        for item in st.session_state.assigned:
-            cache_data[item["field_name"]] = item["bt_key"]
-        for skipped_field in st.session_state.skipped:
-            cache_data[skipped_field] = "SKIPPED"
-
-        cache_path = os.path.join("outputs", f"{st.session_state.pdf_id}_assignment.json")
+        cache_path = os.path.join("outputs", "assignment_cache.json")
         os.makedirs("outputs", exist_ok=True)
+        global_cache = {}
+        if os.path.exists(cache_path):
+            with open(cache_path, "r", encoding="utf-8") as f:
+                try:
+                    global_cache = json.load(f)
+                except Exception:
+                    pass
+
+        global_cache[st.session_state.pdf_id] = st.session_state.field_mapping
+
         with open(cache_path, "w", encoding="utf-8") as f:
-            json.dump(cache_data, f, indent=4, ensure_ascii=False)
+            json.dump(global_cache, f, indent=4, ensure_ascii=False)
         st.session_state.cache_saved = True
 
     col_res, col_dl = st.columns([3, 1])
@@ -267,6 +278,7 @@ if st.session_state.done or idx >= n_fields:
                 "done",
                 "pdf_id",
                 "cache_saved",
+                "field_mapping",
             ]:
                 del st.session_state[k]
             for _, key in BLUETABLE_FIELDS:
@@ -336,6 +348,7 @@ with mid:
         current = st.session_state.get(f"input_{k}", "")
         new_val = f"{current}-{val_to_write}" if current else val_to_write
         st.session_state[f"input_{k}"] = new_val
+        st.session_state.field_mapping[f_name] = k
         st.session_state.assigned.append(
             {
                 "field_name": f_name,
@@ -388,6 +401,7 @@ with right:
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
     if st.button("⏭", use_container_width=True, help="Skip"):
         st.session_state.skipped.append(field_name)
+        st.session_state.field_mapping[field_name] = "SKIPPED"
         st.session_state.field_idx += 1
         if st.session_state.field_idx >= n_fields:
             st.session_state.done = True
