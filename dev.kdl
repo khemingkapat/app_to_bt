@@ -1,0 +1,22 @@
+layout {
+    default_tab_template {
+        children
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+    }
+
+    // Tab 1: Editor
+    tab name="editor" focus=true {
+        pane command="nix" {
+            args "develop"
+        }
+    }
+
+    // Tab 2: Streamlit
+    tab name="streamlit" {
+        pane command="nix" {
+            args "develop" "--command" "uv" "run" "streamlit" "run" "app.py"
+        }
+    }
+}
