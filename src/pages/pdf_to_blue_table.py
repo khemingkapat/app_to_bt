@@ -134,11 +134,14 @@ if st.session_state.pdf_bytes is None:
         st.session_state.assigned = []
         st.session_state.done = False
 
-        from src.pdf_processor.engine import process_pdf
+        from src.pdf_processor.engine import process_pdf, load_registry
+
+        # Load existing registry to ensure structural ID fallback works
+        registry = load_registry()
 
         # Process the PDF from memory using BytesIO
         stream = BytesIO(raw)
-        pdf_id, registry_dict, values_dict = process_pdf(stream)
+        pdf_id, registry_dict, values_dict = process_pdf(stream, existing_registry=registry)
 
         st.session_state.pdf_id = pdf_id
         st.session_state.values_map = values_dict
