@@ -381,6 +381,7 @@ with mid:
         if st.session_state.field_idx >= n_fields:
             st.session_state.done = True
 
+<<<<<<< HEAD
     def do_clear(k):
         st.session_state[f"input_{k}"] = ""
         if k in st.session_state.bt_data:
@@ -440,18 +441,58 @@ with mid:
                 args=(key,),
                 use_container_width=True,
             )
+=======
+    # Create a fixed-height container.
+    # If the rows exceed 400px, a scrollbar appears automatically.
+    with st.container(height=800):
+        for label, key in BLUETABLE_FIELDS:
+            existing_val = st.session_state.bt_data.get(key, "")
+            col_a, col_b = st.columns([4, 1])
+
+            with col_a:
+                st.markdown(
+                    f"<span style='color:white; font-size:0.85rem;'>{label}</span>",
+                    unsafe_allow_html=True,
+                )
+                edited_val = st.text_input(
+                    label,
+                    value=existing_val,
+                    key=f"input_{key}",
+                    placeholder="—",
+                    label_visibility="collapsed",
+                )
+                # Keep bt_data live as user types
+                if edited_val != existing_val:
+                    st.session_state.bt_data[key] = edited_val
+
+            with col_b:
+                st.markdown(
+                    "<div style='margin-top:28px'></div>", unsafe_allow_html=True
+                )
+                st.button(
+                    "Assign",
+                    key=f"assign_{key}_{idx}",
+                    on_click=do_assign,
+                    args=(key, idx, source_value, field_name, label),
+                )
+>>>>>>> f935947 (fix layout)
 
 with right:
-    st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
-    if st.button("⏮", disabled=(idx == 0), use_container_width=True, help="Previous"):
+    st.markdown("<div style='height:360px'></div>", unsafe_allow_html=True)
+    if st.button("⬆️", disabled=(idx == 0), use_container_width=True, help="Previous"):
         st.session_state.field_idx -= 1
         st.rerun()
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+<<<<<<< HEAD
     if st.button("⏭", use_container_width=True, help="Skip"):
         if field_name not in st.session_state.field_mapping:
             st.session_state.skipped.append(field_name)
             st.session_state.field_mapping[field_name] = "SKIPPED"
             save_cache_incremental()
+=======
+    if st.button("⬇️", use_container_width=True, help="Skip"):
+        st.session_state.skipped.append(field_name)
+>>>>>>> f935947 (fix layout)
         st.session_state.field_idx += 1
         if st.session_state.field_idx >= n_fields:
             st.session_state.done = True
