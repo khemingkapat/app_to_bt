@@ -56,7 +56,9 @@ def process_pdf(pdf_file: Union[str, BytesIO]) -> tuple[str, dict, dict]:
 
 
 def update_pdf_registry(
-    pdf_file: Union[str, BytesIO], registry_path: str = REGISTRY_FILE, values_path: str = VALUES_FILE
+    pdf_file: Union[str, BytesIO],
+    registry_path: str = REGISTRY_FILE,
+    values_path: str = VALUES_FILE,
 ) -> tuple[dict, dict]:
     """
     Processes the PDF, saves the structural and extraction records locally,
@@ -94,7 +96,7 @@ def update_pdf_registry(
 
 
 if __name__ == "__main__":
-    TARGET_PDF = "./sources/FilledApplication.pdf"
+    TARGET_PDF = "./resources/FilledApplication.pdf"
 
     if os.path.exists(TARGET_PDF):
         # Now returns dictionaries directly
