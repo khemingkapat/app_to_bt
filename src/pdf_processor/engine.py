@@ -2,6 +2,7 @@ import os
 import json
 from io import BytesIO
 from typing import Union
+import hashlib
 from pypdf import PdfReader
 from .utils.helpers import resolve, get_page_dimensions
 from .utils.pdf_info import get_pdf_file_id
@@ -12,7 +13,18 @@ REGISTRY_FILE = "./outputs/pdf_registry.json"
 VALUES_FILE = "./outputs/extracted_values.json"
 
 
-def process_pdf(pdf_file: Union[str, BytesIO]) -> tuple[str, dict, dict]:
+def load_registry(registry_path: str = REGISTRY_FILE) -> dict:
+    """Helper to load the registry."""
+    if os.path.exists(registry_path):
+        try:
+            with open(registry_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            print("⚠️ Registry file corrupt or empty. Creating a new one.")
+            pass
+    return {}
+
+def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -> tuple[str, dict, dict]:
     """
     Parses a PDF file and extracts its structure and values.
 
@@ -50,7 +62,26 @@ def process_pdf(pdf_file: Union[str, BytesIO]) -> tuple[str, dict, dict]:
         struct_field.pop("value", None)
         clean_structural_fields.append(struct_field)
 
-    registry_dict = {pdf_id: {"pages": pages_list, "fields": clean_structural_fields}}
+    structural_data = {"pages": pages_list, "fields": clean_structural_fields}
+    structural_json = json.dumps(structural_data, sort_keys=True)
+    structural_hash = hashlib.sha256(structural_json.encode("utf-8")).hexdigest()
+
+    # Check structural fallback
+    if existing_registry:
+        for existing_id, existing_data in existing_registry.items():
+            # If the hashes match, fall back to the existing ID to preserve the assignment map
+            if existing_data.get("structural_hash") == structural_hash:
+                print(f"🔄 Structural match found. Falling back to existing ID: {existing_id}")
+                pdf_id = existing_id
+                break
+
+    registry_dict = {
+        pdf_id: {
+            "pages": pages_list,
+            "fields": clean_structural_fields,
+            "structural_hash": structural_hash,
+        }
+    }
 
     return pdf_id, registry_dict, values_dict
 
@@ -65,21 +96,15 @@ def update_pdf_registry(
     and returns both dictionaries for Streamlit UI consumption.
     """
     print(f"🔍 Processing: {pdf_file}")
-    pdf_id, registry_dict, values_dict = process_pdf(pdf_file)
-    print(f"🔑 ID: {pdf_id}")
 
     # Load or create the big registry file
-    registry = {}
-    if os.path.exists(registry_path):
-        try:
-            with open(registry_path, "r", encoding="utf-8") as f:
-                registry = json.load(f)
-        except Exception:
-            print("⚠️ Registry file corrupt. Creating a new one.")
-            registry = {}
+    registry = load_registry(registry_path)
+
+    pdf_id, registry_dict, values_dict = process_pdf(pdf_file, existing_registry=registry)
+    print(f"🔑 ID: {pdf_id}")
 
     # Update global map entry
-    registry[pdf_id] = registry_dict
+    registry.update(registry_dict)
 
     # Save both files
     os.makedirs(os.path.dirname(registry_path), exist_ok=True)
