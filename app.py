@@ -56,6 +56,24 @@ BLUETABLE_FIELDS = [
 
 # ── helpers ────────────────────────────────────────────────────────────────
 
+def save_cache_incremental():
+    if not st.session_state.get("pdf_id"):
+        return
+    cache_path = os.path.join("outputs", "assignment_cache.json")
+    os.makedirs("outputs", exist_ok=True)
+    global_cache = {}
+    if os.path.exists(cache_path):
+        with open(cache_path, "r", encoding="utf-8") as f:
+            try:
+                global_cache = json.load(f)
+            except Exception:
+                pass
+
+    global_cache[st.session_state.pdf_id] = st.session_state.field_mapping
+
+    with open(cache_path, "w", encoding="utf-8") as f:
+        json.dump(global_cache, f, indent=4, ensure_ascii=False)
+
 
 def render_page_with_highlight(
     pdf_bytes: bytes, page_num: int, field: dict, resolution: int = 120
@@ -127,6 +145,9 @@ def init_state():
         "assigned": [],
         "values_map": {},
         "done": False,
+        "pdf_id": None,
+        "cache_saved": False,
+        "field_mapping": {},
     }
     for _, key in BLUETABLE_FIELDS:
         defaults[f"input_{key}"] = ""
@@ -164,10 +185,54 @@ if st.session_state.pdf_bytes is None:
 
         pdf_id, registry_dict, values_dict = process_pdf("temp_upload.pdf")
 
+        st.session_state.pdf_id = pdf_id
         st.session_state.values_map = values_dict
         entry = registry_dict.get(pdf_id, {})
         fields = entry.get("fields", [])
         st.session_state.all_fields = sorted(fields, key=sort_key)
+
+        cache_path = os.path.join("outputs", "assignment_cache.json")
+        if os.path.exists(cache_path):
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    global_cache = json.load(f)
+            except Exception:
+                global_cache = {}
+
+            cache = global_cache.get(pdf_id, {})
+            st.session_state.field_mapping = cache.copy()
+
+            # Helper to find label for bt_key
+            bt_labels = {key: label for label, key in BLUETABLE_FIELDS}
+
+            for field in st.session_state.all_fields:
+                fname = field.get("name", "?")
+                if fname in cache:
+                    bt_key = cache[fname]
+                    if bt_key == "SKIPPED":
+                        st.session_state.skipped.append(fname)
+                        st.session_state.field_idx += 1
+                    else:
+                        lbl = bt_labels.get(bt_key, bt_key)
+                        src_val = values_dict.get(fname, "")
+                        val_to_write = src_val if src_val and not src_val.startswith("/") else ""
+                        current = st.session_state.get(f"input_{bt_key}", "")
+                        new_val = f"{current}-{val_to_write}" if current else val_to_write
+
+                        st.session_state[f"input_{bt_key}"] = new_val
+                        st.session_state.bt_data[bt_key] = new_val
+                        st.session_state.assigned.append({
+                            "field_name": fname,
+                            "bt_key": bt_key,
+                            "bt_label": lbl,
+                            "value": new_val,
+                            "field_idx": st.session_state.field_idx,
+                        })
+                        st.session_state.field_idx += 1
+
+            if st.session_state.field_idx >= len(st.session_state.all_fields):
+                st.session_state.done = True
+
         st.rerun()
 
     st.info("👆 Upload a PDF to begin.")
@@ -183,6 +248,23 @@ idx = st.session_state.field_idx
 # ── 3. Done state ──────────────────────────────────────────────────────────
 if st.session_state.done or idx >= n_fields:
     st.success("✅ All fields processed!")
+
+    if not st.session_state.get("cache_saved") and st.session_state.pdf_id:
+        cache_path = os.path.join("outputs", "assignment_cache.json")
+        os.makedirs("outputs", exist_ok=True)
+        global_cache = {}
+        if os.path.exists(cache_path):
+            with open(cache_path, "r", encoding="utf-8") as f:
+                try:
+                    global_cache = json.load(f)
+                except Exception:
+                    pass
+
+        global_cache[st.session_state.pdf_id] = st.session_state.field_mapping
+
+        with open(cache_path, "w", encoding="utf-8") as f:
+            json.dump(global_cache, f, indent=4, ensure_ascii=False)
+        st.session_state.cache_saved = True
 
     col_res, col_dl = st.columns([3, 1])
     with col_res:
@@ -212,6 +294,9 @@ if st.session_state.done or idx >= n_fields:
                 "assigned",
                 "values_map",
                 "done",
+                "pdf_id",
+                "cache_saved",
+                "field_mapping",
             ]:
                 del st.session_state[k]
             for _, key in BLUETABLE_FIELDS:
@@ -281,6 +366,7 @@ with mid:
         current = st.session_state.get(f"input_{k}", "")
         new_val = f"{current}-{val_to_write}" if current else val_to_write
         st.session_state[f"input_{k}"] = new_val
+        st.session_state.field_mapping[f_name] = k
         st.session_state.assigned.append(
             {
                 "field_name": f_name,
@@ -291,21 +377,39 @@ with mid:
             }
         )
         st.session_state.field_idx += 1
+        save_cache_incremental()
         if st.session_state.field_idx >= n_fields:
             st.session_state.done = True
 
-    st.divider()
+    def do_clear(k):
+        st.session_state[f"input_{k}"] = ""
+        if k in st.session_state.bt_data:
+            st.session_state.bt_data[k] = ""
 
-    for label, key in BLUETABLE_FIELDS:
-        existing_val = st.session_state.bt_data.get(key, "")
-        col_a, col_b = st.columns([4, 1])
+        st.session_state.assigned = [
+            a for a in st.session_state.assigned if a.get("bt_key") != k
+        ]
 
-        with col_a:
-            st.markdown(
+        keys_to_remove = []
+        for pdf_field, bt_key in st.session_state.field_mapping.items():
+            if bt_key == k:
+                keys_to_remove.append(pdf_field)
+        for pdf_field in keys_to_remove:
+            st.session_state.field_mapping.pop(pdf_field, None)
+
+        save_cache_incremental()
+
+    with st.container(height=800):
+        for label, key in BLUETABLE_FIELDS:
+            existing_val = st.session_state.bt_data.get(key, "")
+            col_a, col_b, col_c = st.columns([5, 1.5, 1.5])
+
+            with col_a:
+                st.markdown(
                 f"<span style='color:white; font-size:0.85rem;'>{label}</span>",
                 unsafe_allow_html=True,
             )
-            edited_val = st.text_input(
+                edited_val = st.text_input(
                 label,
                 value=existing_val,
                 key=f"input_{key}",
@@ -330,23 +434,38 @@ with mid:
                         "field_idx": -1,
                     })
 
-        with col_b:
-            st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-            st.button(
+            with col_b:
+                st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
+                st.button(
                 "Assign",
                 key=f"assign_{key}_{idx}",
                 on_click=do_assign,
                 args=(key, idx, source_value, field_name, label),
+                use_container_width=True,
             )
 
+            with col_c:
+                st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
+                st.button(
+                "Clear",
+                key=f"clear_{key}_{idx}",
+                on_click=do_clear,
+                args=(key,),
+                use_container_width=True,
+            )
+
+
 with right:
-    st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
-    if st.button("⏮", disabled=(idx == 0), use_container_width=True, help="Previous"):
+    st.markdown("<div style='height:360px'></div>", unsafe_allow_html=True)
+    if st.button("⬆️", disabled=(idx == 0), use_container_width=True, help="Previous"):
         st.session_state.field_idx -= 1
         st.rerun()
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-    if st.button("⏭", use_container_width=True, help="Skip"):
-        st.session_state.skipped.append(field_name)
+    if st.button("⬇️", use_container_width=True, help="Skip"):
+        if field_name not in st.session_state.field_mapping:
+            st.session_state.skipped.append(field_name)
+            st.session_state.field_mapping[field_name] = "SKIPPED"
+            save_cache_incremental()
         st.session_state.field_idx += 1
         if st.session_state.field_idx >= n_fields:
             st.session_state.done = True
