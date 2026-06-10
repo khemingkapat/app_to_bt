@@ -24,6 +24,7 @@ from src.blue_table_tools import (
 
 # ── helpers ────────────────────────────────────────────────────────────────
 
+
 def save_cache_incremental():
     if not st.session_state.get("pdf_id"):
         return
@@ -162,19 +163,25 @@ if st.session_state.pdf_bytes is None:
                     else:
                         lbl = bt_labels.get(bt_key, bt_key)
                         src_val = values_dict.get(fname, "")
-                        val_to_write = src_val if src_val and not src_val.startswith("/") else ""
+                        val_to_write = (
+                            src_val if src_val and not src_val.startswith("/") else ""
+                        )
                         current = st.session_state.get(f"input_{bt_key}", "")
-                        new_val = f"{current}-{val_to_write}" if current else val_to_write
+                        new_val = (
+                            f"{current}-{val_to_write}" if current else val_to_write
+                        )
 
                         st.session_state[f"input_{bt_key}"] = new_val
                         st.session_state.bt_data[bt_key] = new_val
-                        st.session_state.assigned.append({
-                            "field_name": fname,
-                            "bt_key": bt_key,
-                            "bt_label": lbl,
-                            "value": new_val,
-                            "field_idx": st.session_state.field_idx,
-                        })
+                        st.session_state.assigned.append(
+                            {
+                                "field_name": fname,
+                                "bt_key": bt_key,
+                                "bt_label": lbl,
+                                "value": new_val,
+                                "field_idx": st.session_state.field_idx,
+                            }
+                        )
                         st.session_state.field_idx += 1
 
             if st.session_state.field_idx >= len(st.session_state.all_fields):
@@ -261,8 +268,6 @@ st.caption(
 )
 st.progress(pct)
 
-st.divider()
-
 # ── 6. Two-pane layout ─────────────────────────────────────────────────────
 left, mid, right = st.columns([5, 4, 1], gap="large")
 
@@ -298,11 +303,15 @@ with mid:
     def do_assign(k, i, src_val, f_name, lbl):
         current_input = st.session_state.get(f"input_{k}", "")
         new_val, new_bt_data, new_assigned, new_field_mapping = assign_field(
-            k, i, src_val, f_name, lbl,
+            k,
+            i,
+            src_val,
+            f_name,
+            lbl,
             st.session_state.bt_data,
             st.session_state.assigned,
             st.session_state.field_mapping,
-            current_input
+            current_input,
         )
         st.session_state[f"input_{k}"] = new_val
         st.session_state.bt_data = new_bt_data
@@ -317,7 +326,10 @@ with mid:
     def do_clear(k):
         st.session_state[f"input_{k}"] = ""
         new_bt_data, new_assigned, new_field_mapping = clear_field(
-            k, st.session_state.bt_data, st.session_state.assigned, st.session_state.field_mapping
+            k,
+            st.session_state.bt_data,
+            st.session_state.assigned,
+            st.session_state.field_mapping,
         )
         st.session_state.bt_data = new_bt_data
         st.session_state.assigned = new_assigned
@@ -332,43 +344,51 @@ with mid:
 
             with col_a:
                 st.markdown(
-                f"<span style='color:white; font-size:0.85rem;'>{label}</span>",
-                unsafe_allow_html=True,
-            )
+                    f"<span style='color:white; font-size:0.85rem;'>{label}</span>",
+                    unsafe_allow_html=True,
+                )
                 edited_val = st.text_input(
-                label,
-                value=existing_val,
-                key=f"input_{key}",
-                placeholder="—",
-                label_visibility="collapsed",
-            )
+                    label,
+                    value=existing_val,
+                    key=f"input_{key}",
+                    placeholder="—",
+                    label_visibility="collapsed",
+                )
             # Keep bt_data live as user types
             if edited_val != existing_val:
                 new_bt_data, new_assigned = manual_edit_field(
-                    key, label, edited_val, st.session_state.bt_data, st.session_state.assigned
+                    key,
+                    label,
+                    edited_val,
+                    st.session_state.bt_data,
+                    st.session_state.assigned,
                 )
                 st.session_state.bt_data = new_bt_data
                 st.session_state.assigned = new_assigned
 
             with col_b:
-                st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
+                st.markdown(
+                    "<div style='margin-top:28px'></div>", unsafe_allow_html=True
+                )
                 st.button(
-                "Assign",
-                key=f"assign_{key}_{idx}",
-                on_click=do_assign,
-                args=(key, idx, source_value, field_name, label),
-                use_container_width=True,
-            )
+                    "Assign",
+                    key=f"assign_{key}_{idx}",
+                    on_click=do_assign,
+                    args=(key, idx, source_value, field_name, label),
+                    use_container_width=True,
+                )
 
             with col_c:
-                st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
+                st.markdown(
+                    "<div style='margin-top:28px'></div>", unsafe_allow_html=True
+                )
                 st.button(
-                "Clear",
-                key=f"clear_{key}_{idx}",
-                on_click=do_clear,
-                args=(key,),
-                use_container_width=True,
-            )
+                    "Clear",
+                    key=f"clear_{key}_{idx}",
+                    on_click=do_clear,
+                    args=(key,),
+                    use_container_width=True,
+                )
 
 
 with right:
