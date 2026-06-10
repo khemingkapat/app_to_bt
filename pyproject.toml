@@ -1,7 +1,7 @@
 [project]
 name = "app-to-bt"
 version = "0.1.0"
-description = "Add your description here"
+description = "A portal for processing AXA health insurance applications, isolating PDF tools from Streamlit state to map PDF fields to a BlueTable JSON format."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
