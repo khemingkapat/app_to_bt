@@ -13,7 +13,7 @@ from io import BytesIO
 import streamlit as st
 from PIL import Image
 
-from src.bluetable_tools import (
+from src.blue_table_tools import (
     BLUETABLE_FIELDS,
     load_cache,
     save_cache,
