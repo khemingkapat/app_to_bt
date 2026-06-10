@@ -1,6 +1,6 @@
 import re
-import os
 from playwright.sync_api import Page, expect
+from pathlib import Path
 
 
 def test_landing_page(page: Page):
@@ -22,10 +22,8 @@ def test_pdf_tool_navigation(page: Page):
 
 def test_pdf_to_bluetable_flow(page: Page):
     # Find the sample PDF file relative to the project root folder
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    pdf_path = os.path.abspath(
-        os.path.join(current_dir, "../sources/FilledApplication.pdf")
-    )
+    repo_root = Path(__file__).resolve().parent.parent
+    pdf_path = str(repo_root / "sources" / "FilledApplication.pdf")
 
     # 1. Start the flow
     page.goto("http://localhost:8501/pdf_to_blue_table")
