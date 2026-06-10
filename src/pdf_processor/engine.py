@@ -1,5 +1,7 @@
 import os
 import json
+from io import BytesIO
+from typing import Union
 from pypdf import PdfReader
 from .utils.helpers import resolve, get_page_dimensions
 from .utils.pdf_info import get_pdf_file_id
@@ -10,14 +12,14 @@ REGISTRY_FILE = "./outputs/pdf_registry.json"
 VALUES_FILE = "./outputs/extracted_values.json"
 
 
-def process_pdf(pdf_path: str) -> tuple[str, dict, dict]:
+def process_pdf(pdf_file: Union[str, BytesIO]) -> tuple[str, dict, dict]:
     """
     Parses a PDF file and extracts its structure and values.
 
     Returns:
         tuple: (pdf_id, registry_dict, values_dict)
     """
-    reader = PdfReader(pdf_path)
+    reader = PdfReader(pdf_file)
     pdf_id = get_pdf_file_id(reader)
 
     # 1. Collect all page sizes
@@ -54,14 +56,14 @@ def process_pdf(pdf_path: str) -> tuple[str, dict, dict]:
 
 
 def update_pdf_registry(
-    pdf_path: str, registry_path: str = REGISTRY_FILE, values_path: str = VALUES_FILE
+    pdf_file: Union[str, BytesIO], registry_path: str = REGISTRY_FILE, values_path: str = VALUES_FILE
 ) -> tuple[dict, dict]:
     """
     Processes the PDF, saves the structural and extraction records locally,
     and returns both dictionaries for Streamlit UI consumption.
     """
-    print(f"🔍 Processing: {pdf_path}")
-    pdf_id, registry_dict, values_dict = process_pdf(pdf_path)
+    print(f"🔍 Processing: {pdf_file}")
+    pdf_id, registry_dict, values_dict = process_pdf(pdf_file)
     print(f"🔑 ID: {pdf_id}")
 
     # Load or create the big registry file
