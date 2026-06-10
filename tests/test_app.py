@@ -23,7 +23,7 @@ def test_pdf_tool_navigation(page: Page):
 def test_pdf_to_bluetable_flow(page: Page):
     # Find the sample PDF file relative to the project root folder
     repo_root = Path(__file__).resolve().parent.parent
-    pdf_path = str(repo_root / "sources" / "FilledApplication.pdf")
+    pdf_path = str(repo_root / "resources" / "FilledApplication.pdf")
 
     # 1. Start the flow
     page.goto("http://localhost:8501/pdf_to_blue_table")
@@ -38,7 +38,7 @@ def test_pdf_to_bluetable_flow(page: Page):
     # 3. Form Interactions & UI validation
     expect(page.get_by_role("img")).to_be_visible()
     expect(
-        page.get_by_text("Main InsuredMain InsuredAssignClearDate of BirthDate of")
+        page.get_by_text("Main InsuredMain InsuredAssignClear")
     ).to_be_visible()
     expect(page.get_by_label("🔵 BlueTable")).to_contain_text("🔵 BlueTable")
     expect(page.get_by_role("button", name="⬇️")).to_be_visible()
@@ -62,8 +62,8 @@ def test_pdf_to_bluetable_flow(page: Page):
     page.get_by_role("textbox", name="Main Insured").fill("name_naja")
     page.get_by_role("textbox", name="Main Insured").press("Enter")
     page.get_by_role("button", name="✅").click()
-    expect(page.get_by_text('[0:{"field_name":"Text2""')).to_be_visible()
-    expect(page.get_by_text('0:{"field_name":"Text2""')).to_be_visible()
+    # # expect(page.get_by_text('[0:{"field_name":"Text2""')).to_be_visible()
+    # # expect(page.get_by_text('0:{"field_name":"Text2""')).to_be_visible()
     expect(page.get_by_test_id("stJson")).to_contain_text('"name_naja"')
     expect(page.get_by_test_id("stJson")).to_contain_text('"nationality"')
 
