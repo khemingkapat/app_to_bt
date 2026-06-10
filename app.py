@@ -56,6 +56,24 @@ BLUETABLE_FIELDS = [
 
 # ── helpers ────────────────────────────────────────────────────────────────
 
+def save_cache_incremental():
+    if not st.session_state.get("pdf_id"):
+        return
+    cache_path = os.path.join("outputs", "assignment_cache.json")
+    os.makedirs("outputs", exist_ok=True)
+    global_cache = {}
+    if os.path.exists(cache_path):
+        with open(cache_path, "r", encoding="utf-8") as f:
+            try:
+                global_cache = json.load(f)
+            except Exception:
+                pass
+
+    global_cache[st.session_state.pdf_id] = st.session_state.field_mapping
+
+    with open(cache_path, "w", encoding="utf-8") as f:
+        json.dump(global_cache, f, indent=4, ensure_ascii=False)
+
 
 def render_page_with_highlight(
     pdf_bytes: bytes, page_num: int, field: dict, resolution: int = 120
@@ -359,14 +377,33 @@ with mid:
             }
         )
         st.session_state.field_idx += 1
+        save_cache_incremental()
         if st.session_state.field_idx >= n_fields:
             st.session_state.done = True
+
+    def do_clear(k):
+        st.session_state[f"input_{k}"] = ""
+        if k in st.session_state.bt_data:
+            st.session_state.bt_data[k] = ""
+
+        st.session_state.assigned = [
+            a for a in st.session_state.assigned if a.get("bt_key") != k
+        ]
+
+        keys_to_remove = []
+        for pdf_field, bt_key in st.session_state.field_mapping.items():
+            if bt_key == k:
+                keys_to_remove.append(pdf_field)
+        for pdf_field in keys_to_remove:
+            st.session_state.field_mapping.pop(pdf_field, None)
+
+        save_cache_incremental()
 
     st.divider()
 
     for label, key in BLUETABLE_FIELDS:
         existing_val = st.session_state.bt_data.get(key, "")
-        col_a, col_b = st.columns([4, 1])
+        col_a, col_b, col_c = st.columns([5, 1.5, 1.5])
 
         with col_a:
             st.markdown(
@@ -391,6 +428,17 @@ with mid:
                 key=f"assign_{key}_{idx}",
                 on_click=do_assign,
                 args=(key, idx, source_value, field_name, label),
+                use_container_width=True,
+            )
+
+        with col_c:
+            st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
+            st.button(
+                "Clear",
+                key=f"clear_{key}_{idx}",
+                on_click=do_clear,
+                args=(key,),
+                use_container_width=True,
             )
 
 with right:
@@ -400,8 +448,10 @@ with right:
         st.rerun()
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
     if st.button("⏭", use_container_width=True, help="Skip"):
-        st.session_state.skipped.append(field_name)
-        st.session_state.field_mapping[field_name] = "SKIPPED"
+        if field_name not in st.session_state.field_mapping:
+            st.session_state.skipped.append(field_name)
+            st.session_state.field_mapping[field_name] = "SKIPPED"
+            save_cache_incremental()
         st.session_state.field_idx += 1
         if st.session_state.field_idx >= n_fields:
             st.session_state.done = True
