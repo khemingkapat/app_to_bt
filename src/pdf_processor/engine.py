@@ -122,7 +122,7 @@ def update_pdf_registry(
     pdf_file: Union[str, BytesIO],
     registry_path: str = REGISTRY_FILE,
     values_path: str = VALUES_FILE,
-) -> tuple[dict, dict]:
+) -> tuple[str, dict, dict]:
     """
     Processes the PDF, saves the structural and extraction records locally,
     and returns both dictionaries for Streamlit UI consumption.
@@ -149,7 +149,7 @@ def update_pdf_registry(
     print(f"✅ Pure structural fields saved to: {registry_path}")
     print(f"✅ Simple text values dictionary saved to: {values_path}\n" + "=" * 60)
 
-    return registry_dict, values_dict
+    return pdf_id, registry_dict, values_dict
 
 
 if __name__ == "__main__":
@@ -157,6 +157,6 @@ if __name__ == "__main__":
 
     if os.path.exists(TARGET_PDF):
         # Now returns dictionaries directly
-        reg, vals = update_pdf_registry(TARGET_PDF)
+        pdf_id, reg, vals = update_pdf_registry(TARGET_PDF)
     else:
         print(f"❌ File not found: '{TARGET_PDF}'")
