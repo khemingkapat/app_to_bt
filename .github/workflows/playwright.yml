@@ -26,4 +26,4 @@ jobs:
         uv run streamlit run app.py --server.headless true > streamlit.log 2>&1 &
         sleep 5
     - name: Run tests
-      run: uv run pytest
+      run: uv run pytest --slowmo 1000
