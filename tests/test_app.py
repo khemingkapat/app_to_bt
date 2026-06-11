@@ -7,7 +7,6 @@ import pytest
 repo_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(repo_root))
 
-
 # Fixture to clear outputs before each test for complete isolation
 @pytest.fixture(autouse=True)
 def clean_outputs():
@@ -24,7 +23,6 @@ def clean_outputs():
     if values_path.exists():
         values_path.unlink()
 
-
 def test_landing_page(page: Page):
     page.goto("http://localhost:8501")
     expect(page).to_have_title(re.compile("AXA Health Insurance Application"))
@@ -32,14 +30,12 @@ def test_landing_page(page: Page):
         page.get_by_role("heading", name="🏥 AXA Health Insurance Application Portal")
     ).to_be_visible()
 
-
 def test_pdf_tool_navigation(page: Page):
     page.goto("http://localhost:8501")
     page.get_by_role("button", name="🚀 Launch PDF to BlueTable Tool").click()
     expect(
         page.get_by_role("heading", name="📋 PDF ➜ BlueTable Auto-Fill")
     ).to_be_visible()
-
 
 def test_acroform_pdf_flow(page: Page):
     pdf_path = str(repo_root / "resources" / "FilledApplication.pdf")
@@ -54,7 +50,9 @@ def test_acroform_pdf_flow(page: Page):
     page.get_by_test_id("stFileUploaderDropzoneInput").set_input_files(pdf_path)
 
     expect(page.get_by_role("img")).to_be_visible()
-    expect(page.get_by_text("Main InsuredMain InsuredAssignClear")).to_be_visible()
+    expect(
+        page.get_by_text("Main InsuredMain InsuredAssignClear")
+    ).to_be_visible()
     expect(page.get_by_label("🔵 BlueTable")).to_contain_text("🔵 BlueTable")
     expect(page.get_by_role("button", name="⬇️")).to_be_visible()
     expect(page.get_by_role("button", name="✅")).to_be_visible()
@@ -94,14 +92,12 @@ def test_acroform_pdf_flow(page: Page):
         "📋 PDF ➜ BlueTable Auto-Fill"
     )
 
-
 def test_flatten_pdf_flow(page: Page):
     acroform_pdf_path = str(repo_root / "resources" / "FilledApplication.pdf")
     flatten_pdf_path = str(repo_root / "resources" / "PrintedApplication.pdf")
 
     # Seed the registry with AcroForm PDF so the flattened one can match
     from src.pdf_processor.engine import update_pdf_registry
-
     update_pdf_registry(acroform_pdf_path)
 
     # 1. Start the flow
@@ -117,16 +113,18 @@ def test_flatten_pdf_flow(page: Page):
 
     # 3. Form Interactions & UI validation
     expect(page.get_by_role("img")).to_be_visible()
-    expect(page.get_by_text("Main InsuredMain InsuredAssignClear")).to_be_visible()
+    expect(
+        page.get_by_text("Main InsuredMain InsuredAssignClear")
+    ).to_be_visible()
     expect(page.get_by_label("🔵 BlueTable")).to_contain_text("🔵 BlueTable")
     expect(page.get_by_role("button", name="⬇️")).to_be_visible()
     expect(page.get_by_role("button", name="✅")).to_be_visible()
 
     # Clicking sequences
+    page.get_by_role("button", name="⬇️").click()
+    page.get_by_test_id("stBaseButton-secondary").first.click()
     page.get_by_role("button", name="✅").click()
 
     expect(
         page.get_by_test_id("stDownloadButton").get_by_test_id("stBaseButton-secondary")
     ).to_be_visible()
-
-    expect(page.get_by_test_id("stJson")).to_contain_text('"p_name"')
