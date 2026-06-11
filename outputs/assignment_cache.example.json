@@ -27,7 +27,8 @@
         "CHPLAN 08": "plan",
         "Text19": "premium",
         "CHPLAN 09": "SKIPPED",
-        "Text23": "nationality"
+        "Text23": "nationality",
+        "Text24": "nationality"
     },
     "UNKNOWN_ID": {}
 }
