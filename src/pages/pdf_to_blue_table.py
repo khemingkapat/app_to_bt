@@ -134,14 +134,12 @@ if st.session_state.pdf_bytes is None:
         st.session_state.assigned = []
         st.session_state.done = False
 
-        from src.pdf_processor.engine import process_pdf, load_registry
+        from src.pdf_processor.engine import update_pdf_registry
 
-        # Load existing registry to ensure structural ID fallback works
-        registry = load_registry()
-
-        # Process the PDF from memory using BytesIO
+        # Process the PDF from memory using BytesIO and update the global registry
+        # This ensures Word Anchors and Structural IDs are properly saved to disk
         stream = BytesIO(raw)
-        pdf_id, registry_dict, values_dict = process_pdf(stream, existing_registry=registry)
+        pdf_id, registry_dict, values_dict = update_pdf_registry(stream)
 
         st.session_state.pdf_id = pdf_id
         st.session_state.values_map = values_dict
