@@ -4,7 +4,7 @@ from io import BytesIO
 from typing import Union
 import hashlib
 from pypdf import PdfReader
-from .utils.helpers import resolve, get_page_dimensions
+from .utils.helpers import resolve, get_page_dimensions, get_word_anchors, extract_text_from_coords
 from .utils.pdf_info import get_pdf_file_id
 from .core.walker import walk_fields
 
@@ -50,38 +50,70 @@ def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -
         if fields_array:
             raw_fields = walk_fields(reader, fields_array)
 
-    # 3. Clean up data: Separate values from structure
+    word_anchors = get_word_anchors(pdf_file)
     values_dict = {}
     clean_structural_fields = []
 
-    for field in raw_fields:
-        name = field["name"]
-        values_dict[name] = field["value"]
+    # 3. Handle Normal vs. Flattened PDF
+    if raw_fields:
+        # Normal PDF: Parse fields directly
+        for field in raw_fields:
+            name = field["name"]
+            values_dict[name] = field["value"]
 
-        struct_field = json.loads(json.dumps(field))
-        struct_field.pop("value", None)
-        clean_structural_fields.append(struct_field)
+            struct_field = json.loads(json.dumps(field))
+            struct_field.pop("value", None)
+            clean_structural_fields.append(struct_field)
 
-    structural_data = {"pages": pages_list, "fields": clean_structural_fields}
-    structural_json = json.dumps(structural_data, sort_keys=True)
-    structural_hash = hashlib.sha256(structural_json.encode("utf-8")).hexdigest()
+        structural_data = {"pages": pages_list, "fields": clean_structural_fields}
+        structural_json = json.dumps(structural_data, sort_keys=True)
+        structural_hash = hashlib.sha256(structural_json.encode("utf-8")).hexdigest()
 
-    # Check structural fallback
-    if existing_registry:
-        for existing_id, existing_data in existing_registry.items():
-            # If the hashes match, fall back to the existing ID to preserve the assignment map
-            if existing_data.get("structural_hash") == structural_hash:
-                print(f"🔄 Structural match found. Falling back to existing ID: {existing_id}")
-                pdf_id = existing_id
-                break
+        # Check structural fallback (for prints that kept fields but changed ID)
+        if existing_registry:
+            for existing_id, existing_data in existing_registry.items():
+                if existing_data.get("structural_hash") == structural_hash:
+                    print(f"🔄 Structural match found. Falling back to existing ID: {existing_id}")
+                    pdf_id = existing_id
+                    break
 
-    registry_dict = {
-        pdf_id: {
-            "pages": pages_list,
-            "fields": clean_structural_fields,
-            "structural_hash": structural_hash,
+        registry_dict = {
+            pdf_id: {
+                "pages": pages_list,
+                "fields": clean_structural_fields,
+                "structural_hash": structural_hash,
+                "word_anchors": word_anchors,
+            }
         }
-    }
+    else:
+        # Flattened PDF: No raw fields, so fallback using word_anchors
+        matched = False
+        structural_hash = None
+        if existing_registry:
+            for existing_id, existing_data in existing_registry.items():
+                existing_anchors = existing_data.get("word_anchors", [])
+                # Simple exact list match or subset match for anchors
+                if existing_anchors and word_anchors == existing_anchors:
+                    print(f"📄 Word Anchor match found for flattened PDF! Falling back to ID: {existing_id}")
+                    pdf_id = existing_id
+                    clean_structural_fields = existing_data.get("fields", [])
+                    structural_hash = existing_data.get("structural_hash")
+                    matched = True
+                    break
+
+        if matched and clean_structural_fields:
+            # Extract text from visual bounding boxes
+            values_dict = extract_text_from_coords(pdf_file, clean_structural_fields, pages_list)
+            print(f"✨ Extracted {len(values_dict)} fields using visual coordinate mapping.")
+
+        registry_dict = {
+            pdf_id: {
+                "pages": pages_list,
+                "fields": clean_structural_fields,
+                "structural_hash": structural_hash,
+                "word_anchors": word_anchors,
+            }
+        }
 
     return pdf_id, registry_dict, values_dict
 
