@@ -13,7 +13,5 @@ wheels/
 
 *.ignore.*
 
-outputs/*
-!outputs/*.example.*
 
 streamlit.log
