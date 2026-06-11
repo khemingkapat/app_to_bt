@@ -7,7 +7,7 @@ Iterate through every PDF field, one at a time.
 """
 
 import json
-import os
+import base64
 from io import BytesIO
 
 import streamlit as st
@@ -126,40 +126,59 @@ if st.session_state.pdf_bytes is None:
     uploaded = st.file_uploader("Upload source PDF", type=["pdf"])
 
     if uploaded:
-        raw = uploaded.read()
-        st.session_state.pdf_bytes = raw
-        st.session_state.field_idx = 0
-        st.session_state.bt_data = {}
-        st.session_state.skipped = []
-        st.session_state.assigned = []
-        st.session_state.done = False
+        # Prevent resetting state on every rerun caused by Streamlit re-executing the script
+        if (
+            "last_uploaded_name" not in st.session_state
+            or st.session_state.last_uploaded_name != uploaded.name
+        ):
+            raw = uploaded.read()
+            st.session_state.pdf_bytes = raw
+            st.session_state.field_idx = 0
+            st.session_state.bt_data = {}
+            st.session_state.skipped = []
+            st.session_state.assigned = []
+            st.session_state.done = False
+            st.session_state.last_uploaded_name = uploaded.name
 
-        from src.pdf_processor.engine import process_pdf
+            from src.pdf_processor.engine import update_pdf_registry
 
-        # Process the PDF from memory using BytesIO
-        stream = BytesIO(raw)
-        pdf_id, registry_dict, values_dict = process_pdf(stream)
+            stream = BytesIO(raw)
+            pdf_id, registry_dict, values_dict = update_pdf_registry(stream)
 
-        st.session_state.pdf_id = pdf_id
-        st.session_state.values_map = values_dict
-        entry = registry_dict.get(pdf_id, {})
-        fields = entry.get("fields", [])
-        st.session_state.all_fields = sorted(fields, key=sort_key)
+            st.session_state.pdf_id = pdf_id
+            st.session_state.values_map = values_dict
+            entry = registry_dict.get(pdf_id, {})
+            fields = entry.get("fields", [])
+            st.session_state.all_fields = sorted(fields, key=sort_key)
 
-        cache = load_cache(pdf_id)
-        if cache:
-            st.session_state.field_mapping = cache.copy()
+            # ── Bug fix: guard against empty field list (unrecognised flattened PDF) ──
+            if not st.session_state.all_fields:
+                st.session_state.pdf_bytes = None  # reset so uploader shows again
+                st.warning(
+                    "⚠️ No fields could be found or matched in this PDF. "
+                    "If this is a flattened (Print-to-PDF) copy, make sure the "
+                    "original AcroForm PDF has been processed first so the registry "
+                    "has a word-anchor entry to match against."
+                )
+                st.stop()
 
-            # Helper to find label for bt_key
-            bt_labels = {key: label for label, key in BLUETABLE_FIELDS}
+            # ── Restore cache: pre-populate bt_data & assigned WITHOUT advancing field_idx ──
+            cache = load_cache(pdf_id)
+            if cache:
+                st.session_state.field_mapping = cache.copy()
+                bt_labels = {key: label for label, key in BLUETABLE_FIELDS}
 
-            for field in st.session_state.all_fields:
-                fname = field.get("name", "?")
-                if fname in cache:
+                for field in st.session_state.all_fields:
+                    fname = field.get("name", "?")
+                    if fname not in cache:
+                        continue
+
                     bt_key = cache[fname]
+
                     if bt_key == "SKIPPED":
-                        st.session_state.skipped.append(fname)
-                        st.session_state.field_idx += 1
+                        # Record the skip but do NOT advance field_idx
+                        if fname not in st.session_state.skipped:
+                            st.session_state.skipped.append(fname)
                     else:
                         lbl = bt_labels.get(bt_key, bt_key)
                         src_val = values_dict.get(fname, "")
@@ -179,18 +198,19 @@ if st.session_state.pdf_bytes is None:
                                 "bt_key": bt_key,
                                 "bt_label": lbl,
                                 "value": new_val,
-                                "field_idx": st.session_state.field_idx,
+                                "field_idx": 0,  # placeholder; not used for navigation
                             }
                         )
-                        st.session_state.field_idx += 1
+                # field_idx intentionally stays at 0 — user reviews from field 1
+                # with values already pre-populated from the cache.
 
-            if st.session_state.field_idx >= len(st.session_state.all_fields):
-                st.session_state.done = True
+            st.rerun()
 
-        st.rerun()
-
-    st.info("👆 Upload a PDF to begin.")
-    st.stop()
+        if "all_fields" not in st.session_state:
+            st.stop()
+    else:
+        st.info("👆 Upload a PDF to begin.")
+        st.stop()
 
 # ── 2. Shorthand refs ──────────────────────────────────────────────────────
 pdf_bytes = st.session_state.pdf_bytes
@@ -199,8 +219,21 @@ values_map = st.session_state.values_map
 n_fields = len(all_fields)
 idx = st.session_state.field_idx
 
+# ── Bug fix: guard against empty field list reaching this point ────────────
+if n_fields == 0:
+    st.warning(
+        "⚠️ No fields are available to process. Please upload a valid PDF."
+    )
+    if st.button("🔄 Start Over"):
+        for k in list(st.session_state.keys()):
+            del st.session_state[k]
+        st.rerun()
+    st.stop()
+
 # ── 3. Done state ──────────────────────────────────────────────────────────
-if st.session_state.done or idx >= n_fields:
+# Only trigger done when explicitly set — idx >= n_fields is no longer used
+# as the completion signal to avoid false positives on cache-restored sessions.
+if st.session_state.done:
     st.success("✅ All fields processed!")
 
     if not st.session_state.get("cache_saved") and st.session_state.pdf_id:
@@ -238,11 +271,11 @@ if st.session_state.done or idx >= n_fields:
                 "pdf_id",
                 "cache_saved",
                 "field_mapping",
+                "last_uploaded_name",
             ]:
-                del st.session_state[k]
+                st.session_state.pop(k, None)
             for _, key in BLUETABLE_FIELDS:
-                if f"input_{key}" in st.session_state:
-                    del st.session_state[f"input_{key}"]
+                st.session_state.pop(f"input_{key}", None)
             st.rerun()
 
     st.subheader("Assignment Log")
@@ -250,6 +283,10 @@ if st.session_state.done or idx >= n_fields:
     st.stop()
 
 # ── 4. Current field ───────────────────────────────────────────────────────
+# Clamp idx in case it drifted past the end (e.g. after a back-navigate)
+idx = min(idx, n_fields - 1)
+st.session_state.field_idx = idx
+
 current_field = all_fields[idx]
 field_name = current_field.get("name", "?")
 field_kind = current_field.get("field_kind", "text")
@@ -277,8 +314,6 @@ with left:
     if img:
         buf = BytesIO()
         img.save(buf, format="PNG")
-        import base64
-
         b64 = base64.b64encode(buf.getvalue()).decode()
         st.markdown(
             f"""
@@ -296,7 +331,8 @@ with left:
     )
     if source_value:
         st.code(source_value, language=None)
-# ── RIGHT: BlueTable ───────────────────────────────────────────────────────
+
+# ── MID: BlueTable ─────────────────────────────────────────────────────────
 with mid:
     st.markdown("#### 🔵 BlueTable")
 
@@ -320,6 +356,7 @@ with mid:
 
         st.session_state.field_idx += 1
         save_cache_incremental()
+        # Use explicit done flag rather than idx >= n_fields comparison
         if st.session_state.field_idx >= n_fields:
             st.session_state.done = True
 
@@ -334,7 +371,6 @@ with mid:
         st.session_state.bt_data = new_bt_data
         st.session_state.assigned = new_assigned
         st.session_state.field_mapping = new_field_mapping
-
         save_cache_incremental()
 
     with st.container(height=800):
@@ -354,6 +390,7 @@ with mid:
                     placeholder="—",
                     label_visibility="collapsed",
                 )
+
             # Keep bt_data live as user types
             if edited_val != existing_val:
                 new_bt_data, new_assigned = manual_edit_field(
@@ -390,7 +427,7 @@ with mid:
                     use_container_width=True,
                 )
 
-
+# ── RIGHT: navigation ──────────────────────────────────────────────────────
 with right:
     st.markdown("<div style='height:360px'></div>", unsafe_allow_html=True)
     if st.button("⬆️", disabled=(idx == 0), use_container_width=True, help="Previous"):
