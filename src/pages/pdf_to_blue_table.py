@@ -126,72 +126,78 @@ if st.session_state.pdf_bytes is None:
     uploaded = st.file_uploader("Upload source PDF", type=["pdf"])
 
     if uploaded:
-        raw = uploaded.read()
-        st.session_state.pdf_bytes = raw
-        st.session_state.field_idx = 0
-        st.session_state.bt_data = {}
-        st.session_state.skipped = []
-        st.session_state.assigned = []
-        st.session_state.done = False
+        # Check if we already processed this exact uploaded file to prevent resetting state on every rerun
+        if "last_uploaded_name" not in st.session_state or st.session_state.last_uploaded_name != uploaded.name:
+            raw = uploaded.read()
+            st.session_state.pdf_bytes = raw
+            st.session_state.field_idx = 0
+            st.session_state.bt_data = {}
+            st.session_state.skipped = []
+            st.session_state.assigned = []
+            st.session_state.done = False
+            st.session_state.last_uploaded_name = uploaded.name
 
-        from src.pdf_processor.engine import update_pdf_registry
+            from src.pdf_processor.engine import update_pdf_registry
 
-        # Process the PDF from memory using BytesIO and update the global registry
-        # This ensures Word Anchors and Structural IDs are properly saved to disk
-        stream = BytesIO(raw)
-        pdf_id, registry_dict, values_dict = update_pdf_registry(stream)
+            # Process the PDF from memory using BytesIO and update the global registry
+            # This ensures Word Anchors and Structural IDs are properly saved to disk
+            stream = BytesIO(raw)
+            pdf_id, registry_dict, values_dict = update_pdf_registry(stream)
 
-        st.session_state.pdf_id = pdf_id
-        st.session_state.values_map = values_dict
-        entry = registry_dict.get(pdf_id, {})
-        fields = entry.get("fields", [])
-        st.session_state.all_fields = sorted(fields, key=sort_key)
+            st.session_state.pdf_id = pdf_id
+            st.session_state.values_map = values_dict
+            entry = registry_dict.get(pdf_id, {})
+            fields = entry.get("fields", [])
+            st.session_state.all_fields = sorted(fields, key=sort_key)
 
-        cache = load_cache(pdf_id)
-        if cache:
-            st.session_state.field_mapping = cache.copy()
+            cache = load_cache(pdf_id)
+            if cache:
+                st.session_state.field_mapping = cache.copy()
 
-            # Helper to find label for bt_key
-            bt_labels = {key: label for label, key in BLUETABLE_FIELDS}
+                # Helper to find label for bt_key
+                bt_labels = {key: label for label, key in BLUETABLE_FIELDS}
 
-            for field in st.session_state.all_fields:
-                fname = field.get("name", "?")
-                if fname in cache:
-                    bt_key = cache[fname]
-                    if bt_key == "SKIPPED":
-                        st.session_state.skipped.append(fname)
-                        st.session_state.field_idx += 1
-                    else:
-                        lbl = bt_labels.get(bt_key, bt_key)
-                        src_val = values_dict.get(fname, "")
-                        val_to_write = (
-                            src_val if src_val and not src_val.startswith("/") else ""
-                        )
-                        current = st.session_state.get(f"input_{bt_key}", "")
-                        new_val = (
-                            f"{current}-{val_to_write}" if current else val_to_write
-                        )
+                for field in st.session_state.all_fields:
+                    fname = field.get("name", "?")
+                    if fname in cache:
+                        bt_key = cache[fname]
+                        if bt_key == "SKIPPED":
+                            st.session_state.skipped.append(fname)
+                            st.session_state.field_idx += 1
+                        else:
+                            lbl = bt_labels.get(bt_key, bt_key)
+                            src_val = values_dict.get(fname, "")
+                            val_to_write = (
+                                src_val if src_val and not src_val.startswith("/") else ""
+                            )
+                            current = st.session_state.get(f"input_{bt_key}", "")
+                            new_val = (
+                                f"{current}-{val_to_write}" if current else val_to_write
+                            )
 
-                        st.session_state[f"input_{bt_key}"] = new_val
-                        st.session_state.bt_data[bt_key] = new_val
-                        st.session_state.assigned.append(
-                            {
-                                "field_name": fname,
-                                "bt_key": bt_key,
-                                "bt_label": lbl,
-                                "value": new_val,
-                                "field_idx": st.session_state.field_idx,
-                            }
-                        )
-                        st.session_state.field_idx += 1
+                            st.session_state[f"input_{bt_key}"] = new_val
+                            st.session_state.bt_data[bt_key] = new_val
+                            st.session_state.assigned.append(
+                                {
+                                    "field_name": fname,
+                                    "bt_key": bt_key,
+                                    "bt_label": lbl,
+                                    "value": new_val,
+                                    "field_idx": st.session_state.field_idx,
+                                }
+                            )
+                            st.session_state.field_idx += 1
 
-            if st.session_state.field_idx >= len(st.session_state.all_fields):
-                st.session_state.done = True
+                if st.session_state.field_idx >= len(st.session_state.all_fields):
+                    st.session_state.done = True
+            st.rerun()
 
-        st.rerun()
-
-    st.info("👆 Upload a PDF to begin.")
-    st.stop()
+        # If already loaded and `field_idx` exists, proceed to rendering
+        if "all_fields" not in st.session_state:
+            st.stop()
+    else:
+        st.info("👆 Upload a PDF to begin.")
+        st.stop()
 
 # ── 2. Shorthand refs ──────────────────────────────────────────────────────
 pdf_bytes = st.session_state.pdf_bytes

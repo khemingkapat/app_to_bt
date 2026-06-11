@@ -92,14 +92,27 @@ def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -
         if existing_registry:
             for existing_id, existing_data in existing_registry.items():
                 existing_anchors = existing_data.get("word_anchors", [])
-                # Simple exact list match or subset match for anchors
-                if existing_anchors and word_anchors == existing_anchors:
-                    print(f"📄 Word Anchor match found for flattened PDF! Falling back to ID: {existing_id}")
-                    pdf_id = existing_id
-                    clean_structural_fields = existing_data.get("fields", [])
-                    structural_hash = existing_data.get("structural_hash")
-                    matched = True
-                    break
+                # A flattened PDF might have a slightly different block sequence or miss an exact spacing.
+                # So we consider it a match if at least one meaningful word anchor string from the original exists
+                # in the newly extracted word_anchors, or vice-versa.
+                if existing_anchors and word_anchors:
+                    has_match = False
+                    for anchor in word_anchors:
+                        for existing_anchor in existing_anchors:
+                            # A partial match (e.g. one string is inside another) is robust for flattened PDFs
+                            if anchor in existing_anchor or existing_anchor in anchor:
+                                has_match = True
+                                break
+                        if has_match:
+                            break
+
+                    if has_match:
+                        print(f"📄 Word Anchor match found for flattened PDF! Falling back to ID: {existing_id}")
+                        pdf_id = existing_id
+                        clean_structural_fields = existing_data.get("fields", [])
+                        structural_hash = existing_data.get("structural_hash")
+                        matched = True
+                        break
 
         if matched and clean_structural_fields:
             # Extract text from visual bounding boxes

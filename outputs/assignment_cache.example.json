@@ -9,26 +9,6 @@
         "Text7": "SKIPPED",
         "Text8": "nationality",
         "Text9": "id_card_no",
-        "Text10": "present_address",
-        "Text11": "tel",
-        "Text12": "SKIPPED",
-        "Text13": "email",
-        "Text14": "occupation",
-        "Text15": "SKIPPED",
-        "Text16": "beneficiary",
-        "Text17": "bene_relation",
-        "Text18": "effective_date",
-        "CHPLAN 02": "plan",
-        "CHPLAN 03": "plan",
-        "CHPLAN 04": "plan",
-        "CHPLAN 06": "plan",
-        "CHPLAN 05": "plan",
-        "CHPLAN 07": "plan",
-        "CHPLAN 08": "plan",
-        "Text19": "premium",
-        "CHPLAN 09": "SKIPPED",
-        "Text23": "nationality",
-        "Text24": "nationality"
-    },
-    "UNKNOWN_ID": {}
+        "Text10": "present_address"
+    }
 }
