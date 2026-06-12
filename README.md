@@ -9,7 +9,7 @@ This stateless, database-free administrative automation utility eliminates manua
 The architecture uses a unified, dual-pathway ingestion model designed to absorb legacy paperwork (Pathway A) while guiding customers toward error-free upfront digital data capture (Pathway B). Both pathways converge on a single **Human-in-the-Loop (HITL)** verification layer.
 
 ### **End-to-End Pipeline**
-
+```mermaid
 graph TD  
     sel\[1. Intake Source Selection\]   
       
@@ -39,7 +39,7 @@ graph TD
     %% System Convergence & Outputs  
     HITL \--\> BT\[(8a. Export Clean Row\<br\>to Company BlueTable)\]  
     HITL \--\> app\[8b. Generate Pre-Filled Official PDF\<br\>As Truth Anchor for Signature\]
-
+```
 ### **Detailed Method Breakdown**
 
 #### **1\. Pathway A: Legacy PDF Structural Layout Mapping**
