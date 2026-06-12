@@ -1,23 +1,52 @@
-# Refactoring Plan
+# General Refactoring Plan Template
 
-1. **Memory over Disk for PDFs (Remove `temp_upload.pdf`)**
-   - Update `src/pdf_processor/engine.py` (`process_pdf`) to support `io.BytesIO` streams in addition to file paths.
-   - Pass the uploaded file bytes directly using Streamlit's `session_state` and `io.BytesIO` instead of saving to the filesystem.
+## 1. Optimize I/O: Memory over Disk for File Uploads
 
-2. **Decouple Logic from Streamlit UI**
-   - Create a new module `src/bluetable_tools.py` containing utility functions that operate on standard Python dictionaries and lists.
-   - Move `BLUETABLE_FIELDS` schema, data formatting logic, and cache loading/saving mechanisms out of the UI module.
-   - Extract the `do_assign` and `do_clear` logic into modular functions that take pure data dictionaries and lists as inputs. This ensures the mapping logic can function without Streamlit.
+* **Goal:** Eliminate unnecessary disk writes by processing files directly in memory.
+* **Action Items:**
+* Update core processing engines or helper functions to accept memory streams (e.g., `io.BytesIO`, byte arrays) instead of rigid local filesystem paths.
+* Modify the file ingestion layer to pass upload streams directly to the processing logic without saving temporary files to the disk.
 
-3. **Streamlit Multi-page Structure (Landing Page)**
-   - Create a `pages/` directory. Move the main UI functionality currently in `app.py` into `pages/1_PDF_to_BlueTable.py`.
-   - Rewrite `app.py` as a landing page portal containing a header "AXA health insurance application" and a navigation button pointing to the "PDF to BlueTable" tool.
 
-4. **Update Package Description**
-   - Modify the `description` field in `pyproject.toml` to clearly describe the final version of the code and its isolated tools structure.
 
-5. **Complete Pre-commit Steps**
-   - Ensure proper testing, verifications, reviews, and reflections are done. Run any required checks to confirm that the existing functions are not broken and the logic functions correctly.
+## 2. Decouple Business Logic from User Interface (UI)
 
-6. **Submit Code**
-   - Commit and push the branch.
+* **Goal:** Ensure core application logic is modular, highly testable, and independent of the presentation layer.
+* **Action Items:**
+* Extract data validation schemas, data formatting handlers, and cache/state serialization mechanisms into a dedicated business logic or utility module.
+* Isolate core state manipulation routines (e.g., assignment, clearing, or updating state) into pure functions.
+* Ensure these functions accept standard data structures (dictionaries, lists, native objects) as inputs and return pure data, allowing them to run independently of any specific UI framework.
+
+
+
+## 3. Modularize UI & Application Entry Points
+
+* **Goal:** Improve navigation, UX structure, and scalability of the frontend/entry layer.
+* **Action Items:**
+* Reorganize the main application entry point to serve as a clean landing page, portal, or router.
+* Migrate heavy feature-specific UI layouts into dedicated, isolated sub-pages or separate modules.
+
+
+
+## 4. Update Project Metadata and Documentation
+
+* **Goal:** Keep project configuration and documentation aligned with the architecture changes.
+* **Action Items:**
+* Update the project configuration file (e.g., build configurations, manifest, package descriptions) to accurately reflect the new tool structure and capabilities.
+
+
+
+## 5. Quality Assurance and Validation (Pre-commit)
+
+* **Goal:** Prevent regressions and ensure systemic stability.
+* **Action Items:**
+* Run the local test suite and static analysis tools (linters, formatters, type checkers).
+* Perform manual verification of modified workflows to confirm existing functionalities remain unbroken.
+
+
+
+## 6. Code Submission
+
+* **Goal:** Safely integrate changes into version control.
+* **Action Items:**
+* Stage, commit, and push the refactored code to the remote repository following team branching strategies.
