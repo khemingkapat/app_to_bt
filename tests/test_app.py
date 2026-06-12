@@ -116,7 +116,7 @@ def test_flatten_pdf_flow(browser: Browser):
                 "stBaseButton-secondary"
             )
         ).to_be_visible()
-        expect(page.get_by_test_id("stJson")).to_contain_text('"p_name"')
+        expect(page.get_by_test_id("stJson")).to_contain_text('"name"')
 
     finally:
         context.close()
