@@ -1,38 +1,24 @@
-from dataclasses import dataclass
-
-@dataclass
-class AssignFieldParams:
-    bt_key: str
-    field_idx: int
-    src_val: str
-    field_name: str
-    bt_label: str
-    bt_data: dict
-    assigned: list
-    field_mapping: dict
-    current_input: str
-
-def assign_field(params: AssignFieldParams) -> tuple[str, dict, list, dict]:
+def assign_field(bt_key: str, field_idx: int, src_val: str, field_name: str, bt_label: str, bt_data: dict, assigned: list, field_mapping: dict, current_input: str) -> tuple[str, dict, list, dict]:
     """
     Core logic for assigning a field value.
     Updates and returns the current_input value, bt_data dict, assigned list, and field_mapping.
     """
-    val_to_write = params.src_val if params.src_val and not params.src_val.startswith("/") else ""
-    new_val = f"{params.current_input}-{val_to_write}" if params.current_input else val_to_write
+    val_to_write = src_val if src_val and not src_val.startswith("/") else ""
+    new_val = f"{current_input}-{val_to_write}" if current_input else val_to_write
 
-    params.bt_data[params.bt_key] = new_val
-    params.field_mapping[params.field_name] = params.bt_key
+    bt_data[bt_key] = new_val
+    field_mapping[field_name] = bt_key
 
     # Check if we are updating an existing assignment or adding a new one
-    params.assigned.append({
-        "field_name": params.field_name,
-        "bt_key": params.bt_key,
-        "bt_label": params.bt_label,
+    assigned.append({
+        "field_name": field_name,
+        "bt_key": bt_key,
+        "bt_label": bt_label,
         "value": new_val,
-        "field_idx": params.field_idx,
+        "field_idx": field_idx,
     })
 
-    return new_val, params.bt_data, params.assigned, params.field_mapping
+    return new_val, bt_data, assigned, field_mapping
 
 
 def clear_field(bt_key: str, bt_data: dict, assigned: list, field_mapping: dict) -> tuple[dict, list, dict]:

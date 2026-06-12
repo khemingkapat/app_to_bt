@@ -20,7 +20,6 @@ from src.blue_table_tools import (
     assign_field,
     clear_field,
     manual_edit_field,
-    AssignFieldParams,
 )
 
 # ── helpers ────────────────────────────────────────────────────────────────
@@ -341,18 +340,17 @@ with mid:
 
     def do_assign(k, i, src_val, f_name, lbl):
         current_input = st.session_state.get(f"input_{k}", "")
-        params = AssignFieldParams(
-            bt_key=k,
-            field_idx=i,
-            src_val=src_val,
-            field_name=f_name,
-            bt_label=lbl,
-            bt_data=st.session_state.bt_data,
-            assigned=st.session_state.assigned,
-            field_mapping=st.session_state.field_mapping,
-            current_input=current_input,
+        new_val, new_bt_data, new_assigned, new_field_mapping = assign_field(
+            k,
+            i,
+            src_val,
+            f_name,
+            lbl,
+            st.session_state.bt_data,
+            st.session_state.assigned,
+            st.session_state.field_mapping,
+            current_input,
         )
-        new_val, new_bt_data, new_assigned, new_field_mapping = assign_field(params)
         st.session_state[f"input_{k}"] = new_val
         st.session_state.bt_data = new_bt_data
         st.session_state.assigned = new_assigned
