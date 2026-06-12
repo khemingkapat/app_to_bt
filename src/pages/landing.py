@@ -19,5 +19,7 @@ with col2:
     if st.button("🚀 Launch PDF to BlueTable Tool", use_container_width=True):
         st.switch_page("src/pages/pdf_to_blue_table.py")
 
+    # // TODO: Add button/link to launch Pathway B (the E-Form)
+
 st.divider()
 st.caption("Internal tool for insurance application processing.")
