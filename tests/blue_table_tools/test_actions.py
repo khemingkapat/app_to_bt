@@ -72,8 +72,6 @@ def test_manual_edit_field_new_assignment():
         "value": "fresh value",
         "field_idx": -1,
     }
-import sys
-from pathlib import Path
 import pytest
 
 repo_root = Path(__file__).resolve().parent.parent
