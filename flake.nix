@@ -1,5 +1,5 @@
 {
-  description = "Customer Segmentation from Chat";
+  description = "App to Blue Table - Automatic PDF Form to Tabular Format";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
