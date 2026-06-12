@@ -258,6 +258,9 @@ if st.session_state.done:
             file_name="bluetable_filled.json",
             mime="application/json",
         )
+
+        # // TODO: Implement "Generate Pre-Filled Official PDF As Truth Anchor for Signature" (Step 8b)
+
         if st.button("🔄 Start Over"):
             for k in [
                 "pdf_bytes",
