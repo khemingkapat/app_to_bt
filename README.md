@@ -9,55 +9,56 @@ This stateless, database-free administrative automation utility eliminates manua
 The architecture uses a unified, dual-pathway ingestion model designed to absorb legacy paperwork (Pathway A) while guiding customers toward error-free upfront digital data capture (Pathway B). Both pathways converge on a single **Human-in-the-Loop (HITL)** verification layer.
 
 ### **End-to-End Pipeline**
+
 ```mermaid
-graph TD  
-    sel\[1. Intake Source Selection\]   
-      
-    %% Path A: PDF Processing File Upload  
-    sel \--\>|Option A: Raw PDF Upload| up\[2. Upload Filled Application PDF\]  
-    up \--\> has\_translated{3. Is Structural Map\<br\>Template Available?}  
-      
-    %% Template Translation Engine  
-    has\_translated \--\>|No| trans\_ui\[4. Visual Admin Tool:\<br\>Interactive Click-and-Match UI\]  
-    trans\_ui \--\>|Done| save\_trans\[5. Save Structural Schema Mapping\<br\>Template JSON\]  
-    save\_trans \--\> extraction  
-      
-    %% Extraction  
-    has\_translated \--\>|Yes| extraction\[6. Dynamic Data Extraction Engine\]  
-    extraction \--\> HITL\[7. Human-in-the-Loop Quality Gate\]  
-      
-    %% Path B: E-Form Digital Portal (Upfront Gate)  
-    sel \--\>|Option B: Digital Portal| eform\[2b. Interactive Digital E-Form\]  
-    eform \--\> health\_check{3b. Algorithmic Health Check\<br\>Medical Underwriting Gate}  
-      
-    %% E-Form Branch Decisions  
-    health\_check \--\>|Hard Fail / Critical Condition| rejected((4b. Terminate Application:\<br\>Auto-Rejected))  
-      
-    health\_check \--\>|Pass / Minor Health Issue| personal\_info\[5b. Dynamic Profile Completion\<br\>& Data Structuring\]  
-    personal\_info \--\> HITL  
-      
-    %% System Convergence & Outputs  
-    HITL \--\> BT\[(8a. Export Clean Row\<br\>to Company BlueTable)\]  
-    HITL \--\> app\[8b. Generate Pre-Filled Official PDF\<br\>As Truth Anchor for Signature\]
+graph TD
+    sel[1. Intake Source Selection]
+
+    %% Path A: PDF Processing File Upload
+    sel -->|Option A: Raw PDF Upload| up[2. Upload Filled Application PDF]
+    up --> has_translated{3. Is Structural Map Template Available?}
+
+    %% Template Translation Engine
+    has_translated -->|No| trans_ui[4. Visual Admin Tool: Interactive Click-and-Match UI]
+    trans_ui -->|Done| save_trans[5. Save Structural Schema Mapping Template JSON]
+    save_trans --> extraction
+
+    %% Extraction
+    has_translated -->|Yes| extraction[6. Dynamic Data Extraction Engine]
+    extraction --> HITL[7. Human-in-the-Loop Quality Gate]
+
+    %% Path B: E-Form Digital Portal (Upfront Gate)
+    sel -->|Option B: Digital Portal| eform[2b. Interactive Digital E-Form]
+    eform --> health_check{3b. Algorithmic Health Check Medical Underwriting Gate}
+
+    %% E-Form Branch Decisions
+    health_check -->|Hard Fail / Critical Condition| rejected((4b. Terminate Application: Auto-Rejected))
+    health_check -->|Pass / Minor Health Issue| personal_info[5b. Dynamic Profile Completion & Data Structuring]
+    personal_info --> HITL
+
+    %% System Convergence & Outputs
+    HITL --> BT[(8a. Export Clean Row to Company BlueTable)]
+    HITL --> app[8b. Generate Pre-Filled Official PDF As Truth Anchor for Signature]
 ```
+
 ### **Detailed Method Breakdown**
 
-#### **1\. Pathway A: Legacy PDF Structural Layout Mapping**
+#### **1. Pathway A: Legacy PDF Structural Layout Mapping**
 
 When an operator uploads an OriginalApplication.pdf file:
 
-* **Identification:** The file trailer is scanned to extract its cryptographic permanent file identifier (/ID).  
-* **Cache Match:** If the /ID exists in the local template registry cache (pdf\_registry.json), coordinate bounding boxes align automatically.  
+* **Identification:** The file trailer is scanned to extract its cryptographic permanent file identifier (/ID).
+* **Cache Match:** If the /ID exists in the local template registry cache (`pdf_registry.json`), coordinate bounding boxes align automatically.
 * **Fallback Matrix:** If the template is unknown, the interactive admin canvas initializes. An administrator visually maps the coordinates on the page by drawing bounding boxes to associate physical points directly to BlueTable target fields.
 
-#### **2\. Pathway B: Native Digital E-Form**
+#### **2. Pathway B: Native Digital E-Form**
 
 To restrict human errors upfront, the digital e-form establishes strict input controls:
 
-* **The UI Shield:** Dropdowns, calendar pickers, and strict input masks prevent messy hand-drawn annotations or incorrect strings.  
+* **The UI Shield:** Dropdowns, calendar pickers, and strict input masks prevent messy hand-drawn annotations or incorrect strings.
 * **Underwriting Triage Gate:** A health questionnaire evaluates the applicant's responses against compliance rules in real-time. Auto-declining chronic conditions immediately halt risk propagation before data reaches internal systems.
 
-#### **3\. Convergence & Human-in-the-Loop (HITL) Gate**
+#### **3. Convergence & Human-in-the-Loop (HITL) Gate**
 
 Data from both pipelines converges on the administrator's unified split-screen verification interface. The operator confirms, adjusts, and approves the extracted values before final delivery.
 
@@ -69,14 +70,18 @@ The project utilizes modern, isolated toolchains to ensure immediate execution w
 
 If you use Nix, enter the development environment shell and synchronize dependencies:
 
-nix develop  
+```bash
+nix develop
 uv sync
+```
 
 ### **Option 2: Using Standard Native UV**
 
 If you have uv installed locally on your system, simply sync your environment:
 
+```bash
 uv sync
+```
 
 ## **🏃 Running the Application & Tests**
 
@@ -84,22 +89,26 @@ Once your dependencies are synchronized through Nix or native UV, use the follow
 
 ### **Launch the Streamlit Interface**
 
+```bash
 uv run streamlit run app.py
+```
 
 ### **Run Automated Integration Tests**
 
+```bash
 uv run pytest
+```
 
 ## **📂 Layout Configuration Mapping (JSON Schema)**
 
-When layout mappings are completed, layout geometries are registered inside pdf\_registry.json indexed by their cryptographic PDF /ID key:
+When layout mappings are completed, layout geometries are registered inside `pdf_registry.json` indexed by their cryptographic PDF /ID key:
 
 ### `pdf_registry.json`
 Stores extracted PDF structure: page dimensions, field coordinates/widgets, and structural metadata per PDF.
 
 ```json
 {
-  "": {
+  "<pdf_id>": {
     "pages": [
       { "page_num": 1, "page_w": 595.28, "page_h": 841.89 }
     ],
@@ -150,7 +159,7 @@ Caches the field-to-category assignment per PDF (`<pdf_id>` → field name → c
 
 ```json
 {
-  "": {
+  "<pdf_id>": {
     "Text2": "name",
     "Text3": "dob",
     "Text6": "SKIPPED",
