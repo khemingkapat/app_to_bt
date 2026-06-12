@@ -1,29 +1,40 @@
 name: Playwright Tests
+
 on:
-  push:
-    branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+    types: [ opened, synchronize, reopened ]
+
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
+
+    # Better way: Use the official uv setup action for speed and caching
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        version: "latest"
+        enable-cache: true
+
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install uv
-        uv sync --dev
+      run: uv sync --dev
+
     - name: Ensure browsers are installed
       run: uv run playwright install --with-deps
+
     - name: Run application in background
       run: |
         uv run streamlit run app.py --server.headless true > streamlit.log 2>&1 &
-        sleep 5
+        # Wait for Streamlit to fully start up
+        timeout 15 bash -c 'until curl -s http://localhost:8501; do sleep 1; done'
+
     - name: Run tests
       run: uv run pytest --slowmo 1000
