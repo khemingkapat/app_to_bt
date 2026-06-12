@@ -7,7 +7,7 @@ __all__ = [
     "load_cache",
     "save_cache",
     "assign_field",
+    "AssignFieldParams",
     "clear_field",
     "manual_edit_field",
-    "AssignFieldParams",
 ]
