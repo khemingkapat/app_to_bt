@@ -154,6 +154,7 @@ if st.session_state.pdf_bytes is None:
             # ── Bug fix: guard against empty field list (unrecognised flattened PDF) ──
             if not st.session_state.all_fields:
                 st.session_state.pdf_bytes = None  # reset so uploader shows again
+                # TODO: Implement Visual Admin Tool: Interactive Click-and-Match UI for structural map templates (Pathway A)
                 st.warning(
                     "⚠️ No fields could be found or matched in this PDF. "
                     "If this is a flattened (Print-to-PDF) copy, make sure the "
@@ -251,6 +252,7 @@ if st.session_state.done:
 
     with col_dl:
         st.subheader("Export")
+        # TODO: Generate Pre-Filled Official PDF As Truth Anchor for Signature
         result_json = json.dumps(st.session_state.bt_data, ensure_ascii=False, indent=2)
         st.download_button(
             "⬇ Download BlueTable JSON",
