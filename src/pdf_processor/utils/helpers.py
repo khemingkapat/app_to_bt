@@ -1,7 +1,6 @@
 from io import BytesIO
 from typing import Union
 import fitz  # PyMuPDF
-from pypdf import PdfReader
 from pypdf.generic import IndirectObject
 
 
