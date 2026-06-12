@@ -258,7 +258,6 @@ if st.session_state.done:
             file_name="bluetable_filled.json",
             mime="application/json",
         )
-
         if st.button("🔄 Start Over"):
             for k in [
                 "pdf_bytes",
