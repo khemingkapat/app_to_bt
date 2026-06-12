@@ -105,8 +105,8 @@ def init_state():
         "cache_saved": False,
         "field_mapping": {},
     }
-    for _, key in BLUETABLE_FIELDS:
-        defaults[f"input_{key}"] = ""
+    for field in BLUETABLE_FIELDS:
+        defaults[f"input_{field.key}"] = ""
 
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -167,7 +167,7 @@ if st.session_state.pdf_bytes is None:
             cache = load_cache(pdf_id)
             if cache:
                 st.session_state.field_mapping = cache.copy()
-                bt_labels = {key: label for label, key in BLUETABLE_FIELDS}
+                bt_labels = {field.key: field.label for field in BLUETABLE_FIELDS}
 
                 for field in st.session_state.all_fields:
                     fname = field.get("name", "?")
@@ -244,11 +244,11 @@ if st.session_state.done:
     col_res, col_dl = st.columns([3, 1])
     with col_res:
         st.subheader("BlueTable Summary")
-        for label, key in BLUETABLE_FIELDS:
-            val = st.session_state.get(f"input_{key}", "")
+        for field in BLUETABLE_FIELDS:
+            val = st.session_state.get(f"input_{field.key}", "")
             if val:
-                st.session_state.bt_data[key] = val
-                st.markdown(f"**{label}**: {val}")
+                st.session_state.bt_data[field.key] = val
+                st.markdown(f"**{field.label}**: {val}")
 
     with col_dl:
         st.subheader("Export")
@@ -276,8 +276,8 @@ if st.session_state.done:
                 "last_uploaded_name",
             ]:
                 st.session_state.pop(k, None)
-            for _, key in BLUETABLE_FIELDS:
-                st.session_state.pop(f"input_{key}", None)
+            for field in BLUETABLE_FIELDS:
+                st.session_state.pop(f"input_{field.key}", None)
             st.rerun()
 
     st.subheader("Assignment Log")
@@ -376,19 +376,19 @@ with mid:
         save_cache_incremental()
 
     with st.container(height=800):
-        for label, key in BLUETABLE_FIELDS:
-            existing_val = st.session_state.bt_data.get(key, "")
+        for field in BLUETABLE_FIELDS:
+            existing_val = st.session_state.bt_data.get(field.key, "")
             col_a, col_b, col_c = st.columns([5, 1.5, 1.5])
 
             with col_a:
                 st.markdown(
-                    f"<span style='color:white; font-size:0.85rem;'>{label}</span>",
+                    f"<span style='color:white; font-size:0.85rem;'>{field.label}</span>",
                     unsafe_allow_html=True,
                 )
                 edited_val = st.text_input(
-                    label,
+                    field.label,
                     value=existing_val,
-                    key=f"input_{key}",
+                    key=f"input_{field.key}",
                     placeholder="—",
                     label_visibility="collapsed",
                 )
@@ -396,8 +396,8 @@ with mid:
             # Keep bt_data live as user types
             if edited_val != existing_val:
                 new_bt_data, new_assigned = manual_edit_field(
-                    key,
-                    label,
+                    field.key,
+                    field.label,
                     edited_val,
                     st.session_state.bt_data,
                     st.session_state.assigned,
@@ -411,9 +411,9 @@ with mid:
                 )
                 st.button(
                     "Assign",
-                    key=f"assign_{key}_{idx}",
+                    key=f"assign_{field.key}_{idx}",
                     on_click=do_assign,
-                    args=(key, idx, source_value, field_name, label),
+                    args=(field.key, idx, source_value, field_name, field.label),
                     use_container_width=True,
                 )
 
@@ -423,9 +423,9 @@ with mid:
                 )
                 st.button(
                     "Clear",
-                    key=f"clear_{key}_{idx}",
+                    key=f"clear_{field.key}_{idx}",
                     on_click=do_clear,
-                    args=(key,),
+                    args=(field.key,),
                     use_container_width=True,
                 )
 
