@@ -71,3 +71,5 @@ def test_calculate_single_option_premium():
     assert result["total"] == 42503
     assert result["coverage"] == "1M"
     assert result["room_limit"] == "3,000"
+
+# TODO: Add edge-case test coverage for newborn infants (< 30 days) and senior applicants (ages 61-65) to verify premium calculations.

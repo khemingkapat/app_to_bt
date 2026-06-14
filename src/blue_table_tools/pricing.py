@@ -3,6 +3,8 @@ from src.pdf_processor.inverter import load_product_config
 
 CONFIG_PATH = "./config/health_and_accident.json"
 
+# TODO: Implement multi-product support (e.g. personal accident, travel plans) and configurable discount thresholds.
+
 def get_age_bracket_key(age: int, config: dict) -> str:
     """Finds the age bracket key (e.g. '31-35') for the given age."""
     brackets = config.get("age_brackets", [])
