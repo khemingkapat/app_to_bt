@@ -4,7 +4,7 @@ import time
 from io import BytesIO
 import streamlit as st
 from src.pdf_processor.inverter import fill_acroform_pdf, load_product_config
-from src.blue_table_tools.pricing import calculate_all_plans_premiums
+from src.blue_table_tools.pricing import calculate_single_option_premium
 
 # Setup page config
 st.set_page_config(layout="wide", page_title="Digital E-Form Portal")
@@ -27,14 +27,26 @@ if "members_setup" not in st.session_state:
         "child_1_age": 10,
         "child_2_age": 10,
         "child_3_age": 10,
-        "plan": "Plan 2",
-        "deductible": "0",
-        "coverage_type": "ipd"
+        
+        # Default choices for Option A, B, C
+        "opt_a_plan": "Plan 1",
+        "opt_a_coverage": "ipd",
+        "opt_a_deductible": "0",
+        
+        "opt_b_plan": "Plan 2",
+        "opt_b_coverage": "ipd_opd_3000",
+        "opt_b_deductible": "0",
+        
+        "opt_c_plan": "Plan 3",
+        "opt_c_coverage": "ipd_opd_50000",
+        "opt_c_deductible": "20000",
+        
+        "selected_option": "Option B"
     }
 if "ocr_simulated" not in st.session_state:
     st.session_state.ocr_simulated = {}
 
-# Header (Using Standard Streamlit title and write)
+# Header
 st.title("🏥 AXA Health Digital Application Portal")
 st.write("Pathway B: Native Digital Form with Underwriting & Premium Sandbox")
 
@@ -86,14 +98,14 @@ if st.session_state.step == 1:
 # ── STEP 2: PLAN SANDBOX & PREMIUM ENGINE ──────────────────────────────────
 elif st.session_state.step == 2:
     st.subheader("🎨 Step 2: Interactive Plan & Premium Sandbox")
-    st.write("Input your family structure and customize deductibles to see your premiums in real time.")
+    st.write("Input family structure (static params) and customize Option A, B, and C (dynamic params) to compare them side-by-side.")
 
-    col_setup, col_pricing = st.columns([2, 3], gap="large")
+    col_setup, col_pricing = st.columns([1.5, 3.5], gap="large")
     
     setup = st.session_state.members_setup
 
     with col_setup:
-        st.subheader("👨‍👩‍👧 Family Composition")
+        st.subheader("👨‍👩‍👧 Static Parameters: Family Structure")
         
         # Main Insured
         setup["main_age"] = st.number_input("Main Insured Age", min_value=0, max_value=64, value=setup["main_age"])
@@ -108,11 +120,12 @@ elif st.session_state.step == 2:
         
         for i in range(1, setup["child_count"] + 1):
             setup[f"child_{i}_age"] = st.number_input(f"Child {i} Age", min_value=0, max_value=17, value=setup.get(f"child_{i}_age", 10))
-            
-        st.divider()
-        st.subheader("⚙️ Policy Configurations")
-        
-        # Coverage Type Selector
+
+    with col_pricing:
+        st.subheader("🏷️ Dynamic Parameters: Compare Custom Options")
+        st.write("Configure each column independently to compare plan level, coverage, and deductible combinations.")
+
+        # Definitions
         coverage_labels = {
             "ipd": "IPD Only",
             "ipd_opd_3000": "IPD + OPD 3,000 THB/visit (30 visits/year)",
@@ -120,95 +133,169 @@ elif st.session_state.step == 2:
             "ipd_opd_50000": "IPD + OPD 50,000 THB/year",
             "ipd_opd_50000_wellness": "IPD + OPD 50,000 THB + Wellness"
         }
-        setup["coverage_type"] = st.selectbox(
-            "Coverage Type",
-            options=list(coverage_labels.keys()),
-            format_func=lambda x: coverage_labels[x],
-            index=list(coverage_labels.keys()).index(setup.get("coverage_type", "ipd"))
-        )
         
-        # Deductible selector
         deductibles = config.get("pricing", {}).get("deductibles", [])
         ded_labels = {d["key"]: d["label"] for d in deductibles}
-        setup["deductible"] = st.selectbox(
-            "Deductible Option (Applies to IPD)",
-            options=list(ded_labels.keys()),
-            format_func=lambda x: ded_labels[x],
-            index=list(ded_labels.keys()).index(setup["deductible"])
-        )
 
-    with col_pricing:
-        st.subheader("🏷️ Premium Calculation Comparison Matrix")
-        st.write("Select the plans you want to compare and click the plan selector to highlight.")
+        # 1. Configuration Columns for Option A, B, C
+        col_opt_a, col_opt_b, col_opt_c = st.columns(3)
+        
+        with col_opt_a:
+            st.markdown("### **Option A**")
+            setup["opt_a_plan"] = st.selectbox(
+                "Plan A", 
+                ["Plan 1", "Plan 2", "Plan 3", "Plan 4"], 
+                key="opt_a_p", 
+                index=["Plan 1", "Plan 2", "Plan 3", "Plan 4"].index(setup["opt_a_plan"])
+            )
+            setup["opt_a_coverage"] = st.selectbox(
+                "Coverage A", 
+                list(coverage_labels.keys()), 
+                format_func=lambda x: coverage_labels[x], 
+                key="opt_a_c", 
+                index=list(coverage_labels.keys()).index(setup["opt_a_coverage"])
+            )
+            setup["opt_a_deductible"] = st.selectbox(
+                "Deductible A", 
+                list(ded_labels.keys()), 
+                format_func=lambda x: ded_labels[x], 
+                key="opt_a_d", 
+                index=list(ded_labels.keys()).index(setup["opt_a_deductible"])
+            )
+            
+        with col_opt_b:
+            st.markdown("### **Option B**")
+            setup["opt_b_plan"] = st.selectbox(
+                "Plan B", 
+                ["Plan 1", "Plan 2", "Plan 3", "Plan 4"], 
+                key="opt_b_p", 
+                index=["Plan 1", "Plan 2", "Plan 3", "Plan 4"].index(setup["opt_b_plan"])
+            )
+            setup["opt_b_coverage"] = st.selectbox(
+                "Coverage B", 
+                list(coverage_labels.keys()), 
+                format_func=lambda x: coverage_labels[x], 
+                key="opt_b_c", 
+                index=list(coverage_labels.keys()).index(setup["opt_b_coverage"])
+            )
+            setup["opt_b_deductible"] = st.selectbox(
+                "Deductible B", 
+                list(ded_labels.keys()), 
+                format_func=lambda x: ded_labels[x], 
+                key="opt_b_d", 
+                index=list(ded_labels.keys()).index(setup["opt_b_deductible"])
+            )
+            
+        with col_opt_c:
+            st.markdown("### **Option C**")
+            setup["opt_c_plan"] = st.selectbox(
+                "Plan C", 
+                ["Plan 1", "Plan 2", "Plan 3", "Plan 4"], 
+                key="opt_c_p", 
+                index=["Plan 1", "Plan 2", "Plan 3", "Plan 4"].index(setup["opt_c_plan"])
+            )
+            setup["opt_c_coverage"] = st.selectbox(
+                "Coverage C", 
+                list(coverage_labels.keys()), 
+                format_func=lambda x: coverage_labels[x], 
+                key="opt_c_c", 
+                index=list(coverage_labels.keys()).index(setup["opt_c_coverage"])
+            )
+            setup["opt_c_deductible"] = st.selectbox(
+                "Deductible C", 
+                list(ded_labels.keys()), 
+                format_func=lambda x: ded_labels[x], 
+                key="opt_c_d", 
+                index=list(ded_labels.keys()).index(setup["opt_c_deductible"])
+            )
 
-        # Calculate premiums for all 4 plans
-        plans_pricing = calculate_all_plans_premiums(
-            setup["coverage_type"],
-            int(setup["deductible"]),
-            setup,
-            config
-        )
-        
-        # Let user select which plans to compare
-        plans_to_compare = st.multiselect(
-            "Plans to Compare",
-            options=["Plan 1", "Plan 2", "Plan 3", "Plan 4"],
-            default=["Plan 1", "Plan 2", "Plan 3", "Plan 4"]
-        )
-        
-        filtered_plans = [p for p in plans_pricing if p["key"] in plans_to_compare]
-        
-        if filtered_plans:
-            # Generate dynamic Markdown table to compare plans side-by-side
-            h1 = "| Benefit / Detail |"
-            h2 = "| :--- |"
-            for p in filtered_plans:
-                is_sel = (p["key"] == setup["plan"])
-                header = f"**{p['key']} (Selected) ✅**" if is_sel else f"**{p['key']}**"
-                h1 += f" {header} |"
-                h2 += " :---: |"
-                
-            r1 = "| **IPD Limit** |"
-            for p in filtered_plans:
-                r1 += f" {p['coverage']} |"
-                
-            r2 = "| **Room Limit** |"
-            for p in filtered_plans:
-                r2 += f" {p['room_limit']} THB |"
-                
-            r3 = "| **Annual Premium** |"
-            for p in filtered_plans:
-                is_sel = (p["key"] == setup["plan"])
-                val = f"**{p['total']:,.0f} THB**" if is_sel else f"{p['total']:,.0f} THB"
-                r3 += f" {val} |"
-                
-            r4 = "| **Average / Person** |"
-            for p in filtered_plans:
-                is_sel = (p["key"] == setup["plan"])
-                val = f"**{p['avg']:,.0f} THB**" if is_sel else f"{p['avg']:,.0f} THB"
-                r4 += f" {val} |"
-                
-            table_md = f"{h1}\n{h2}\n{r1}\n{r2}\n{r3}\n{r4}"
-            st.markdown(table_md)
-        else:
-            st.warning("⚠️ Please select at least one plan to compare.")
+        # 2. Calculate premiums for each option
+        res_a = calculate_single_option_premium(setup["opt_a_plan"], setup["opt_a_coverage"], int(setup["opt_a_deductible"]), setup, config)
+        res_b = calculate_single_option_premium(setup["opt_b_plan"], setup["opt_b_coverage"], int(setup["opt_b_deductible"]), setup, config)
+        res_c = calculate_single_option_premium(setup["opt_c_plan"], setup["opt_c_coverage"], int(setup["opt_c_deductible"]), setup, config)
 
         st.divider()
-        st.subheader("Select Plan for Application")
-        selected_plan = st.radio(
-            "Active Plan Choice",
-            options=["Plan 1", "Plan 2", "Plan 3", "Plan 4"],
-            index=["Plan 1", "Plan 2", "Plan 3", "Plan 4"].index(setup["plan"]),
+        st.subheader("📊 Comparison Matrix")
+        
+        # Render clean Markdown Table
+        h1 = "| Parameter / Option |"
+        h2 = "| :--- |"
+        
+        options_data = [
+            {"key": "Option A", "plan": setup["opt_a_plan"], "coverage_type": setup["opt_a_coverage"], "deductible": setup["opt_a_deductible"], "res": res_a},
+            {"key": "Option B", "plan": setup["opt_b_plan"], "coverage_type": setup["opt_b_coverage"], "deductible": setup["opt_b_deductible"], "res": res_b},
+            {"key": "Option C", "plan": setup["opt_c_plan"], "coverage_type": setup["opt_c_coverage"], "deductible": setup["opt_c_deductible"], "res": res_c}
+        ]
+        
+        for opt in options_data:
+            is_sel = (setup["selected_option"] == opt["key"])
+            header = f"**{opt['key']} (Selected) ✅**" if is_sel else f"**{opt['key']}**"
+            h1 += f" {header} |"
+            h2 += " :---: |"
+            
+        r_plan = "| **Plan Tier** |"
+        for opt in options_data:
+            is_sel = (setup["selected_option"] == opt["key"])
+            val = f"**{opt['plan']}**" if is_sel else f"{opt['plan']}"
+            r_plan += f" {val} |"
+            
+        r_cov = "| **Coverage Type** |"
+        for opt in options_data:
+            is_sel = (setup["selected_option"] == opt["key"])
+            lbl = coverage_labels[opt["coverage_type"]]
+            val = f"**{lbl}**" if is_sel else f"{lbl}"
+            r_cov += f" {val} |"
+            
+        r_ded = "| **Deductible** |"
+        for opt in options_data:
+            is_sel = (setup["selected_option"] == opt["key"])
+            lbl = ded_labels[opt["deductible"]]
+            val = f"**{lbl}**" if is_sel else f"{lbl}"
+            r_ded += f" {val} |"
+            
+        r_ipd = "| **IPD Limit** |"
+        for opt in options_data:
+            is_sel = (setup["selected_option"] == opt["key"])
+            val = f"**{opt['res']['coverage']}**" if is_sel else f"{opt['res']['coverage']}"
+            r_ipd += f" {val} |"
+            
+        r_room = "| **Room Limit** |"
+        for opt in options_data:
+            is_sel = (setup["selected_option"] == opt["key"])
+            val = f"**{opt['res']['room_limit']} THB**" if is_sel else f"{opt['res']['room_limit']} THB"
+            r_room += f" {val} |"
+            
+        r_tot = "| **Total Annual Premium** |"
+        for opt in options_data:
+            is_sel = (setup["selected_option"] == opt["key"])
+            val = f"**{opt['res']['total']:,.0f} THB**" if is_sel else f"{opt['res']['total']:,.0f} THB"
+            r_tot += f" {val} |"
+            
+        r_avg = "| **Average / Person** |"
+        for opt in options_data:
+            is_sel = (setup["selected_option"] == opt["key"])
+            val = f"**{opt['res']['avg']:,.0f} THB**" if is_sel else f"{opt['res']['avg']:,.0f} THB"
+            r_avg += f" {val} |"
+            
+        table_md = f"{h1}\n{h2}\n{r_plan}\n{r_cov}\n{r_ded}\n{r_ipd}\n{r_room}\n{r_tot}\n{r_avg}"
+        st.markdown(table_md)
+
+        st.divider()
+        st.subheader("Select Final Choice for Application")
+        selected_option = st.radio(
+            "Apply Selected Combination",
+            options=["Option A", "Option B", "Option C"],
+            index=["Option A", "Option B", "Option C"].index(setup["selected_option"]),
             horizontal=True
         )
-        setup["plan"] = selected_plan
+        setup["selected_option"] = selected_option
         
-        # Family discount notification
+        # Family discount indicator
         o = 1 + (1 if setup["cover_spouse"] else 0) + setup["child_count"]
         if o >= 2 and o <= 3:
-            st.info("🎉 Family Discount: **5% off** has been applied to all premiums.")
+            st.info("🎉 Family Volume Discount: **5% off** has been automatically applied to all options.")
         elif o >= 4:
-            st.info("🎉 Family Discount: **10% off** has been applied to all premiums.")
+            st.info("🎉 Family Volume Discount: **10% off** has been automatically applied to all options.")
 
     st.markdown("---")
     
@@ -221,13 +308,13 @@ elif st.session_state.step == 2:
         if st.button("Proceed to Details Intake ➡️", type="primary", use_container_width=True):
             st.session_state.members_setup = setup
             
-            # Fetch pricing details for the chosen plan
-            chosen_plan_pricing = next(p for p in plans_pricing if p["key"] == setup["plan"])
+            # Fetch pricing details for the chosen option
+            chosen_opt = next(o for o in options_data if o["key"] == setup["selected_option"])
             
             # Populate form_data for output mapping
-            st.session_state.form_data["plan"] = setup["plan"]
-            st.session_state.form_data["deductible"] = ded_labels[setup["deductible"]]
-            st.session_state.form_data["premium"] = f"{chosen_plan_pricing['total']:,.0f}"
+            st.session_state.form_data["plan"] = chosen_opt["plan"]
+            st.session_state.form_data["deductible"] = ded_labels[chosen_opt["deductible"]]
+            st.session_state.form_data["premium"] = f"{chosen_opt['res']['total']:,.0f}"
             st.session_state.step = 3
             st.rerun()
 

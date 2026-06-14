@@ -96,3 +96,20 @@ def calculate_all_plans_premiums(coverage_key: str, deductible_amount: int, memb
         })
         
     return results
+
+def calculate_single_option_premium(plan_key: str, coverage_key: str, deductible_amount: int, members: dict, config: dict = None) -> dict:
+    """
+    Computes premium details for a single specific combination of plan, coverage, and deductible.
+    """
+    if config is None:
+        config = load_product_config(CONFIG_PATH)
+        
+    plans_config = config.get("plans", [])
+    plan_idx = 0
+    for idx, plan in enumerate(plans_config):
+        if plan["key"] == plan_key:
+            plan_idx = idx
+            break
+            
+    all_plans = calculate_all_plans_premiums(coverage_key, deductible_amount, members, config)
+    return all_plans[plan_idx]
