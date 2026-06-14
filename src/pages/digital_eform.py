@@ -74,7 +74,7 @@ if st.session_state.step == 1:
     st.write("To protect your time, we screen key medical history upfront. Please select if any applicant in your family has ever been diagnosed with or received treatment for any of the following:")
 
     conditions = config.get("underwriting_rules", {}).get("critical_conditions", [])
-    # TODO: Implement dynamic follow-up questions from config schema if certain non-critical conditions are checked.
+    # TODO: Jules to implement dynamic follow-up questions from config schema if certain non-critical conditions are checked.
     has_declined = False
     
     col_c1, col_c2 = st.columns(2)
@@ -564,6 +564,7 @@ elif st.session_state.step == 3:
 elif st.session_state.step == 4:
     st.subheader("🔍 Step 4: Human-in-the-Loop Verification & Output Generation")
     st.success("🎉 Application Submitted Successfully! Review the compiled parameters below.")
+    # TODO: Jules to save the submitted form_data into a local sqlite database (or queue table) so that it can be loaded on the Central Admin Verification Queue Dashboard page.
 
     form_data = st.session_state.form_data
     setup = st.session_state.members_setup
