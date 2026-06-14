@@ -1,51 +1,76 @@
 import pytest
 from src.pdf_processor.inverter import load_product_config
-from src.blue_table_tools.pricing import get_age_multiplier, calculate_premium
+from src.blue_table_tools.pricing import get_age_bracket_key, get_deductible_discount, calculate_all_plans_premiums
 
-def test_get_age_multiplier():
+def test_get_age_bracket_key():
     config = load_product_config()
-    
-    # Brackets: 0-18 (0.8), 19-35 (1.0), 36-50 (1.25), 51-65 (1.6), 66+ (2.2)
-    assert get_age_multiplier(10, config) == 0.8
-    assert get_age_multiplier(25, config) == 1.0
-    assert get_age_multiplier(40, config) == 1.25
-    assert get_age_multiplier(60, config) == 1.6
-    assert get_age_multiplier(70, config) == 2.2
+    assert get_age_bracket_key(5, config) == "0-5"
+    assert get_age_bracket_key(25, config) == "21-25"
+    assert get_age_bracket_key(40, config) == "36-40"
+    assert get_age_bracket_key(64, config) == "61-64"
+    assert get_age_bracket_key(70, config) is None
 
-def test_calculate_premium_basic():
+def test_get_deductible_discount():
     config = load_product_config()
+    # Age <= 40: 20000 -> 0.45, 40000 -> 0.55
+    assert get_deductible_discount(30, 20000, config) == 0.45
+    assert get_deductible_discount(30, 40000, config) == 0.55
+    assert get_deductible_discount(30, 0, config) == 0.0
     
-    # Case: Basic Plan (12000 Base), No Spouse, No Kids, No Deductible, age 25 (1.0 mult)
+    # Age 41-60: 20000 -> 0.30, 100000 -> 0.65
+    assert get_deductible_discount(50, 20000, config) == 0.30
+    assert get_deductible_discount(50, 100000, config) == 0.65
+    
+    # Age 61+: 20000 -> 0.10, 200000 -> 0.35
+    assert get_deductible_discount(62, 20000, config) == 0.10
+    assert get_deductible_discount(62, 200000, config) == 0.35
+
+def test_calculate_all_plans_premiums_single():
+    config = load_product_config()
     members = {
         "main_age": 25,
         "cover_spouse": False,
         "child_count": 0
     }
     
-    premium, breakdown = calculate_premium("Basic", "None", members, config)
-    assert premium == 12000.0
-    assert breakdown["Main Insured"] == 12000.0
-
-def test_calculate_premium_with_spouse_and_child():
-    config = load_product_config()
+    # IPD only, deductible 0
+    results = calculate_all_plans_premiums("ipd", 0, members, config)
     
-    # Case: Standard Plan (24000 Base), Deductible 10k (0.85 mult)
-    # Main: Age 40 (1.25 mult) -> cost = 24000 * 1.25 = 30000
-    # Spouse: Age 30 (1.0 mult, 90% premium) -> cost = 24000 * 1.0 * 0.9 = 21600
-    # Child 1: Age 8 (0.8 mult, 70% premium) -> cost = 24000 * 0.8 * 0.7 = 13440
-    # Total before deductible = 30000 + 21600 + 13440 = 65040
-    # After Deductible: 65040 * 0.85 = 55284
+    # Expected: "21-25" bracket array: [16380, 21215, 23045, 25345]
+    # No discounts, 1 person
+    assert results[0]["total"] == 16380
+    assert results[1]["total"] == 21215
+    assert results[2]["total"] == 23045
+    assert results[3]["total"] == 25345
+
+def test_calculate_all_plans_premiums_family_deductible():
+    config = load_product_config()
     members = {
         "main_age": 40,
         "cover_spouse": True,
         "spouse_age": 30,
-        "child_count": 1,
-        "child_1_age": 8
+        "child_count": 0
     }
     
-    premium, breakdown = calculate_premium("Standard", "10k", members, config)
+    # Coverage: ipd_opd_3000, deductible 20000
+    # Main age 40: Bracket 36-40.
+    # IPD Plan 1 = 21370, Total Plan 1 = 34415. OPD portion = 34415 - 21370 = 13045.
+    # Deductible 20000 discount (age 40) = 45% (0.45).
+    # Discounted IPD = ceil(21370 * (1 - 0.45)) = 11754.
+    # Main Total Plan 1 = 11754 + 13045 = 24799.
+    #
+    # Spouse age 30: Bracket 26-30.
+    # IPD Plan 1 = 17400, Total Plan 1 = 27770. OPD portion = 27770 - 17400 = 10370.
+    # Deductible 20000 discount (age 30) = 45% (0.45).
+    # Discounted IPD = ceil(17400 * (1 - 0.45)) = 9570.
+    # Spouse Total Plan 1 = 9570 + 10370 = 19940.
+    #
+    # Total before family discount = 24799 + 19940 = 44739.
+    # Family discount: 2 people -> 5% off.
+    # Final Plan 1 = ceil(44739 * 0.95) = ceil(42502.05) = 42503.
+    # Average = ceil(42503 / 2) = 21252.
     
-    assert breakdown["Main Insured"] == 30000.0
-    assert breakdown["Spouse"] == 21600.0
-    assert breakdown["Children"] == [13440.0]
-    assert premium == 55284.0
+    results = calculate_all_plans_premiums("ipd_opd_3000", 20000, members, config)
+    
+    assert results[0]["total"] == 42503
+    assert results[0]["avg"] == 21252
