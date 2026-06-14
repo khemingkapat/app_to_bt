@@ -1,0 +1,837 @@
+{
+    "product_name": "Health and Accident Insurance",
+    "underwriting_rules": {
+        "critical_conditions": [
+            "Cancer",
+            "Heart Disease / Heart Attack",
+            "Stroke / Stroke History",
+            "Kidney Failure / Chronic Kidney Disease",
+            "HIV / AIDS",
+            "Chronic Liver Disease / Hepatitis C",
+            "Alzheimer's / Dementia"
+        ]
+    },
+    "pricing": {
+        "plans": [
+            {
+                "key": "Basic",
+                "label": "Basic Plan",
+                "base_premium": 12000
+            },
+            {
+                "key": "Standard",
+                "label": "Standard Plan",
+                "base_premium": 24000
+            },
+            {
+                "key": "Gold",
+                "label": "Gold Plan",
+                "base_premium": 48000
+            }
+        ],
+        "deductibles": [
+            {
+                "key": "0",
+                "label": "No Deductible",
+                "amount": 0
+            },
+            {
+                "key": "20000",
+                "label": "20,000 THB Deductible",
+                "amount": 20000
+            },
+            {
+                "key": "40000",
+                "label": "40,000 THB Deductible",
+                "amount": 40000
+            },
+            {
+                "key": "100000",
+                "label": "100,000 THB Deductible",
+                "amount": 100000
+            },
+            {
+                "key": "200000",
+                "label": "200,000 THB Deductible",
+                "amount": 200000
+            }
+        ],
+        "age_brackets": [
+            {
+                "min": 0,
+                "max": 18,
+                "multiplier": 0.8
+            },
+            {
+                "min": 19,
+                "max": 35,
+                "multiplier": 1.0
+            },
+            {
+                "min": 36,
+                "max": 50,
+                "multiplier": 1.25
+            },
+            {
+                "min": 51,
+                "max": 65,
+                "multiplier": 1.6
+            },
+            {
+                "min": 66,
+                "max": 120,
+                "multiplier": 2.2
+            }
+        ],
+        "spouse_premium_percentage": 0.9,
+        "child_premium_percentage": 0.7
+    },
+    "pdf_id": "87ba7613a963df438482bbcd8c1612a0",
+    "field_mappings": {
+        "Text2": {
+            "bt_key": "name",
+            "section": "Main Insured Info",
+            "label": "Full Name"
+        },
+        "Text3": {
+            "bt_key": "dob",
+            "section": "Main Insured Info",
+            "label": "Birth Day (DD)"
+        },
+        "Text4": {
+            "bt_key": "dob",
+            "section": "Main Insured Info",
+            "label": "Birth Month (MM)"
+        },
+        "Text5": {
+            "bt_key": "dob",
+            "section": "Main Insured Info",
+            "label": "Birth Year (YYYY)"
+        },
+        "Text8": {
+            "bt_key": "nationality",
+            "section": "Main Insured Info",
+            "label": "Nationality"
+        },
+        "Text9": {
+            "bt_key": "id_card_no",
+            "section": "Main Insured Info",
+            "label": "ID Card / Passport No."
+        },
+        "Text10": {
+            "bt_key": "present_address",
+            "section": "Main Insured Info",
+            "label": "Present Address"
+        },
+        "Text11": {
+            "bt_key": "tel",
+            "section": "Main Insured Info",
+            "label": "Telephone No."
+        },
+        "Text13": {
+            "bt_key": "email",
+            "section": "Main Insured Info",
+            "label": "Email Address"
+        },
+        "Text14": {
+            "bt_key": "occupation",
+            "section": "Main Insured Info",
+            "label": "Occupation"
+        },
+        "Text16": {
+            "bt_key": "beneficiary",
+            "section": "Main Insured Info",
+            "label": "Beneficiary Name"
+        },
+        "Text17": {
+            "bt_key": "bene_relation",
+            "section": "Main Insured Info",
+            "label": "Relation to Beneficiary"
+        },
+        "Text18": {
+            "bt_key": "effective_date",
+            "section": "Plan Details",
+            "label": "Effective Date"
+        },
+        "Text19": {
+            "bt_key": "premium",
+            "section": "Plan Details",
+            "label": "Premium (THB)"
+        },
+        "Text83": {
+            "bt_key": "tax_id",
+            "section": "Main Insured Info",
+            "label": "Tax ID No."
+        },
+        "Text84": {
+            "bt_key": "tax_id",
+            "section": "Main Insured Info",
+            "label": "Tax ID Details"
+        },
+        "Text23": {
+            "bt_key": "sp_name",
+            "section": "Spouse Info",
+            "label": "Spouse Full Name"
+        },
+        "Text24": {
+            "bt_key": "sp_dob",
+            "section": "Spouse Info",
+            "label": "Spouse Birth Day (DD)"
+        },
+        "Text25": {
+            "bt_key": "sp_dob",
+            "section": "Spouse Info",
+            "label": "Spouse Birth Month (MM)"
+        },
+        "Text26": {
+            "bt_key": "sp_dob",
+            "section": "Spouse Info",
+            "label": "Spouse Birth Year (YYYY)"
+        },
+        "Text29": {
+            "bt_key": "sp_nationality",
+            "section": "Spouse Info",
+            "label": "Spouse Nationality"
+        },
+        "Text30": {
+            "bt_key": "sp_id_card_no",
+            "section": "Spouse Info",
+            "label": "Spouse ID Card / Passport No."
+        },
+        "Text35": {
+            "bt_key": "sp_occupation",
+            "section": "Spouse Info",
+            "label": "Spouse Occupation"
+        },
+        "Text37": {
+            "bt_key": "sp_beneficiary",
+            "section": "Spouse Info",
+            "label": "Spouse Beneficiary Name"
+        },
+        "Text38": {
+            "bt_key": "sp_bene_relation",
+            "section": "Spouse Info",
+            "label": "Spouse Relation to Beneficiary"
+        },
+        "Text39": {
+            "bt_key": "c1_name",
+            "section": "Child 1 Info",
+            "label": "Child 1 Full Name"
+        },
+        "Text40": {
+            "bt_key": "c1_dob",
+            "section": "Child 1 Info",
+            "label": "Child 1 Birth Day (DD)"
+        },
+        "Text41": {
+            "bt_key": "c1_dob",
+            "section": "Child 1 Info",
+            "label": "Child 1 Birth Month (MM)"
+        },
+        "Text42": {
+            "bt_key": "c1_dob",
+            "section": "Child 1 Info",
+            "label": "Child 1 Birth Year (YYYY)"
+        },
+        "Text43": {
+            "bt_key": "c1_id_card_no",
+            "section": "Child 1 Info",
+            "label": "Child 1 ID Card No."
+        },
+        "Text46": {
+            "bt_key": "c1_beneficiary",
+            "section": "Child 1 Info",
+            "label": "Child 1 Beneficiary Name"
+        },
+        "Text47": {
+            "bt_key": "c1_bene_relation",
+            "section": "Child 1 Info",
+            "label": "Child 1 Relation to Beneficiary"
+        },
+        "Text48": {
+            "bt_key": "c2_name",
+            "section": "Child 2 Info",
+            "label": "Child 2 Full Name"
+        },
+        "Text49": {
+            "bt_key": "c2_dob",
+            "section": "Child 2 Info",
+            "label": "Child 2 Birth Day (DD)"
+        },
+        "Text50": {
+            "bt_key": "c2_dob",
+            "section": "Child 2 Info",
+            "label": "Child 2 Birth Month (MM)"
+        },
+        "Text51": {
+            "bt_key": "c2_dob",
+            "section": "Child 2 Info",
+            "label": "Child 2 Birth Year (YYYY)"
+        },
+        "Text52": {
+            "bt_key": "c2_id_card_no",
+            "section": "Child 2 Info",
+            "label": "Child 2 ID Card No."
+        },
+        "Text55": {
+            "bt_key": "c2_beneficiary",
+            "section": "Child 2 Info",
+            "label": "Child 2 Beneficiary Name"
+        },
+        "Text56": {
+            "bt_key": "c2_bene_relation",
+            "section": "Child 2 Info",
+            "label": "Child 2 Relation to Beneficiary"
+        },
+        "Text57": {
+            "bt_key": "c3_name",
+            "section": "Child 3 Info",
+            "label": "Child 3 Full Name"
+        },
+        "Text58": {
+            "bt_key": "c3_dob",
+            "section": "Child 3 Info",
+            "label": "Child 3 Birth Day (DD)"
+        },
+        "Text59": {
+            "bt_key": "c3_dob",
+            "section": "Child 3 Info",
+            "label": "Child 3 Birth Month (MM)"
+        },
+        "Text60": {
+            "bt_key": "c3_dob",
+            "section": "Child 3 Info",
+            "label": "Child 3 Birth Year (YYYY)"
+        },
+        "Text61": {
+            "bt_key": "c3_id_card_no",
+            "section": "Child 3 Info",
+            "label": "Child 3 ID Card No."
+        },
+        "Text66": {
+            "bt_key": "exclusions",
+            "section": "Underwriting Info",
+            "label": "Exclusions / Pre-existing Conditions"
+        },
+        "Text67": {
+            "bt_key": "exclusions",
+            "section": "Underwriting Info",
+            "label": "Additional Underwriting Comments"
+        }
+    },
+    "premium_tables": {
+        "ipd": {
+            "0-5": [
+                48520,
+                57610,
+                64140,
+                70470
+            ],
+            "6-10": [
+                24965,
+                30495,
+                33950,
+                37990
+            ],
+            "11-15": [
+                16310,
+                19940,
+                22475,
+                25660
+            ],
+            "16-20": [
+                16310,
+                19940,
+                22475,
+                24725
+            ],
+            "21-25": [
+                16380,
+                21215,
+                23045,
+                25345
+            ],
+            "26-30": [
+                17400,
+                22660,
+                25225,
+                27750
+            ],
+            "31-35": [
+                18585,
+                23755,
+                27575,
+                31405
+            ],
+            "36-40": [
+                21370,
+                27800,
+                31835,
+                36350
+            ],
+            "41-45": [
+                25175,
+                32755,
+                37965,
+                42440
+            ],
+            "46-50": [
+                29335,
+                38160,
+                43135,
+                48375
+            ],
+            "51-55": [
+                34090,
+                43575,
+                48090,
+                53890
+            ],
+            "56-60": [
+                39590,
+                50610,
+                55855,
+                62595
+            ],
+            "61-64": [
+                49640,
+                60000,
+                66215,
+                74215
+            ]
+        },
+        "ipd_opd_3000": {
+            "0-5": [
+                70450,
+                79540,
+                86070,
+                92400
+            ],
+            "6-10": [
+                39955,
+                45480,
+                48940,
+                52975
+            ],
+            "11-15": [
+                28415,
+                32045,
+                34585,
+                37765
+            ],
+            "16-20": [
+                26370,
+                30000,
+                32540,
+                34790
+            ],
+            "21-25": [
+                25245,
+                30075,
+                31905,
+                34210
+            ],
+            "26-30": [
+                27770,
+                33025,
+                35590,
+                38115
+            ],
+            "31-35": [
+                30645,
+                35815,
+                39630,
+                43460
+            ],
+            "36-40": [
+                34415,
+                40850,
+                44885,
+                49395
+            ],
+            "41-45": [
+                39780,
+                47360,
+                52570,
+                57045
+            ],
+            "46-50": [
+                46950,
+                55775,
+                60755,
+                65990
+            ],
+            "51-55": [
+                54535,
+                64020,
+                68535,
+                74340
+            ],
+            "56-60": [
+                64515,
+                75535,
+                80775,
+                87520
+            ],
+            "61-64": [
+                78820,
+                89180,
+                95390,
+                103390
+            ]
+        },
+        "ipd_opd_3000_wellness": {
+            "0-5": [
+                72650,
+                81740,
+                88270,
+                94600
+            ],
+            "6-10": [
+                41375,
+                46900,
+                50360,
+                54395
+            ],
+            "11-15": [
+                29270,
+                32900,
+                35440,
+                38620
+            ],
+            "16-20": [
+                27120,
+                30750,
+                33290,
+                35540
+            ],
+            "21-25": [
+                25965,
+                30795,
+                32625,
+                34930
+            ],
+            "26-30": [
+                28550,
+                33805,
+                36370,
+                38895
+            ],
+            "31-35": [
+                31475,
+                36645,
+                40460,
+                44290
+            ],
+            "36-40": [
+                35335,
+                41770,
+                45805,
+                50315
+            ],
+            "41-45": [
+                40865,
+                48445,
+                53655,
+                58130
+            ],
+            "46-50": [
+                48255,
+                57080,
+                62060,
+                67295
+            ],
+            "51-55": [
+                55940,
+                65425,
+                69940,
+                75745
+            ],
+            "56-60": [
+                65960,
+                76980,
+                82220,
+                88965
+            ],
+            "61-64": [
+                80145,
+                90510,
+                96720,
+                104720
+            ]
+        },
+        "ipd_opd_50000": {
+            "0-5": [
+                73740,
+                82830,
+                89360,
+                95690
+            ],
+            "6-10": [
+                42375,
+                47905,
+                51360,
+                55400
+            ],
+            "11-15": [
+                30650,
+                34280,
+                36820,
+                40000
+            ],
+            "16-20": [
+                28460,
+                32090,
+                34630,
+                36880
+            ],
+            "21-25": [
+                27085,
+                31915,
+                33745,
+                36050
+            ],
+            "26-30": [
+                29920,
+                35180,
+                37745,
+                40265
+            ],
+            "31-35": [
+                33145,
+                38315,
+                42130,
+                45965
+            ],
+            "36-40": [
+                37125,
+                43555,
+                47590,
+                52105
+            ],
+            "41-45": [
+                42810,
+                50390,
+                55600,
+                60075
+            ],
+            "46-50": [
+                50605,
+                59430,
+                64410,
+                69645
+            ],
+            "51-55": [
+                58780,
+                68265,
+                72780,
+                78580
+            ],
+            "56-60": [
+                68540,
+                79560,
+                84800,
+                91545
+            ],
+            "61-64": [
+                83195,
+                93555,
+                99770,
+                107765
+            ]
+        },
+        "ipd_opd_50000_wellness": {
+            "0-5": [
+                75940,
+                85030,
+                91560,
+                97890
+            ],
+            "6-10": [
+                43795,
+                49325,
+                52780,
+                56820
+            ],
+            "11-15": [
+                31505,
+                35135,
+                37675,
+                40855
+            ],
+            "16-20": [
+                29210,
+                32840,
+                35380,
+                37630
+            ],
+            "21-25": [
+                27805,
+                32635,
+                34465,
+                36770
+            ],
+            "26-30": [
+                30700,
+                35960,
+                38525,
+                41045
+            ],
+            "31-35": [
+                33975,
+                39145,
+                42960,
+                46795
+            ],
+            "36-40": [
+                38045,
+                44475,
+                48510,
+                53025
+            ],
+            "41-45": [
+                43895,
+                51475,
+                56685,
+                61160
+            ],
+            "46-50": [
+                51910,
+                60735,
+                65715,
+                70950
+            ],
+            "51-55": [
+                60185,
+                69670,
+                74185,
+                79985
+            ],
+            "56-60": [
+                69985,
+                81005,
+                86245,
+                92990
+            ],
+            "61-64": [
+                84525,
+                94885,
+                101100,
+                109095
+            ]
+        }
+    },
+    "deductible_discounts": {
+        "0-40": {
+            "20000": 0.45,
+            "40000": 0.55,
+            "100000": 0.75,
+            "200000": 0.85
+        },
+        "41-60": {
+            "20000": 0.3,
+            "40000": 0.4,
+            "100000": 0.65,
+            "200000": 0.75
+        },
+        "61+": {
+            "20000": 0.1,
+            "40000": 0.15,
+            "100000": 0.3,
+            "200000": 0.35
+        }
+    },
+    "age_brackets": [
+        {
+            "min": 0,
+            "max": 5,
+            "key": "0-5"
+        },
+        {
+            "min": 6,
+            "max": 10,
+            "key": "6-10"
+        },
+        {
+            "min": 11,
+            "max": 15,
+            "key": "11-15"
+        },
+        {
+            "min": 16,
+            "max": 20,
+            "key": "16-20"
+        },
+        {
+            "min": 21,
+            "max": 25,
+            "key": "21-25"
+        },
+        {
+            "min": 26,
+            "max": 30,
+            "key": "26-30"
+        },
+        {
+            "min": 31,
+            "max": 35,
+            "key": "31-35"
+        },
+        {
+            "min": 36,
+            "max": 40,
+            "key": "36-40"
+        },
+        {
+            "min": 41,
+            "max": 45,
+            "key": "41-45"
+        },
+        {
+            "min": 46,
+            "max": 50,
+            "key": "46-50"
+        },
+        {
+            "min": 51,
+            "max": 55,
+            "key": "51-55"
+        },
+        {
+            "min": 56,
+            "max": 60,
+            "key": "56-60"
+        },
+        {
+            "min": 61,
+            "max": 64,
+            "key": "61-64"
+        }
+    ],
+    "plans": [
+        {
+            "key": "Plan 1",
+            "label": "SmartCare Essential - Plan 1",
+            "coverage": "1M",
+            "room_limit": "3,000"
+        },
+        {
+            "key": "Plan 2",
+            "label": "SmartCare Essential - Plan 2",
+            "coverage": "2M",
+            "room_limit": "5,000"
+        },
+        {
+            "key": "Plan 3",
+            "label": "SmartCare Essential - Plan 3",
+            "coverage": "5M",
+            "room_limit": "10,000"
+        },
+        {
+            "key": "Plan 4",
+            "label": "SmartCare Essential - Plan 4",
+            "coverage": "10M",
+            "room_limit": "12,000"
+        }
+    ]
+}

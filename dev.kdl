@@ -19,4 +19,10 @@ layout {
             args "develop" "--command" "uv" "run" "streamlit" "run" "app.py"
         }
     }
+
+    tab name="agy" {
+        pane command="nix" {
+            args "develop" "--command" "agy" "-c"
+        }
+    }
 }
