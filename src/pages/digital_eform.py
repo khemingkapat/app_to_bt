@@ -4,7 +4,7 @@ import time
 from io import BytesIO
 import streamlit as st
 from src.pdf_processor.inverter import fill_acroform_pdf, load_product_config
-from src.blue_table_tools.pricing import calculate_premium
+from src.blue_table_tools.pricing import calculate_all_plans_premiums
 
 # Setup page config
 st.set_page_config(layout="wide", page_title="Digital E-Form Portal")
@@ -27,8 +27,9 @@ if "members_setup" not in st.session_state:
         "child_1_age": 10,
         "child_2_age": 10,
         "child_3_age": 10,
-        "plan": "Standard",
-        "deductible": "None"
+        "plan": "Plan 2",
+        "deductible": "0",
+        "coverage_type": "ipd"
     }
 if "ocr_simulated" not in st.session_state:
     st.session_state.ocr_simulated = {}
@@ -95,27 +96,42 @@ elif st.session_state.step == 2:
         st.subheader("👨‍👩‍👧 Family Composition")
         
         # Main Insured
-        setup["main_age"] = st.number_input("Main Insured Age", min_value=0, max_value=100, value=setup["main_age"])
+        setup["main_age"] = st.number_input("Main Insured Age", min_value=0, max_value=64, value=setup["main_age"])
         
         # Spouse cover
         setup["cover_spouse"] = st.checkbox("Cover Spouse", value=setup["cover_spouse"])
         if setup["cover_spouse"]:
-            setup["spouse_age"] = st.number_input("Spouse Age", min_value=0, max_value=100, value=setup["spouse_age"])
+            setup["spouse_age"] = st.number_input("Spouse Age", min_value=18, max_value=64, value=setup["spouse_age"])
             
         # Children cover
         setup["child_count"] = st.slider("Number of Children to Cover", min_value=0, max_value=3, value=setup["child_count"])
         
         for i in range(1, setup["child_count"] + 1):
-            setup[f"child_{i}_age"] = st.number_input(f"Child {i} Age", min_value=0, max_value=25, value=setup.get(f"child_{i}_age", 10))
+            setup[f"child_{i}_age"] = st.number_input(f"Child {i} Age", min_value=0, max_value=17, value=setup.get(f"child_{i}_age", 10))
             
         st.divider()
         st.subheader("⚙️ Policy Configurations")
+        
+        # Coverage Type Selector
+        coverage_labels = {
+            "ipd": "IPD Only",
+            "ipd_opd_3000": "IPD + OPD 3,000 THB/visit (30 visits/year)",
+            "ipd_opd_3000_wellness": "IPD + OPD 3,000 THB + Wellness",
+            "ipd_opd_50000": "IPD + OPD 50,000 THB/year",
+            "ipd_opd_50000_wellness": "IPD + OPD 50,000 THB + Wellness"
+        }
+        setup["coverage_type"] = st.selectbox(
+            "Coverage Type",
+            options=list(coverage_labels.keys()),
+            format_func=lambda x: coverage_labels[x],
+            index=list(coverage_labels.keys()).index(setup.get("coverage_type", "ipd"))
+        )
         
         # Deductible selector
         deductibles = config.get("pricing", {}).get("deductibles", [])
         ded_labels = {d["key"]: d["label"] for d in deductibles}
         setup["deductible"] = st.selectbox(
-            "Deductible Option",
+            "Deductible Option (Applies to IPD)",
             options=list(ded_labels.keys()),
             format_func=lambda x: ded_labels[x],
             index=list(ded_labels.keys()).index(setup["deductible"])
@@ -123,51 +139,76 @@ elif st.session_state.step == 2:
 
     with col_pricing:
         st.subheader("🏷️ Premium Calculation Comparison Matrix")
-        st.write("Compare different plan tiers side-by-side. Your selected settings are applied live.")
+        st.write("Select the plans you want to compare and click the plan selector to highlight.")
 
-        plans = config.get("pricing", {}).get("plans", [])
+        # Calculate premiums for all 4 plans
+        plans_pricing = calculate_all_plans_premiums(
+            setup["coverage_type"],
+            int(setup["deductible"]),
+            setup,
+            config
+        )
         
-        col_p1, col_p2, col_p3 = st.columns(3)
-        cols = [col_p1, col_p2, col_p3]
+        # Let user select which plans to compare
+        plans_to_compare = st.multiselect(
+            "Plans to Compare",
+            options=["Plan 1", "Plan 2", "Plan 3", "Plan 4"],
+            default=["Plan 1", "Plan 2", "Plan 3", "Plan 4"]
+        )
         
-        for idx, plan in enumerate(plans):
-            final_p, breakdown = calculate_premium(plan["key"], setup["deductible"], setup)
-            is_selected = (setup["plan"] == plan["key"])
-            
-            with cols[idx]:
-                st.markdown(f"### {plan['label']}")
-                st.metric("Annual Premium", f"{final_p:,.2f} THB")
-                if is_selected:
-                    st.success("Selected Plan")
+        filtered_plans = [p for p in plans_pricing if p["key"] in plans_to_compare]
+        
+        if filtered_plans:
+            # Generate dynamic Markdown table to compare plans side-by-side
+            h1 = "| Benefit / Detail |"
+            h2 = "| :--- |"
+            for p in filtered_plans:
+                is_sel = (p["key"] == setup["plan"])
+                header = f"**{p['key']} (Selected) ✅**" if is_sel else f"**{p['key']}**"
+                h1 += f" {header} |"
+                h2 += " :---: |"
                 
-                if st.button(f"Choose {plan['key']}", key=f"btn_plan_{plan['key']}", use_container_width=True):
-                    setup["plan"] = plan["key"]
-                    st.rerun()
+            r1 = "| **IPD Limit** |"
+            for p in filtered_plans:
+                r1 += f" {p['coverage']} |"
+                
+            r2 = "| **Room Limit** |"
+            for p in filtered_plans:
+                r2 += f" {p['room_limit']} THB |"
+                
+            r3 = "| **Annual Premium** |"
+            for p in filtered_plans:
+                is_sel = (p["key"] == setup["plan"])
+                val = f"**{p['total']:,.0f} THB**" if is_sel else f"{p['total']:,.0f} THB"
+                r3 += f" {val} |"
+                
+            r4 = "| **Average / Person** |"
+            for p in filtered_plans:
+                is_sel = (p["key"] == setup["plan"])
+                val = f"**{p['avg']:,.0f} THB**" if is_sel else f"{p['avg']:,.0f} THB"
+                r4 += f" {val} |"
+                
+            table_md = f"{h1}\n{h2}\n{r1}\n{r2}\n{r3}\n{r4}"
+            st.markdown(table_md)
+        else:
+            st.warning("⚠️ Please select at least one plan to compare.")
 
-        # Display pricing breakdown
         st.divider()
-        st.subheader("🧾 Pricing Breakdown Details")
+        st.subheader("Select Plan for Application")
+        selected_plan = st.radio(
+            "Active Plan Choice",
+            options=["Plan 1", "Plan 2", "Plan 3", "Plan 4"],
+            index=["Plan 1", "Plan 2", "Plan 3", "Plan 4"].index(setup["plan"]),
+            horizontal=True
+        )
+        setup["plan"] = selected_plan
         
-        current_final, curr_breakdown = calculate_premium(setup["plan"], setup["deductible"], setup)
-        
-        st.write(f"**Selected Plan:** {setup['plan']} | **Deductible:** {ded_labels[setup['deductible']]}")
-        
-        # Details list
-        st.write(f"* **Main Insured:** {curr_breakdown['Main Insured']:,.2f} THB")
-        
-        if setup["cover_spouse"]:
-            st.write(f"* **Spouse Premium:** {curr_breakdown['Spouse']:,.2f} THB")
-            
-        if setup["child_count"] > 0:
-            for idx, c_cost in enumerate(curr_breakdown['Children']):
-                st.write(f"* **Child {idx+1} Premium:** {c_cost:,.2f} THB")
-                
-        ded_obj = next(d for d in deductibles if d["key"] == setup["deductible"])
-        if ded_obj["multiplier"] < 1.0:
-            discount = (1.0 - ded_obj["multiplier"]) * 100
-            st.write(f"* **Deductible Discount:** -{discount:.0f}%")
-            
-        st.markdown(f"### **Total Annual Premium: {current_final:,.2f} THB**")
+        # Family discount notification
+        o = 1 + (1 if setup["cover_spouse"] else 0) + setup["child_count"]
+        if o >= 2 and o <= 3:
+            st.info("🎉 Family Discount: **5% off** has been applied to all premiums.")
+        elif o >= 4:
+            st.info("🎉 Family Discount: **10% off** has been applied to all premiums.")
 
     st.markdown("---")
     
@@ -179,10 +220,14 @@ elif st.session_state.step == 2:
     with col_n:
         if st.button("Proceed to Details Intake ➡️", type="primary", use_container_width=True):
             st.session_state.members_setup = setup
-            # Automatically set Plan details in form_data
+            
+            # Fetch pricing details for the chosen plan
+            chosen_plan_pricing = next(p for p in plans_pricing if p["key"] == setup["plan"])
+            
+            # Populate form_data for output mapping
             st.session_state.form_data["plan"] = setup["plan"]
             st.session_state.form_data["deductible"] = ded_labels[setup["deductible"]]
-            st.session_state.form_data["premium"] = f"{current_final:,.2f}"
+            st.session_state.form_data["premium"] = f"{chosen_plan_pricing['total']:,.0f}"
             st.session_state.step = 3
             st.rerun()
 
@@ -197,10 +242,8 @@ elif st.session_state.step == 3:
     # Helper function to render a standard text field
     def render_field(label_text, bt_key, section, placeholder="", is_required=True):
         full_key = f"{section}_{bt_key}"
-        # Check if pre-filled by OCR
         is_prefilled = full_key in st.session_state.ocr_simulated
         
-        # Display highlight warning if prefilled
         if is_prefilled:
             st.warning("⚠️ Review pre-filled info")
             

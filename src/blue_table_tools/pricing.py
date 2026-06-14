@@ -1,70 +1,98 @@
+import math
 from src.pdf_processor.inverter import load_product_config
 
 CONFIG_PATH = "./config/health_and_accident.json"
 
-def get_age_multiplier(age: int, config: dict) -> float:
-    pricing = config.get("pricing", {})
-    brackets = pricing.get("age_brackets", [])
+def get_age_bracket_key(age: int, config: dict) -> str:
+    """Finds the age bracket key (e.g. '31-35') for the given age."""
+    brackets = config.get("age_brackets", [])
     for b in brackets:
         if b["min"] <= age <= b["max"]:
-            return b["multiplier"]
-    return 1.0
+            return b["key"]
+    return None
 
-def calculate_premium(plan_key: str, deductible_key: str, members: dict, config: dict = None) -> tuple[float, dict]:
+def get_deductible_discount(age: int, deductible_amount: int, config: dict) -> float:
+    """Calculates the deductible discount percentage based on age and deductible amount."""
+    if not deductible_amount or int(deductible_amount) == 0:
+        return 0.0
+        
+    # Determine age bracket for deductible discount
+    if age <= 40:
+        bracket = "0-40"
+    elif age <= 60:
+        bracket = "41-60"
+    else:
+        bracket = "61+"
+        
+    discounts = config.get("deductible_discounts", {})
+    age_discounts = discounts.get(bracket, {})
+    return age_discounts.get(str(deductible_amount), 0.0)
+
+def calculate_all_plans_premiums(coverage_key: str, deductible_amount: int, members: dict, config: dict = None) -> list[dict]:
     """
-    Computes total premium and its breakdown based on plan, deductible, and family ages/options.
+    Computes premium details for all 4 plan levels simultaneously, matching AXA calculator logic.
     """
     if config is None:
         config = load_product_config(CONFIG_PATH)
         
-    pricing = config.get("pricing", {})
-    
-    # 1. Find Plan Base Premium
-    base_premium = 0
-    for p in pricing.get("plans", []):
-        if p["key"] == plan_key:
-            base_premium = p["base_premium"]
-            break
-            
-    # 2. Find Deductible Multiplier
-    deductible_multiplier = 1.0
-    for d in pricing.get("deductibles", []):
-        if d["key"] == deductible_key:
-            deductible_multiplier = d["multiplier"]
-            break
-            
-    # 3. Calculate Member Premiums
-    total_premium = 0
-    breakdown = {}
-    
-    # Main Insured
-    main_age = members.get("main_age", 30)
-    main_multiplier = get_age_multiplier(main_age, config)
-    main_cost = base_premium * main_multiplier
-    total_premium += main_cost
-    breakdown["Main Insured"] = main_cost
-    
-    # Spouse
+    # 1. Collect all ages
+    ages = [members["main_age"]]
     if members.get("cover_spouse", False):
-        spouse_age = members.get("spouse_age", 30)
-        spouse_multiplier = get_age_multiplier(spouse_age, config)
-        spouse_cost = base_premium * spouse_multiplier * pricing.get("spouse_premium_percentage", 0.90)
-        total_premium += spouse_cost
-        breakdown["Spouse"] = spouse_cost
+        ages.append(members["spouse_age"])
         
-    # Children
     child_count = members.get("child_count", 0)
-    if child_count > 0:
-        child_costs = []
-        for i in range(1, child_count + 1):
-            child_age = members.get(f"child_{i}_age", 10)
-            child_multiplier = get_age_multiplier(child_age, config)
-            child_cost = base_premium * child_multiplier * pricing.get("child_premium_percentage", 0.70)
-            total_premium += child_cost
-            child_costs.append(child_cost)
-        breakdown["Children"] = child_costs
+    for i in range(1, child_count + 1):
+        ages.append(members.get(f"child_{i}_age", 10))
         
-    # Apply Deductible
-    final_premium = round(total_premium * deductible_multiplier, 2)
+    # 2. Accumulate base premiums for each plan level (0 to 3)
+    r = [0, 0, 0, 0]
+    premium_tables = config.get("premium_tables", {})
+    ipd_table = premium_tables.get("ipd", {})
+    cov_table = premium_tables.get(coverage_key, {})
     
-    return final_premium, breakdown
+    for age in ages:
+        bracket = get_age_bracket_key(age, config)
+        if not bracket:
+            continue
+            
+        f = ipd_table.get(bracket, [0, 0, 0, 0])
+        g = cov_table.get(bracket, [0, 0, 0, 0])
+        
+        # Deductible discount fraction
+        h = get_deductible_discount(age, deductible_amount, config)
+        
+        for S in range(4):
+            p = f[S]  # IPD only base premium
+            v = g[S] - p  # OPD only portion
+            
+            # Discounted IPD portion
+            m = math.ceil(p * (1.0 - h))
+            
+            # Member total for plan level S
+            y = math.ceil(m + v)
+            r[S] += y
+            
+    # 3. Apply family discount
+    o = len(ages)
+    i = 0.0
+    if o >= 2 and o <= 3:
+        i = 0.05
+    elif o >= 4:
+        i = 0.10
+        
+    final_premiums = [math.ceil(total * (1.0 - i)) for total in r]
+    avg_premiums = [math.ceil(total / o) if o > 0 else 0 for total in final_premiums]
+    
+    plans_config = config.get("plans", [])
+    results = []
+    for idx, plan in enumerate(plans_config):
+        results.append({
+            "key": plan["key"],
+            "label": plan["label"],
+            "coverage": plan["coverage"],
+            "room_limit": plan["room_limit"],
+            "total": final_premiums[idx],
+            "avg": avg_premiums[idx]
+        })
+        
+    return results
