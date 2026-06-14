@@ -1,6 +1,6 @@
 import pytest
 from src.pdf_processor.inverter import load_product_config
-from src.blue_table_tools.pricing import get_age_bracket_key, get_deductible_discount, calculate_all_plans_premiums
+from src.blue_table_tools.pricing import get_age_bracket_key, get_deductible_discount, calculate_all_plans_premiums, calculate_single_option_premium
 
 def test_get_age_bracket_key():
     config = load_product_config()
@@ -52,25 +52,22 @@ def test_calculate_all_plans_premiums_family_deductible():
         "child_count": 0
     }
     
-    # Coverage: ipd_opd_3000, deductible 20000
-    # Main age 40: Bracket 36-40.
-    # IPD Plan 1 = 21370, Total Plan 1 = 34415. OPD portion = 34415 - 21370 = 13045.
-    # Deductible 20000 discount (age 40) = 45% (0.45).
-    # Discounted IPD = ceil(21370 * (1 - 0.45)) = 11754.
-    # Main Total Plan 1 = 11754 + 13045 = 24799.
-    #
-    # Spouse age 30: Bracket 26-30.
-    # IPD Plan 1 = 17400, Total Plan 1 = 27770. OPD portion = 27770 - 17400 = 10370.
-    # Deductible 20000 discount (age 30) = 45% (0.45).
-    # Discounted IPD = ceil(17400 * (1 - 0.45)) = 9570.
-    # Spouse Total Plan 1 = 9570 + 10370 = 19940.
-    #
-    # Total before family discount = 24799 + 19940 = 44739.
-    # Family discount: 2 people -> 5% off.
-    # Final Plan 1 = ceil(44739 * 0.95) = ceil(42502.05) = 42503.
-    # Average = ceil(42503 / 2) = 21252.
-    
     results = calculate_all_plans_premiums("ipd_opd_3000", 20000, members, config)
     
     assert results[0]["total"] == 42503
     assert results[0]["avg"] == 21252
+
+def test_calculate_single_option_premium():
+    config = load_product_config()
+    members = {
+        "main_age": 40,
+        "cover_spouse": True,
+        "spouse_age": 30,
+        "child_count": 0
+    }
+    
+    # Calculate single plan specifically (Plan 1)
+    result = calculate_single_option_premium("Plan 1", "ipd_opd_3000", 20000, members, config)
+    assert result["total"] == 42503
+    assert result["coverage"] == "1M"
+    assert result["room_limit"] == "3,000"
