@@ -57,7 +57,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<div class='main-header'>🏥 AXA Health Insurance Application Portal</div>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-header'>🏥 AXA Health Insurance Application Portal</h1>", unsafe_allow_html=True)
 st.markdown("<div class='landing-desc'>A unified intake workflow platform designed for zero-error underwriting, automated data extraction, and human-in-the-loop validation.</div>", unsafe_allow_html=True)
 
 col_a, col_b = st.columns(2, gap="large")

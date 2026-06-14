@@ -6,6 +6,8 @@ from pypdf import PdfReader, PdfWriter
 
 CONFIG_FILE = "./config/health_and_accident.json"
 
+# TODO: Add support for secure PDF signature stamps and digital watermarking on filled applications.
+
 def load_product_config(config_path: str = CONFIG_FILE) -> dict:
     """Loads the product configuration schema."""
     if os.path.exists(config_path):

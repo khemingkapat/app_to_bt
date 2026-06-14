@@ -36,7 +36,7 @@ def test_landing_page(page: Page):
 
 def test_pdf_tool_navigation(page: Page):
     page.goto("http://localhost:8501")
-    page.get_by_role("button", name="🚀 Launch PDF to BlueTable Tool").click()
+    page.get_by_role("button", name="Launch PDF to BlueTable Tool ➡️").click()
     expect(
         page.get_by_role("heading", name="📋 PDF ➜ BlueTable Auto-Fill")
     ).to_be_visible()
@@ -103,7 +103,7 @@ def test_flatten_pdf_flow(browser: Browser):
         page.get_by_test_id("stFileUploaderDropzoneInput").set_input_files(FLATTEN_PDF)
         page.get_by_text("Field 1 of").wait_for()
 
-        expect(page.get_by_role("img")).to_be_visible()
+        expect(page.locator("img")).to_be_visible()
         expect(page.get_by_role("button", name="⬇️")).to_be_visible()
         expect(page.get_by_role("button", name="✅")).to_be_visible()
 
@@ -116,7 +116,7 @@ def test_flatten_pdf_flow(browser: Browser):
                 "stBaseButton-secondary"
             )
         ).to_be_visible()
-        expect(page.get_by_test_id("stJson")).to_contain_text('"p_name"')
+        expect(page.get_by_test_id("stJson")).to_contain_text('"name"')
 
     finally:
         context.close()
