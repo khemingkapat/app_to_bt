@@ -321,6 +321,7 @@ elif st.session_state.step == 3:
         st.write("Upload National ID to auto-fill:")
         uploaded_id = st.file_uploader("Upload Main Insured ID Card Image", type=["jpg", "png", "pdf"])
         if uploaded_id:
+            # TODO: Jules to integrate with actual OCR API (e.g. Google Cloud Document AI or custom OCR server) in production to replace this simulated scanning process.
             if st.button("📸 Scan ID Card (Simulation)", key="btn_scan_main"):
                 run_ocr_simulation(
                     "Main",
@@ -501,6 +502,7 @@ elif st.session_state.step == 4:
                     # Fill interactive PDF fields
                     filled_pdf_stream = fill_acroform_pdf(template_pdf_path, form_data)
                     
+                    # TODO: Jules to implement email routing or downstream API integration to send the filled PDF automatically to the customer for signature (e.g., DocuSign or Adobe Sign).
                     st.download_button(
                         "⬇️ Download Pre-filled Official PDF",
                         data=filled_pdf_stream.getvalue(),
