@@ -84,12 +84,18 @@ def resolve_plan_combination(data: dict) -> dict:
     plan_tier = ""
     optional_benefit = ""
     opd_choice = ""
+    is_visa = False
     
     valid_benefits = ("IPD", "IPD+OPD", "IPD+OPD+WELLNESS")
     valid_opd_choices = ("3k * 30 times / year", "50k per year")
     
     for p in parts:
-        if "Plan" in p:
+        if p.startswith("ESSENTIAL"):
+            plan_tier = p.replace("ESSENTIAL", "").strip()
+        elif p.startswith("VISA"):
+            plan_tier = p.replace("VISA Plan", "").replace("VISA", "").strip()
+            is_visa = True
+        elif "Plan" in p:
             plan_tier = p.replace("Plan", "").strip()
         elif p in valid_benefits:
             optional_benefit = p
@@ -100,12 +106,16 @@ def resolve_plan_combination(data: dict) -> dict:
     if deductible_amount == "0,000":
         deductible_amount = "0"
          
-    if plan_tier and optional_benefit:
-        # Build the combo key depending on benefit type
-        if optional_benefit == "IPD":
-            combo_key = f"ESSENTIAL{plan_tier}-IPD DD {deductible_amount}"
+    if plan_tier:
+        if is_visa:
+            combo_key = f"VISA{plan_tier} DD {deductible_amount}"
+        elif optional_benefit:
+            if optional_benefit == "IPD":
+                combo_key = f"ESSENTIAL{plan_tier}-IPD DD {deductible_amount}"
+            else:
+                combo_key = f"ESSENTIAL{plan_tier}-{optional_benefit}({opd_choice}) DD {deductible_amount}"
         else:
-            combo_key = f"ESSENTIAL{plan_tier}-{optional_benefit}({opd_choice}) DD {deductible_amount}"
+            return updated
             
         try:
             from src.pdf_processor.inverter import load_product_config
@@ -145,6 +155,7 @@ def fill_blue_table_docx(template_path: str, data: dict) -> BytesIO:
         "Relation": data.get("bene_relation", ""),
         "Occupation": data.get("occupation", ""),
         "Agent CODE/Name": data.get("agent", ""),
+        "Product Name": data.get("product_name", ""),
         "Plan": data.get("plan", ""),
         "Deductible": data.get("deductible", ""),
         "Premium": data.get("premium", ""),
