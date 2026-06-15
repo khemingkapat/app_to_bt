@@ -37,9 +37,24 @@ def walk_fields(reader: PdfReader, fields_array, parent_ft=None) -> list[dict]:
                 kid = resolve(kid_ref)
                 kid_rect = kid.get("/Rect")
                 kid_page, kid_h_node = get_page_info(reader, kid)
+                
+                # Extract the choice value (export value) from /AP/N
+                choice_value = ""
+                ap = resolve(kid.get("/AP"))
+                if ap:
+                    n = resolve(ap.get("/N"))
+                    if n:
+                        try:
+                            keys = [str(k) for k in n.keys() if str(k) != "/Off"]
+                            if keys:
+                                choice_value = keys[0]
+                        except Exception:
+                            pass
+                
                 kid_widgets.append(
                     {
                         "page": kid_page,
+                        "choice_value": choice_value,
                         "coords": rect_to_dict(kid_rect, kid_h_node),
                     }
                 )

@@ -317,6 +317,213 @@
             "bt_key": "exclusions",
             "section": "Underwriting Info",
             "label": "Additional Underwriting Comments"
+        },
+        "CHPLAN 01": {
+            "bt_key": "plan",
+            "section": "Plan Details",
+            "label": "Main Insured Selected Plan Tier",
+            "choices": {
+                "/Choice1": "Plan 1",
+                "/Choice2": "Plan 2",
+                "/Choice3": "Plan 3",
+                "/Choice4": "Plan 4"
+            }
+        },
+        "CHPLAN 02": {
+            "bt_key": "plan",
+            "section": "Plan Details",
+            "label": "Main Insured Optional Benefit (OPD/Wellness)",
+            "choices": {
+                "/Choice3": "IPD",
+                "/Choice4": "IPD+OPD3k",
+                "/Choice5": "IPD+OPD50k",
+                "/Choice6": "IPD+OPD3k+Wellness",
+                "/Choice7": "IPD+OPD50k+Wellness"
+            }
+        },
+        "CHPLAN 07": {
+            "bt_key": "deductible",
+            "section": "Plan Details",
+            "label": "Main Insured Deductible",
+            "choices": {
+                "/Choice1": "0",
+                "/Choice2": "20k",
+                "/Choice3": "40k",
+                "/Choice4": "100k",
+                "/Choice5": "200k"
+            }
+        },
+        "CHPLAN 03": {
+            "bt_key": "plan",
+            "section": "Plan Details",
+            "label": "Spouse Selected Plan Tier",
+            "choices": {
+                "/Choice1": "Plan 1",
+                "/Choice2": "Plan 2",
+                "/Choice3": "Plan 3",
+                "/Choice4": "Plan 4"
+            }
+        },
+        "CHPLAN 04": {
+            "bt_key": "plan",
+            "section": "Plan Details",
+            "label": "Spouse Optional Benefit (OPD)",
+            "choices": {
+                "/Choice3": "IPD",
+                "/Choice4": "IPD+OPD3k",
+                "/Choice5": "IPD+OPD50k"
+            }
+        },
+        "CHPLAN 08": {
+            "bt_key": "deductible",
+            "section": "Plan Details",
+            "label": "Spouse Deductible",
+            "choices": {
+                "/Choice3": "0",
+                "/Choice7": "20k",
+                "/Choice8": "40k"
+            }
+        },
+        "CHPLAN 05": {
+            "bt_key": "plan",
+            "section": "Plan Details",
+            "label": "Child Selected Plan Tier",
+            "choices": {
+                "/Choice1": "Plan 1",
+                "/Choice2": "Plan 2"
+            }
+        },
+        "CHPLAN 06": {
+            "bt_key": "plan",
+            "section": "Plan Details",
+            "label": "Child Optional Benefit (OPD)",
+            "choices": {
+                "/Choice3": "IPD"
+            }
+        },
+        "CHPLAN 09": {
+            "bt_key": "deductible",
+            "section": "Plan Details",
+            "label": "Child Deductible",
+            "choices": {
+                "/Choice1": "0"
+            }
+        },
+        "Group7": {
+            "bt_key": "exclusions",
+            "section": "Underwriting Info",
+            "label": "Main Insured Q1: Cancer/Tumors/Dementia",
+            "choices": {
+                "/Choice1": "Yes",
+                "/Choice2": "No"
+            }
+        },
+        "Group8": {
+            "bt_key": "exclusions",
+            "section": "Underwriting Info",
+            "label": "Main Insured Q2: Heart Disease/Stroke",
+            "choices": {
+                "/Choice3": "Yes",
+                "/Choice4": "No"
+            }
+        },
+        "Group9": {
+            "bt_key": "exclusions",
+            "section": "Underwriting Info",
+            "label": "Main Insured Q3: Kidney Failure/CKD",
+            "choices": {
+                "/Choice5": "Yes",
+                "/Choice6": "No"
+            }
+        },
+        "Group10": {
+            "bt_key": "exclusions",
+            "section": "Underwriting Info",
+            "label": "Main Insured Q4: HIV/AIDS/Liver Disease",
+            "choices": {
+                "/Choice7": "Yes",
+                "/Choice8": "No"
+            }
+        },
+        "Group11": {
+            "bt_key": "sp_exclusions",
+            "section": "Underwriting Info",
+            "label": "Spouse Q1: Cancer/Tumors/Dementia",
+            "choices": {
+                "/Choice1": "Yes",
+                "/Choice2": "No"
+            }
+        },
+        "Group12": {
+            "bt_key": "sp_exclusions",
+            "section": "Underwriting Info",
+            "label": "Spouse Q2: Heart Disease/Stroke",
+            "choices": {
+                "/Choice3": "Yes",
+                "/Choice4": "No"
+            }
+        },
+        "Group13": {
+            "bt_key": "sp_exclusions",
+            "section": "Underwriting Info",
+            "label": "Spouse Q3: Kidney Failure/CKD",
+            "choices": {
+                "/Choice5": "Yes",
+                "/Choice6": "No"
+            }
+        },
+        "Group14": {
+            "bt_key": "sp_exclusions",
+            "section": "Underwriting Info",
+            "label": "Spouse Q4: HIV/AIDS/Liver Disease",
+            "choices": {
+                "/Choice7": "Yes",
+                "/Choice8": "No"
+            }
+        },
+        "Group15": {
+            "bt_key": "c1_exclusions",
+            "section": "Underwriting Info",
+            "label": "Children Q1: Cancer/Tumors/Dementia",
+            "choices": {
+                "/Choice1": "Yes",
+                "/Choice2": "No"
+            }
+        },
+        "Group16": {
+            "bt_key": "c1_exclusions",
+            "section": "Underwriting Info",
+            "label": "Children Q2-Q4: Heart Disease/CKD/HIV",
+            "choices": {
+                "/Choice3": "Yes",
+                "/Choice4": "No",
+                "/Choice5": "Yes",
+                "/Choice6": "No"
+            }
+        },
+        "Check Box2": {
+            "bt_key": "SKIPPED",
+            "section": "Consents",
+            "label": "Declaration & Consent checkbox 1",
+            "choices": {
+                "/Yes": "Yes"
+            }
+        },
+        "Check Box3": {
+            "bt_key": "SKIPPED",
+            "section": "Consents",
+            "label": "Declaration & Consent checkbox 2",
+            "choices": {
+                "/Yes": "Yes"
+            }
+        },
+        "Check Box4": {
+            "bt_key": "SKIPPED",
+            "section": "Consents",
+            "label": "Declaration & Consent checkbox 3",
+            "choices": {
+                "/Yes": "Yes"
+            }
         }
     },
     "premium_tables": {
@@ -833,5 +1040,107 @@
             "coverage": "10M",
             "room_limit": "12,000"
         }
-    ]
+    ],
+    "combinations_map": {
+        "ESSENTIAL1-IPD DD 0": "101",
+        "ESSENTIAL1-IPD DD 20,000": "127",
+        "ESSENTIAL1-IPD DD 40,000": "103",
+        "ESSENTIAL1-IPD DD 100,000": "104",
+        "ESSENTIAL1-IPD DD 200,000": "105",
+        "ESSENTIAL1-IPD+OPD3000 DD 0": "106",
+        "ESSENTIAL1-IPD+OPD3000 DD 20,000": "107",
+        "ESSENTIAL1-IPD+OPD3000 DD 40,000": "108",
+        "ESSENTIAL1-IPD+OPD3000 DD 100,000": "109",
+        "ESSENTIAL1-IPD+OPD3000 DD 200,000": "110",
+        "ESSENTIAL1-IPD+OPD50000 DD 0": "111",
+        "ESSENTIAL1-IPD+OPD50000 DD 20,000": "112",
+        "ESSENTIAL1-IPD+OPD50000 DD 40,000": "113",
+        "ESSENTIAL1-IPD+OPD50000 DD 100,000": "114",
+        "ESSENTIAL1-IPD+OPD50000 DD 200,000": "115",
+        "ESSENTIAL1-IPD+OPD3000+Wellness DD 0": "116",
+        "ESSENTIAL1-IPD+OPD3000+Wellness DD 20,000": "117",
+        "ESSENTIAL1-IPD+OPD3000+Wellness DD 40,000": "118",
+        "ESSENTIAL1-IPD+OPD3000+Wellness DD 100,000": "119",
+        "ESSENTIAL1-IPD+OPD3000+Wellness DD 200,000": "120",
+        "ESSENTIAL1-IPD+OPD50000+Wellness DD 0": "121",
+        "ESSENTIAL1-IPD+OPD50000+Wellness DD 20,000": "122",
+        "ESSENTIAL1-IPD+OPD50000+Wellness DD 40,000": "123",
+        "ESSENTIAL1-IPD+OPD50000+Wellness DD 100,000": "124",
+        "ESSENTIAL1-IPD+OPD50000+Wellness DD 200,000": "125",
+        "ESSENTIAL2-IPD DD 0": "126",
+        "ESSENTIAL2-IPD DD 20,000": "127",
+        "ESSENTIAL2-IPD DD 40,000": "128",
+        "ESSENTIAL2-IPD DD 100,000": "129",
+        "ESSENTIAL2-IPD DD 200,000": "130",
+        "ESSENTIAL2-IPD+OPD3000 DD 0": "131",
+        "ESSENTIAL2-IPD+OPD3000 DD 20,000": "132",
+        "ESSENTIAL2-IPD+OPD3000 DD 40,000": "133",
+        "ESSENTIAL2-IPD+OPD3000 DD 100,000": "134",
+        "ESSENTIAL2-IPD+OPD3000 DD 200,000": "135",
+        "ESSENTIAL2-IPD+OPD50000 DD 0": "136",
+        "ESSENTIAL2-IPD+OPD50000 DD 20,000": "137",
+        "ESSENTIAL2-IPD+OPD50000 DD 40,000": "138",
+        "ESSENTIAL2-IPD+OPD50000 DD 100,000": "139",
+        "ESSENTIAL2-IPD+OPD50000 DD 200,000": "140",
+        "ESSENTIAL2-IPD+OPD3000+Wellness DD 0": "141",
+        "ESSENTIAL2-IPD+OPD3000+Wellness DD 20,000": "142",
+        "ESSENTIAL2-IPD+OPD3000+Wellness DD 40,000": "143",
+        "ESSENTIAL2-IPD+OPD3000+Wellness DD 100,000": "144",
+        "ESSENTIAL2-IPD+OPD3000+Wellness DD 200,000": "145",
+        "ESSENTIAL2-IPD+OPD50000+Wellness DD 0": "146",
+        "ESSENTIAL2-IPD+OPD50000+Wellness DD 20,000": "147",
+        "ESSENTIAL2-IPD+OPD50000+Wellness DD 40,000": "148",
+        "ESSENTIAL2-IPD+OPD50000+Wellness DD 100,000": "149",
+        "ESSENTIAL2-IPD+OPD50000+Wellness DD 200,000": "150",
+        "ESSENTIAL3-IPD DD 0": "151",
+        "ESSENTIAL3-IPD DD 20,000": "152",
+        "ESSENTIAL3-IPD DD 40,000": "153",
+        "ESSENTIAL3-IPD DD 100,000": "154",
+        "ESSENTIAL3-IPD DD 200,000": "155",
+        "ESSENTIAL3-IPD+OPD3000 DD 0": "156",
+        "ESSENTIAL3-IPD+OPD3000 DD 20,000": "157",
+        "ESSENTIAL3-IPD+OPD3000 DD 40,000": "158",
+        "ESSENTIAL3-IPD+OPD3000 DD 100,000": "159",
+        "ESSENTIAL3-IPD+OPD3000 DD 200,000": "160",
+        "ESSENTIAL3-IPD+OPD50000 DD 0": "161",
+        "ESSENTIAL3-IPD+OPD50000 DD 20,000": "162",
+        "ESSENTIAL3-IPD+OPD50000 DD 40,000": "163",
+        "ESSENTIAL3-IPD+OPD50000 DD 100,000": "164",
+        "ESSENTIAL3-IPD+OPD50000 DD 200,000": "165",
+        "ESSENTIAL3-IPD+OPD3000+Wellness DD 0": "166",
+        "ESSENTIAL3-IPD+OPD3000+Wellness DD 20,000": "167",
+        "ESSENTIAL3-IPD+OPD3000+Wellness DD 40,000": "168",
+        "ESSENTIAL3-IPD+OPD3000+Wellness DD 100,000": "169",
+        "ESSENTIAL3-IPD+OPD3000+Wellness DD 200,000": "170",
+        "ESSENTIAL3-IPD+OPD50000+Wellness DD 0": "171",
+        "ESSENTIAL3-IPD+OPD50000+Wellness DD 20,000": "172",
+        "ESSENTIAL3-IPD+OPD50000+Wellness DD 40,000": "173",
+        "ESSENTIAL3-IPD+OPD50000+Wellness DD 100,000": "174",
+        "ESSENTIAL3-IPD+OPD50000+Wellness DD 200,000": "175",
+        "ESSENTIAL4-IPD DD 0": "176",
+        "ESSENTIAL4-IPD DD 20,000": "177",
+        "ESSENTIAL4-IPD DD 40,000": "178",
+        "ESSENTIAL4-IPD DD 100,000": "179",
+        "ESSENTIAL4-IPD DD 200,000": "180",
+        "ESSENTIAL4-IPD+OPD3000 DD 0": "181",
+        "ESSENTIAL4-IPD+OPD3000 DD 20,000": "182",
+        "ESSENTIAL4-IPD+OPD3000 DD 40,000": "183",
+        "ESSENTIAL4-IPD+OPD3000 DD 100,000": "184",
+        "ESSENTIAL4-IPD+OPD3000 DD 200,000": "185",
+        "ESSENTIAL4-IPD+OPD50000 DD 0": "186",
+        "ESSENTIAL4-IPD+OPD50000 DD 20,000": "187",
+        "ESSENTIAL4-IPD+OPD50000 DD 40,000": "188",
+        "ESSENTIAL4-IPD+OPD50000 DD 100,000": "189",
+        "ESSENTIAL4-IPD+OPD50000 DD 200,000": "190",
+        "ESSENTIAL4-IPD+OPD3000+Wellness DD 0": "191",
+        "ESSENTIAL4-IPD+OPD3000+Wellness DD 20,000": "192",
+        "ESSENTIAL4-IPD+OPD3000+Wellness DD 40,000": "193",
+        "ESSENTIAL4-IPD+OPD3000+Wellness DD 100,000": "194",
+        "ESSENTIAL4-IPD+OPD3000+Wellness DD 200,000": "195",
+        "ESSENTIAL4-IPD+OPD50000+Wellness DD 0": "196",
+        "ESSENTIAL4-IPD+OPD50000+Wellness DD 20,000": "197",
+        "ESSENTIAL4-IPD+OPD50000+Wellness DD 40,000": "198",
+        "ESSENTIAL4-IPD+OPD50000+Wellness DD 100,000": "199",
+        "ESSENTIAL4-IPD+OPD50000+Wellness DD 200,000": "200"
+    }
 }
