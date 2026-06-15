@@ -120,7 +120,7 @@ def test_apply_acceptance_rules():
     assert res["sp_acceptance_conditions"] == "Accepted"
 
 def test_resolve_plan_combination():
-    # Test valid combination lookup
+    # Test valid combination lookup (IPD only)
     data = {
         "plan": "Plan 2-IPD",
         "deductible": "20k"
@@ -136,6 +136,15 @@ def test_resolve_plan_combination():
     }
     resolved = resolve_plan_combination(data)
     assert resolved["plan"] == "ESSENTIAL2-IPD DD 20,000 (127)"
+    assert resolved["deductible"] == "20,000"
+
+    # Test IPD+OPD combination lookup with specific OPD limits
+    data = {
+        "plan": "Plan 1-IPD+OPD-3k * 30 times / year",
+        "deductible": "20k"
+    }
+    resolved = resolve_plan_combination(data)
+    assert resolved["plan"] == "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 20,000 (107)"
     assert resolved["deductible"] == "20,000"
 
     # Test already resolved plan (should skip)
