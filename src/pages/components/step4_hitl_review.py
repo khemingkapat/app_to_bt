@@ -2,6 +2,7 @@ import os
 import json
 import streamlit as st
 from src.pdf_processor.inverter import fill_acroform_pdf
+from src.blue_table_tools import fill_blue_table_docx
 
 def render_step4(form_data: dict, setup: dict) -> None:
     st.subheader("🔍 Step 4: Human-in-the-Loop Verification & Output Generation")
@@ -13,6 +14,9 @@ def render_step4(form_data: dict, setup: dict) -> None:
         st.subheader("🔵 Compiled BlueTable Fields")
 
         from src.blue_table_tools.schema import BLUETABLE_FIELDS
+        from src.blue_table_tools import apply_acceptance_rules
+
+        form_data = apply_acceptance_rules(form_data)
 
         rows = []
         for label, key in BLUETABLE_FIELDS:
@@ -25,14 +29,23 @@ def render_step4(form_data: dict, setup: dict) -> None:
     with col_action:
         st.subheader("#### 📥 Downstream Deliverables")
 
-        result_json = json.dumps(form_data, ensure_ascii=False, indent=2)
-        st.download_button(
-            "⬇️ Download BlueTable JSON Row",
-            data=result_json,
-            file_name="bluetable_row.json",
-            mime="application/json",
-            use_container_width=True
-        )
+        template_docx_path = "./resources/BlueTable.docx"
+        if os.path.exists(template_docx_path):
+            with st.spinner("Generating filled BlueTable DOCX..."):
+                try:
+                    docx_stream = fill_blue_table_docx(template_docx_path, form_data)
+                    st.download_button(
+                        "⬇️ Download Filled BlueTable DOCX",
+                        data=docx_stream.getvalue(),
+                        file_name="bluetable_filled.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        use_container_width=True,
+                        type="primary"
+                    )
+                except Exception as e:
+                    st.error(f"Failed to generate DOCX: {e}")
+        else:
+            st.error(f"Template DOCX not found at: {template_docx_path}")
 
         st.write("---")
 
