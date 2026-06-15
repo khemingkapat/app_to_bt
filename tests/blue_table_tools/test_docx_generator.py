@@ -2,7 +2,7 @@ import os
 import docx
 import pytest
 from datetime import datetime
-from src.blue_table_tools.docx_generator import calculate_age, fill_blue_table_docx, apply_acceptance_rules
+from src.blue_table_tools.docx_generator import calculate_age, fill_blue_table_docx, apply_acceptance_rules, resolve_plan_combination
 
 def test_calculate_age():
     # Test DD/MM/YYYY
@@ -118,3 +118,63 @@ def test_apply_acceptance_rules():
     res = apply_acceptance_rules(data)
     assert res["acceptance_conditions"] == "Accepted with exclusion"
     assert res["sp_acceptance_conditions"] == "Accepted"
+
+def test_resolve_plan_combination():
+    # Test valid combination lookup (IPD only)
+    data = {
+        "plan": "Plan 2-IPD",
+        "deductible": "20k"
+    }
+    resolved = resolve_plan_combination(data)
+    assert resolved["plan"] == "ESSENTIAL2-IPD DD 20,000 (127)"
+    assert resolved["deductible"] == "20,000"
+
+    # Test reverse order combination lookup
+    data = {
+        "plan": "IPD-Plan 2",
+        "deductible": "20k"
+    }
+    resolved = resolve_plan_combination(data)
+    assert resolved["plan"] == "ESSENTIAL2-IPD DD 20,000 (127)"
+    assert resolved["deductible"] == "20,000"
+
+    # Test IPD+OPD combination lookup with specific OPD limits
+    data = {
+        "plan": "Plan 1-IPD+OPD-3k * 30 times / year",
+        "deductible": "20k"
+    }
+    resolved = resolve_plan_combination(data)
+    assert resolved["plan"] == "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 20,000 (107)"
+    assert resolved["deductible"] == "20,000"
+
+    # Test already resolved plan (should skip)
+    data = {
+        "plan": "ESSENTIAL2-IPD DD 20,000 (127)",
+        "deductible": "20,000"
+    }
+    resolved = resolve_plan_combination(data)
+    assert resolved["plan"] == "ESSENTIAL2-IPD DD 20,000 (127)"
+
+    # Test EasyCare Visa combination lookup (legacy format)
+    data = {
+        "plan": "VISA Plan 1",
+        "deductible": "100k"
+    }
+    resolved = resolve_plan_combination(data)
+    assert resolved["plan"] == "VISA1 DD 100,000 (201)"
+    assert resolved["deductible"] == "100,000"
+
+    # Test new direct product plan prefix format (ESSENTIAL and VISA)
+    data = {
+        "plan": "ESSENTIAL2-IPD",
+        "deductible": "20k"
+    }
+    resolved = resolve_plan_combination(data)
+    assert resolved["plan"] == "ESSENTIAL2-IPD DD 20,000 (127)"
+
+    data = {
+        "plan": "VISA1",
+        "deductible": "100k"
+    }
+    resolved = resolve_plan_combination(data)
+    assert resolved["plan"] == "VISA1 DD 100,000 (201)"

@@ -23,6 +23,13 @@ from src.blue_table_tools import (
     AssignFieldParams,
     fill_blue_table_docx,
 )
+from src.pdf_processor.inverter import load_product_config
+
+# Load product config mapping definitions
+try:
+    product_config = load_product_config("./config/health_and_accident.json")
+except Exception:
+    product_config = {}
 
 # ── helpers ────────────────────────────────────────────────────────────────
 
@@ -33,8 +40,103 @@ def save_cache_incremental():
     save_cache(st.session_state.pdf_id, st.session_state.field_mapping)
 
 
+def save_choices_to_registry(pdf_id: str, field_name: str, choices_map: dict):
+    if not pdf_id:
+        return
+    import json
+
+    registry_path = "./outputs/pdf_registry.json"
+    try:
+        with open(registry_path, "r", encoding="utf-8") as f:
+            registry = json.load(f)
+    except Exception:
+        registry = {}
+
+    if pdf_id in registry:
+        for f in registry[pdf_id].get("fields", []):
+            if f.get("name") == field_name:
+                f["choices_map"] = choices_map
+                break
+
+        with open(registry_path, "w", encoding="utf-8") as f:
+            json.dump(registry, f, indent=4, ensure_ascii=False)
+
+
+def do_assign_choice_option(opt_key, choice_val, bt_key):
+    if st.session_state.pdf_id is None:
+        return
+    idx = st.session_state.field_idx
+    current_field = st.session_state.all_fields[idx]
+    field_name = current_field.get("name", "?")
+
+    widgets = current_field.get("widgets", [])
+    w_idx = st.session_state.widget_idx
+    if not widgets or w_idx < 0 or w_idx >= len(widgets):
+        return
+    raw_choice = widgets[w_idx].get("choice_value", "")
+    if not raw_choice:
+        return
+
+    choices_map = current_field.get("choices_map", {})
+    if choices_map is None:
+        choices_map = {}
+
+    # Set the mapping
+    choices_map[raw_choice] = choice_val
+    current_field["choices_map"] = choices_map
+
+    # Save choice mapping back to pdf_registry.json
+    save_choices_to_registry(st.session_state.pdf_id, field_name, choices_map)
+
+    # Update field mapping to target BlueTable key, including choices_map in cache
+    st.session_state.field_mapping[field_name] = {
+        "bt_key": bt_key,
+        "choices_map": choices_map,
+    }
+
+    # If the PDF's current value is the one we just mapped, write it to bt_data
+    source_val = field_value_hint(current_field, st.session_state.values_map)
+
+    # We update the actual value written to the BlueTable field
+    translated_val = choices_map.get(source_val, "")
+    if translated_val:
+        current_input = st.session_state.get(f"input_{bt_key}", "")
+        parts = [p.strip() for p in current_input.split("-") if p.strip()]
+        if translated_val not in parts:
+            new_val = (
+                f"{current_input}-{translated_val}" if current_input else translated_val
+            )
+            st.session_state[f"input_{bt_key}"] = new_val
+            st.session_state.bt_data[bt_key] = new_val
+
+            # Record assignment log
+            st.session_state.assigned.append(
+                {
+                    "field_name": field_name,
+                    "bt_key": bt_key,
+                    "bt_label": bt_key.capitalize(),
+                    "value": new_val,
+                    "field_idx": idx,
+                }
+            )
+
+    # Go to next choice/field choice-by-choice
+    st.session_state.widget_idx += 1
+    if st.session_state.widget_idx >= len(widgets):
+        st.session_state.widget_idx = 0
+        st.session_state.field_idx += 1
+        if st.session_state.field_idx >= len(st.session_state.all_fields):
+            st.session_state.done = True
+
+    save_cache_incremental()
+
+
 def render_page_with_highlight(
-    pdf_bytes: bytes, page_num: int, field: dict, resolution: int = 120
+    pdf_bytes: bytes,
+    page_num: int,
+    field: dict,
+    resolution: int = 120,
+    highlight_choice_value: str = None,
 ):
     try:
         import fitz
@@ -45,21 +147,39 @@ def render_page_with_highlight(
         page = doc[page_num - 1]
         pdf_h = page.rect.height
 
-        boxes = []
         kind = field.get("field_kind")
         if kind == "radio":
             for w in field.get("widgets", []):
                 c = w.get("coords")
+                choice_val = w.get("choice_value", "")
                 if c and w.get("page") == page_num:
-                    boxes.append(c)
+                    rect = fitz.Rect(c["x0"], pdf_h - c["y1"], c["x1"], pdf_h - c["y0"])
+
+                    if highlight_choice_value and choice_val == highlight_choice_value:
+                        page.draw_rect(
+                            rect,
+                            color=(0.9, 0.1, 0.1),
+                            fill=(0.9, 0.1, 0.1, 0.4),
+                            width=3,
+                        )
+                    else:
+                        page.draw_rect(
+                            rect, color=(1, 0.63, 0), fill=(1, 0.9, 0, 0.15), width=1.5
+                        )
+
+                    if choice_val:
+                        # Draw label text slightly above the top-left of the box
+                        point = fitz.Point(c["x0"], pdf_h - c["y1"] - 3)
+                        # Remove leading slash for cleaner display in label, e.g. /Choice1 -> Choice1
+                        display_text = choice_val.lstrip("/")
+                        page.insert_text(
+                            point, display_text, fontsize=9, color=(0.8, 0, 0)
+                        )
         else:
             c = field.get("coords")
             if c:
-                boxes.append(c)
-
-        for c in boxes:
-            rect = fitz.Rect(c["x0"], pdf_h - c["y1"], c["x1"], pdf_h - c["y0"])
-            page.draw_rect(rect, color=(1, 0.63, 0), fill=(1, 0.9, 0, 0.4), width=2)
+                rect = fitz.Rect(c["x0"], pdf_h - c["y1"], c["x1"], pdf_h - c["y0"])
+                page.draw_rect(rect, color=(1, 0.63, 0), fill=(1, 0.9, 0, 0.4), width=2)
 
         zoom = resolution / 72
         mat = fitz.Matrix(zoom, zoom)
@@ -98,6 +218,7 @@ def init_state():
         "pdf_bytes": None,
         "all_fields": [],
         "field_idx": 0,
+        "widget_idx": 0,
         "bt_data": {},
         "skipped": [],
         "assigned": [],
@@ -176,7 +297,15 @@ if st.session_state.pdf_bytes is None:
                     if fname not in cache:
                         continue
 
-                    bt_key = cache[fname]
+                    bt_key_entry = cache[fname]
+                    if isinstance(bt_key_entry, dict):
+                        bt_key = bt_key_entry.get("bt_key")
+                        choices_map = bt_key_entry.get("choices_map", {})
+                        # Apply choices_map back to field in session state so mapping assistant sees it
+                        field["choices_map"] = choices_map
+                    else:
+                        bt_key = bt_key_entry
+                        choices_map = field.get("choices_map", {}) or {}
 
                     if bt_key == "SKIPPED":
                         # Record the skip but do NOT advance field_idx
@@ -185,13 +314,30 @@ if st.session_state.pdf_bytes is None:
                     else:
                         lbl = bt_labels.get(bt_key, bt_key)
                         src_val = values_dict.get(fname, "")
-                        val_to_write = (
-                            src_val if src_val and not src_val.startswith("/") else ""
-                        )
+
+                        # Translate radio choices if they exist in choices_map
+                        if src_val in choices_map:
+                            val_to_write = choices_map[src_val]
+                        else:
+                            val_to_write = (
+                                src_val
+                                if src_val and not src_val.startswith("/")
+                                else ""
+                            )
+
                         current = st.session_state.get(f"input_{bt_key}", "")
-                        new_val = (
-                            f"{current}-{val_to_write}" if current else val_to_write
-                        )
+                        if val_to_write:
+                            parts = [p.strip() for p in current.split("-") if p.strip()]
+                            if val_to_write not in parts:
+                                new_val = (
+                                    f"{current}-{val_to_write}"
+                                    if current
+                                    else val_to_write
+                                )
+                            else:
+                                new_val = current
+                        else:
+                            new_val = current
 
                         st.session_state[f"input_{bt_key}"] = new_val
                         st.session_state.bt_data[bt_key] = new_val
@@ -224,9 +370,7 @@ idx = st.session_state.field_idx
 
 # ── Bug fix: guard against empty field list reaching this point ────────────
 if n_fields == 0:
-    st.warning(
-        "⚠️ No fields are available to process. Please upload a valid PDF."
-    )
+    st.warning("⚠️ No fields are available to process. Please upload a valid PDF.")
     if st.button("🔄 Start Over"):
         for k in list(st.session_state.keys()):
             del st.session_state[k]
@@ -247,6 +391,7 @@ if st.session_state.done:
     with col_res:
         st.subheader("BlueTable Summary")
         from src.blue_table_tools import apply_acceptance_rules
+
         st.session_state.bt_data = apply_acceptance_rules(st.session_state.bt_data)
         for label, key in BLUETABLE_FIELDS:
             val = st.session_state.bt_data.get(key, "")
@@ -256,21 +401,24 @@ if st.session_state.done:
 
     with col_dl:
         st.subheader("Export")
-        
+
         import os
+
         template_docx_path = "./resources/BlueTable.docx"
-        
+
         if os.path.exists(template_docx_path):
             with st.spinner("Generating filled BlueTable DOCX..."):
                 try:
-                    docx_stream = fill_blue_table_docx(template_docx_path, st.session_state.bt_data)
+                    docx_stream = fill_blue_table_docx(
+                        template_docx_path, st.session_state.bt_data
+                    )
                     st.download_button(
                         "⬇ Download Filled DOCX",
                         data=docx_stream.getvalue(),
                         file_name="bluetable_filled.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         use_container_width=True,
-                        type="primary"
+                        type="primary",
                     )
                 except Exception as e:
                     st.error(f"Failed to generate DOCX: {e}")
@@ -300,7 +448,7 @@ if st.session_state.done:
     st.json(st.session_state.assigned)
     st.stop()
 
-# ── 4. Current field ───────────────────────────────────────────────────────
+# ── 4. Current field & Choice Wizard ───────────────────────────────────────
 # Clamp idx in case it drifted past the end (e.g. after a back-navigate)
 idx = min(idx, n_fields - 1)
 st.session_state.field_idx = idx
@@ -313,29 +461,67 @@ field_page = current_field.get("page") or (
 )
 source_value = field_value_hint(current_field, values_map)
 
+widgets = current_field.get("widgets", [])
+is_radio = field_kind == "radio"
+n_widgets = len(widgets) if (is_radio and widgets) else 1
+
+# Clamp widget_idx
+w_idx = min(st.session_state.widget_idx, n_widgets - 1)
+st.session_state.widget_idx = w_idx
+
+# Find current choice value
+current_choice_value = ""
+if is_radio and widgets:
+    current_choice_value = widgets[w_idx].get("choice_value", "")
+    # Store the current choice value in session state so the callback can read it
+    st.session_state[f"sel_choice_{field_name}"] = current_choice_value
+
 # ── 5. Progress + top navigation ──────────────────────────────────────────
 pct = idx / n_fields
 st.caption(
     f"Field **{idx + 1}** of **{n_fields}** &nbsp;|&nbsp; "
     f"Page **{field_page}** &nbsp;|&nbsp; "
+    f"Choice **{w_idx + 1}** of **{n_widgets}** &nbsp;|&nbsp; "
     f"✅ {len(st.session_state.assigned)} assigned &nbsp;|&nbsp; "
     f"⏭ {len(st.session_state.skipped)} skipped"
 )
 st.progress(pct)
 
-# ── 6. Two-pane layout ─────────────────────────────────────────────────────
-left, mid, right = st.columns([5, 4, 1], gap="large")
+# ── 6. Three-pane layout ───────────────────────────────────────────────────
+left, mid, right = st.columns([5, 5, 1], gap="large")
 
 # ── LEFT: PDF preview ──────────────────────────────────────────────────────
 with left:
-    img = render_page_with_highlight(pdf_bytes, field_page, current_field)
+    field_mappings = product_config.get("field_mappings", {})
+    mapping_meta = field_mappings.get(field_name, {})
+    field_label = mapping_meta.get("label", "")
+    field_section = mapping_meta.get("section", "")
+
+    # Check registry choice mappings first, fallback to config
+    choices_map = current_field.get("choices_map", {})
+    if choices_map is None:
+        choices_map = {}
+
+    # Merge with mapping_meta choices if any are present
+    meta_choices = mapping_meta.get("choices", {})
+    if meta_choices:
+        for k, v in meta_choices.items():
+            if k not in choices_map:
+                choices_map[k] = v
+
+    img = render_page_with_highlight(
+        pdf_bytes,
+        field_page,
+        current_field,
+        highlight_choice_value=current_choice_value,
+    )
     if img:
         buf = BytesIO()
         img.save(buf, format="PNG")
         b64 = base64.b64encode(buf.getvalue()).decode()
         st.markdown(
             f"""
-            <div style="height:110vh; overflow-y:auto; border:1px solid #333; border-radius:6px;">
+            <div style="height:80vh; overflow-y:auto; border:1px solid #333; border-radius:6px;">
                 <img src="data:image/png;base64,{b64}" style="width:100%;">
             </div>
             """,
@@ -344,11 +530,8 @@ with left:
     else:
         st.info("No preview available for this field.")
 
-    st.caption(
-        f"🔍 **{field_name}** &nbsp;|&nbsp; type: `{field_kind}` &nbsp;|&nbsp; page: {field_page}"
-    )
-    if source_value:
-        st.code(source_value, language=None)
+    value_to_assign = choices_map.get(source_value, source_value)
+
 
 # ── MID: BlueTable ─────────────────────────────────────────────────────────
 with mid:
@@ -374,6 +557,7 @@ with mid:
         st.session_state.field_mapping = new_field_mapping
 
         st.session_state.field_idx += 1
+        st.session_state.widget_idx = 0
         save_cache_incremental()
         # Use explicit done flag rather than idx >= n_fields comparison
         if st.session_state.field_idx >= n_fields:
@@ -392,21 +576,94 @@ with mid:
         st.session_state.field_mapping = new_field_mapping
         save_cache_incremental()
 
+    # ── 1. Plan Options Mapping at the Top of BlueTable Block ──
+    product_options = product_config.get("product_options", {})
+    if product_options:
+        st.caption(
+            "Highlight a checkbox on the left, then click an option below to map it."
+        )
+
+        # Selected Product mapping row
+        product_name_opt = product_options.get("product_name", {})
+        if product_name_opt:
+            label = product_name_opt.get("label", "Selected Product")
+            bt_key = product_name_opt.get("bt_key", "product_name")
+            choices = product_name_opt.get("choices", [])
+
+            cols = st.columns([2] + [2] * len(choices))
+            with cols[0]:
+                st.markdown(
+                    f"<span style='font-size:0.85rem; font-weight:bold;'>{label}</span>",
+                    unsafe_allow_html=True,
+                )
+            for i, val in enumerate(choices):
+                with cols[i + 1]:
+                    st.button(
+                        val,
+                        key=f"assign_opt_prod_{val}_{idx}",
+                        on_click=do_assign_choice_option,
+                        args=("product_name", val, bt_key),
+                        use_container_width=True,
+                    )
+
+        # Determine detected product line from the PDF mapping state
+        product_selection = st.session_state.bt_data.get("product_name", "")
+        detected_product = "SmartCare Essential"
+        if "EASYCARE" in product_selection:
+            detected_product = "EasyCare Visa"
+
+        # Let the user select which product line options to view/map, defaulting to the detected one
+        product_list = ["SmartCare Essential", "EasyCare Visa"]
+        default_idx = product_list.index(detected_product) if detected_product in product_list else 0
+        
+        selected_product = st.selectbox(
+            "Select Product Line Options to Map",
+            options=product_list,
+            index=default_idx,
+            key=f"prod_select_box_{idx}"
+        )
+
+        st.markdown(f"**Options for {selected_product}**")
+        opts = product_options.get("products", {}).get(selected_product, {})
+        with st.container(border=True):
+            for opt_key, opt_data in opts.items():
+                label = opt_data.get("label", opt_key)
+                bt_key = opt_data.get("bt_key", "plan")
+                choices = opt_data.get("choices", [])
+
+                cols = st.columns([2] + [2] * len(choices))
+                with cols[0]:
+                    st.markdown(
+                        f"<span style='font-size:0.85rem; font-weight:bold;'>{label}</span>",
+                        unsafe_allow_html=True,
+                    )
+                for i, val in enumerate(choices):
+                    with cols[i + 1]:
+                        st.button(
+                            val,
+                            key=f"assign_opt_{opt_key}_{val}_{idx}",
+                            on_click=do_assign_choice_option,
+                            args=(opt_key, val, bt_key),
+                            use_container_width=True,
+                        )
+
+    # ── 2. BlueTable Fields Below Plan Options Mapping ──
     from src.blue_table_tools import apply_acceptance_rules
+
     st.session_state.bt_data = apply_acceptance_rules(st.session_state.bt_data)
     status_keys = {
         "acceptance_conditions",
         "sp_acceptance_conditions",
         "c1_acceptance_conditions",
         "c2_acceptance_conditions",
-        "c3_acceptance_conditions"
+        "c3_acceptance_conditions",
     }
     for key in status_keys:
         if key in st.session_state.bt_data:
             if st.session_state.get(f"input_{key}") != st.session_state.bt_data[key]:
                 st.session_state[f"input_{key}"] = st.session_state.bt_data[key]
 
-    with st.container(height=800):
+    with st.container(height=350):
         for label, key in BLUETABLE_FIELDS:
             existing_val = st.session_state.bt_data.get(key, "")
             col_a, col_b, col_c = st.columns([5, 1.5, 1.5])
@@ -444,7 +701,7 @@ with mid:
                     "Assign",
                     key=f"assign_{key}_{idx}",
                     on_click=do_assign,
-                    args=(key, idx, source_value, field_name, label),
+                    args=(key, idx, value_to_assign, field_name, label),
                     use_container_width=True,
                 )
 
@@ -463,19 +720,56 @@ with mid:
 # ── RIGHT: navigation ──────────────────────────────────────────────────────
 with right:
     st.markdown("<div style='height:360px'></div>", unsafe_allow_html=True)
-    if st.button("⬆️", disabled=(idx == 0), use_container_width=True, help="Previous"):
-        st.session_state.field_idx -= 1
+    if st.button(
+        "⬆️",
+        disabled=(idx == 0 and st.session_state.widget_idx == 0),
+        use_container_width=True,
+        help="Previous",
+    ):
+        is_radio = field_kind == "radio"
+        if is_radio and st.session_state.widget_idx > 0:
+            st.session_state.widget_idx -= 1
+        else:
+            st.session_state.field_idx -= 1
+            if st.session_state.field_idx < 0:
+                st.session_state.field_idx = 0
+                st.session_state.widget_idx = 0
+            else:
+                prev_field = all_fields[st.session_state.field_idx]
+                if prev_field.get("field_kind") == "radio" and prev_field.get(
+                    "widgets"
+                ):
+                    st.session_state.widget_idx = len(prev_field["widgets"]) - 1
+                else:
+                    st.session_state.widget_idx = 0
         st.rerun()
+
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
     if st.button("⬇️", use_container_width=True, help="Skip"):
-        if field_name not in st.session_state.field_mapping:
-            st.session_state.skipped.append(field_name)
-            st.session_state.field_mapping[field_name] = "SKIPPED"
-            save_cache_incremental()
-        st.session_state.field_idx += 1
-        if st.session_state.field_idx >= n_fields:
-            st.session_state.done = True
+        is_radio = field_kind == "radio"
+        if is_radio and widgets:
+            st.session_state.widget_idx += 1
+            if st.session_state.widget_idx >= len(widgets):
+                st.session_state.widget_idx = 0
+                if field_name not in st.session_state.field_mapping:
+                    st.session_state.field_mapping[field_name] = "SKIPPED"
+                    if field_name not in st.session_state.skipped:
+                        st.session_state.skipped.append(field_name)
+                st.session_state.field_idx += 1
+                if st.session_state.field_idx >= n_fields:
+                    st.session_state.done = True
+        else:
+            if field_name not in st.session_state.field_mapping:
+                st.session_state.field_mapping[field_name] = "SKIPPED"
+                if field_name not in st.session_state.skipped:
+                    st.session_state.skipped.append(field_name)
+            st.session_state.field_idx += 1
+            st.session_state.widget_idx = 0
+            if st.session_state.field_idx >= n_fields:
+                st.session_state.done = True
+        save_cache_incremental()
         st.rerun()
+
     st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
     if st.button("✅", use_container_width=True, help="Finish"):
         st.session_state.done = True

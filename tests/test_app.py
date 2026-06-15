@@ -55,7 +55,7 @@ def test_acroform_pdf_flow(page: Page):
     expect(page.get_by_role("button", name="✅")).to_be_visible()
 
     page.get_by_role("button", name="⬇️").click()
-    page.get_by_test_id("stBaseButton-secondary").first.click()
+    page.get_by_role("button", name="Assign").first.click()
     page.get_by_role("button", name="⬇️").click()
     page.get_by_role("button", name="⬇️").click()
     page.get_by_role("button", name="⬇️").click()

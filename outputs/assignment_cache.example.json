@@ -1,6 +1,15 @@
 {
     "87ba7613a963df438482bbcd8c1612a0": {
-        "CHPLAN 01": "plan",
+        "CHPLAN 01": "name"
+    },
+    "UNKNOWN_ID": {
+        "CHPLAN 01": {
+            "bt_key": "product_name",
+            "choices_map": {
+                "/Choice1": "ESSENTIAL",
+                "/Choice2": "EASYCARE"
+            }
+        },
         "Text2": "name",
         "Text3": "dob",
         "Text4": "dob",
@@ -18,13 +27,56 @@
         "Text16": "beneficiary",
         "Text17": "bene_relation",
         "Text18": "effective_date",
-        "CHPLAN 02": "plan",
-        "CHPLAN 03": "plan",
-        "CHPLAN 04": "plan",
-        "CHPLAN 06": "plan",
-        "CHPLAN 05": "plan",
-        "CHPLAN 07": "deductible",
-        "CHPLAN 08": "deductible",
+        "CHPLAN 02": {
+            "bt_key": "plan",
+            "choices_map": {
+                "/Choice3": "ESSENTIAL1",
+                "/Choice4": "ESSENTIAL3",
+                "/Choice5": "ESSENTIAL2",
+                "/Choice6": "ESSENTIAL4"
+            }
+        },
+        "CHPLAN 03": {
+            "bt_key": "plan",
+            "choices_map": {
+                "/Choice1": "VISA1",
+                "/Choice2": "VISA2"
+            }
+        },
+        "CHPLAN 04": {
+            "bt_key": "plan",
+            "choices_map": {
+                "/Choice3": "IPD",
+                "/Choice4": "IPD+OPD",
+                "/Choice5": "IPD+OPD+WELLNESS"
+            }
+        },
+        "CHPLAN 06": "SKIPPED",
+        "CHPLAN 05": {
+            "bt_key": "plan",
+            "choices_map": {
+                "/Choice1": "3k * 30 times / year",
+                "/Choice2": "50k per year"
+            }
+        },
+        "CHPLAN 07": {
+            "bt_key": "deductible",
+            "choices_map": {
+                "/Choice1": "0",
+                "/Choice2": "20k",
+                "/Choice4": "40k",
+                "/Choice5": "100k",
+                "/Choice6": "200k"
+            }
+        },
+        "CHPLAN 08": {
+            "bt_key": "deductible",
+            "choices_map": {
+                "/Choice3": "100k",
+                "/Choice7": "200k",
+                "/Choice8": "300k"
+            }
+        },
         "Text19": "premium",
         "CHPLAN 09": "SKIPPED",
         "Text23": "sp_name",
@@ -68,14 +120,14 @@
         "Text61": "c3_id_card_no",
         "Text62": "SKIPPED",
         "Text63": "SKIPPED",
-        "Text64": "SKIPPED",
-        "Text65": "SKIPPED",
+        "Text64": "c3_beneficiary",
+        "Text65": "c3_bene_relation",
         "Group7": "SKIPPED",
         "Group8": "SKIPPED",
         "Group9": "SKIPPED",
         "Group10": "SKIPPED",
-        "Text66": "exclusions",
-        "Text67": "exclusions",
+        "Text66": "SKIPPED",
+        "Text67": "SKIPPED",
         "Text69": "SKIPPED",
         "Text70": "SKIPPED",
         "Text71": "SKIPPED",
