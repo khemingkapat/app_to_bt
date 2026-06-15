@@ -63,6 +63,15 @@ def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -
 
             struct_field = json.loads(json.dumps(field))
             struct_field.pop("value", None)
+
+            # Preserve choices_map from existing registry if present
+            if existing_registry and pdf_id in existing_registry:
+                existing_fields = existing_registry[pdf_id].get("fields", [])
+                for ef in existing_fields:
+                    if ef.get("name") == name and "choices_map" in ef:
+                        struct_field["choices_map"] = ef["choices_map"]
+                        break
+
             clean_structural_fields.append(struct_field)
 
         structural_data = {"pages": pages_list, "fields": clean_structural_fields}

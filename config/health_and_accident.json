@@ -317,6 +317,116 @@
             "bt_key": "exclusions",
             "section": "Underwriting Info",
             "label": "Additional Underwriting Comments"
+        },
+        "CHPLAN 01": {
+            "bt_key": "plan",
+            "section": "Plan Details",
+            "label": "Main Insured Selected Plan Tier"
+        },
+        "CHPLAN 02": {
+            "bt_key": "plan",
+            "section": "Plan Details",
+            "label": "Main Insured Optional Benefit (OPD/Wellness)"
+        },
+        "CHPLAN 07": {
+            "bt_key": "deductible",
+            "section": "Plan Details",
+            "label": "Main Insured Deductible"
+        },
+        "CHPLAN 03": {
+            "bt_key": "plan",
+            "section": "Plan Details",
+            "label": "Spouse Selected Plan Tier"
+        },
+        "CHPLAN 04": {
+            "bt_key": "plan",
+            "section": "Plan Details",
+            "label": "Spouse Optional Benefit (OPD)"
+        },
+        "CHPLAN 08": {
+            "bt_key": "deductible",
+            "section": "Plan Details",
+            "label": "Spouse Deductible"
+        },
+        "CHPLAN 05": {
+            "bt_key": "plan",
+            "section": "Plan Details",
+            "label": "Child Selected Plan Tier"
+        },
+        "CHPLAN 06": {
+            "bt_key": "plan",
+            "section": "Plan Details",
+            "label": "Child Optional Benefit (OPD)"
+        },
+        "CHPLAN 09": {
+            "bt_key": "deductible",
+            "section": "Plan Details",
+            "label": "Child Deductible"
+        },
+        "Group7": {
+            "bt_key": "exclusions",
+            "section": "Underwriting Info",
+            "label": "Main Insured Q1: Cancer/Tumors/Dementia"
+        },
+        "Group8": {
+            "bt_key": "exclusions",
+            "section": "Underwriting Info",
+            "label": "Main Insured Q2: Heart Disease/Stroke"
+        },
+        "Group9": {
+            "bt_key": "exclusions",
+            "section": "Underwriting Info",
+            "label": "Main Insured Q3: Kidney Failure/CKD"
+        },
+        "Group10": {
+            "bt_key": "exclusions",
+            "section": "Underwriting Info",
+            "label": "Main Insured Q4: HIV/AIDS/Liver Disease"
+        },
+        "Group11": {
+            "bt_key": "sp_exclusions",
+            "section": "Underwriting Info",
+            "label": "Spouse Q1: Cancer/Tumors/Dementia"
+        },
+        "Group12": {
+            "bt_key": "sp_exclusions",
+            "section": "Underwriting Info",
+            "label": "Spouse Q2: Heart Disease/Stroke"
+        },
+        "Group13": {
+            "bt_key": "sp_exclusions",
+            "section": "Underwriting Info",
+            "label": "Spouse Q3: Kidney Failure/CKD"
+        },
+        "Group14": {
+            "bt_key": "sp_exclusions",
+            "section": "Underwriting Info",
+            "label": "Spouse Q4: HIV/AIDS/Liver Disease"
+        },
+        "Group15": {
+            "bt_key": "c1_exclusions",
+            "section": "Underwriting Info",
+            "label": "Children Q1: Cancer/Tumors/Dementia"
+        },
+        "Group16": {
+            "bt_key": "c1_exclusions",
+            "section": "Underwriting Info",
+            "label": "Children Q2-Q4: Heart Disease/CKD/HIV"
+        },
+        "Check Box2": {
+            "bt_key": "SKIPPED",
+            "section": "Consents",
+            "label": "Declaration & Consent checkbox 1"
+        },
+        "Check Box3": {
+            "bt_key": "SKIPPED",
+            "section": "Consents",
+            "label": "Declaration & Consent checkbox 2"
+        },
+        "Check Box4": {
+            "bt_key": "SKIPPED",
+            "section": "Consents",
+            "label": "Declaration & Consent checkbox 3"
         }
     },
     "premium_tables": {
@@ -833,5 +943,184 @@
             "coverage": "10M",
             "room_limit": "12,000"
         }
-    ]
+    ],
+    "combinations_map": {
+        "ESSENTIAL1-IPD DD 0": "101",
+        "ESSENTIAL1-IPD DD 20,000": "127",
+        "ESSENTIAL1-IPD DD 40,000": "103",
+        "ESSENTIAL1-IPD DD 100,000": "104",
+        "ESSENTIAL1-IPD DD 200,000": "105",
+        "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 0": "106",
+        "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 20,000": "107",
+        "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 40,000": "108",
+        "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 100,000": "109",
+        "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 200,000": "110",
+        "ESSENTIAL1-IPD+OPD(50k per year) DD 0": "111",
+        "ESSENTIAL1-IPD+OPD(50k per year) DD 20,000": "112",
+        "ESSENTIAL1-IPD+OPD(50k per year) DD 40,000": "113",
+        "ESSENTIAL1-IPD+OPD(50k per year) DD 100,000": "114",
+        "ESSENTIAL1-IPD+OPD(50k per year) DD 200,000": "115",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 0": "116",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 20,000": "117",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 40,000": "118",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 100,000": "119",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 200,000": "120",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(50k per year) DD 0": "121",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(50k per year) DD 20,000": "122",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(50k per year) DD 40,000": "123",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(50k per year) DD 100,000": "124",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(50k per year) DD 200,000": "125",
+        "ESSENTIAL2-IPD DD 0": "126",
+        "ESSENTIAL2-IPD DD 20,000": "127",
+        "ESSENTIAL2-IPD DD 40,000": "128",
+        "ESSENTIAL2-IPD DD 100,000": "129",
+        "ESSENTIAL2-IPD DD 200,000": "130",
+        "ESSENTIAL2-IPD+OPD(3k * 30 times / year) DD 0": "131",
+        "ESSENTIAL2-IPD+OPD(3k * 30 times / year) DD 20,000": "132",
+        "ESSENTIAL2-IPD+OPD(3k * 30 times / year) DD 40,000": "133",
+        "ESSENTIAL2-IPD+OPD(3k * 30 times / year) DD 100,000": "134",
+        "ESSENTIAL2-IPD+OPD(3k * 30 times / year) DD 200,000": "135",
+        "ESSENTIAL2-IPD+OPD(50k per year) DD 0": "136",
+        "ESSENTIAL2-IPD+OPD(50k per year) DD 20,000": "137",
+        "ESSENTIAL2-IPD+OPD(50k per year) DD 40,000": "138",
+        "ESSENTIAL2-IPD+OPD(50k per year) DD 100,000": "139",
+        "ESSENTIAL2-IPD+OPD(50k per year) DD 200,000": "140",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 0": "141",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 20,000": "142",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 40,000": "143",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 100,000": "144",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 200,000": "145",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(50k per year) DD 0": "146",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(50k per year) DD 20,000": "147",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(50k per year) DD 40,000": "148",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(50k per year) DD 100,000": "149",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(50k per year) DD 200,000": "150",
+        "ESSENTIAL3-IPD DD 0": "151",
+        "ESSENTIAL3-IPD DD 20,000": "152",
+        "ESSENTIAL3-IPD DD 40,000": "153",
+        "ESSENTIAL3-IPD DD 100,000": "154",
+        "ESSENTIAL3-IPD DD 200,000": "155",
+        "ESSENTIAL3-IPD+OPD(3k * 30 times / year) DD 0": "156",
+        "ESSENTIAL3-IPD+OPD(3k * 30 times / year) DD 20,000": "157",
+        "ESSENTIAL3-IPD+OPD(3k * 30 times / year) DD 40,000": "158",
+        "ESSENTIAL3-IPD+OPD(3k * 30 times / year) DD 100,000": "159",
+        "ESSENTIAL3-IPD+OPD(3k * 30 times / year) DD 200,000": "160",
+        "ESSENTIAL3-IPD+OPD(50k per year) DD 0": "161",
+        "ESSENTIAL3-IPD+OPD(50k per year) DD 20,000": "162",
+        "ESSENTIAL3-IPD+OPD(50k per year) DD 40,000": "163",
+        "ESSENTIAL3-IPD+OPD(50k per year) DD 100,000": "164",
+        "ESSENTIAL3-IPD+OPD(50k per year) DD 200,000": "165",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 0": "166",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 20,000": "167",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 40,000": "168",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 100,000": "169",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 200,000": "170",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(50k per year) DD 0": "171",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(50k per year) DD 20,000": "172",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(50k per year) DD 40,000": "173",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(50k per year) DD 100,000": "174",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(50k per year) DD 200,000": "175",
+        "ESSENTIAL4-IPD DD 0": "176",
+        "ESSENTIAL4-IPD DD 20,000": "177",
+        "ESSENTIAL4-IPD DD 40,000": "178",
+        "ESSENTIAL4-IPD DD 100,000": "179",
+        "ESSENTIAL4-IPD DD 200,000": "180",
+        "ESSENTIAL4-IPD+OPD(3k * 30 times / year) DD 0": "181",
+        "ESSENTIAL4-IPD+OPD(3k * 30 times / year) DD 20,000": "182",
+        "ESSENTIAL4-IPD+OPD(3k * 30 times / year) DD 40,000": "183",
+        "ESSENTIAL4-IPD+OPD(3k * 30 times / year) DD 100,000": "184",
+        "ESSENTIAL4-IPD+OPD(3k * 30 times / year) DD 200,000": "185",
+        "ESSENTIAL4-IPD+OPD(50k per year) DD 0": "186",
+        "ESSENTIAL4-IPD+OPD(50k per year) DD 20,000": "187",
+        "ESSENTIAL4-IPD+OPD(50k per year) DD 40,000": "188",
+        "ESSENTIAL4-IPD+OPD(50k per year) DD 100,000": "189",
+        "ESSENTIAL4-IPD+OPD(50k per year) DD 200,000": "190",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 0": "191",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 20,000": "192",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 40,000": "193",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 100,000": "194",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 200,000": "195",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 0": "196",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 20,000": "197",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 40,000": "198",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 100,000": "199",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 200,000": "200",
+        "VISA1 DD 100,000": "201",
+        "VISA1 DD 200,000": "202",
+        "VISA1 DD 300,000": "203",
+        "VISA2 DD 100,000": "204",
+        "VISA2 DD 200,000": "205",
+        "VISA2 DD 300,000": "206"
+    },
+    "product_options": {
+        "product_name": {
+            "label": "Selected Product",
+            "bt_key": "product_name",
+            "choices": [
+                "ESSENTIAL",
+                "EASYCARE"
+            ]
+        },
+        "products": {
+            "SmartCare Essential": {
+                "plan_tier": {
+                    "label": "Plan Tier",
+                    "bt_key": "plan",
+                    "choices": [
+                        "ESSENTIAL1",
+                        "ESSENTIAL2",
+                        "ESSENTIAL3",
+                        "ESSENTIAL4"
+                    ]
+                },
+                "optional_benefit": {
+                    "label": "Optional Benefit",
+                    "bt_key": "plan",
+                    "choices": [
+                        "IPD",
+                        "IPD+OPD",
+                        "IPD+OPD+WELLNESS"
+                    ]
+                },
+                "opd_choice": {
+                    "label": "OPD Choice Limit",
+                    "bt_key": "plan",
+                    "choices": [
+                        "3k * 30 times / year",
+                        "50k per year"
+                    ]
+                },
+                "deductible": {
+                    "label": "Deductible",
+                    "bt_key": "deductible",
+                    "choices": [
+                        "0",
+                        "20k",
+                        "40k",
+                        "100k",
+                        "200k"
+                    ]
+                }
+            },
+            "EasyCare Visa": {
+                "plan_tier": {
+                    "label": "Plan Tier",
+                    "bt_key": "plan",
+                    "choices": [
+                        "VISA1",
+                        "VISA2"
+                    ]
+                },
+                "deductible": {
+                    "label": "Deductible",
+                    "bt_key": "deductible",
+                    "choices": [
+                        "100k",
+                        "200k",
+                        "300k"
+                    ]
+                }
+            }
+        }
+    }
 }

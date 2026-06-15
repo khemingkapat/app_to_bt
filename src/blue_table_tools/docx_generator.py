@@ -68,11 +68,75 @@ def apply_acceptance_rules(data: dict) -> dict:
             
     return updated
 
+def resolve_plan_combination(data: dict) -> dict:
+    """
+    Resolves the combined plan name and code from raw mapping fields
+    and updates the 'plan' and 'deductible' fields in the data dict.
+    """
+    updated = data.copy()
+    plan_val = str(updated.get("plan") or "").strip()
+    ded_val = str(updated.get("deductible") or "").strip()
+    
+    if "(" in plan_val and ")" in plan_val:
+        return updated
+        
+    parts = [p.strip() for p in plan_val.split("-") if p.strip()]
+    plan_tier = ""
+    optional_benefit = ""
+    opd_choice = ""
+    is_visa = False
+    
+    valid_benefits = ("IPD", "IPD+OPD", "IPD+OPD+WELLNESS")
+    valid_opd_choices = ("3k * 30 times / year", "50k per year")
+    
+    for p in parts:
+        if p.startswith("ESSENTIAL"):
+            plan_tier = p.replace("ESSENTIAL", "").strip()
+        elif p.startswith("VISA"):
+            plan_tier = p.replace("VISA Plan", "").replace("VISA", "").strip()
+            is_visa = True
+        elif "Plan" in p:
+            plan_tier = p.replace("Plan", "").strip()
+        elif p in valid_benefits:
+            optional_benefit = p
+        elif p in valid_opd_choices:
+            opd_choice = p
+            
+    deductible_amount = ded_val.replace("k", ",000")
+    if deductible_amount == "0,000":
+        deductible_amount = "0"
+         
+    if plan_tier:
+        if is_visa:
+            combo_key = f"VISA{plan_tier} DD {deductible_amount}"
+        elif optional_benefit:
+            if optional_benefit == "IPD":
+                combo_key = f"ESSENTIAL{plan_tier}-IPD DD {deductible_amount}"
+            else:
+                combo_key = f"ESSENTIAL{plan_tier}-{optional_benefit}({opd_choice}) DD {deductible_amount}"
+        else:
+            return updated
+            
+        try:
+            from src.pdf_processor.inverter import load_product_config
+            config = load_product_config("./config/health_and_accident.json")
+            combo_map = config.get("combinations_map", {})
+            plan_code = combo_map.get(combo_key)
+            if plan_code:
+                updated["plan"] = f"{combo_key} ({plan_code})"
+                updated["deductible"] = deductible_amount
+        except Exception:
+            pass
+            
+    return updated
+
+
 def fill_blue_table_docx(template_path: str, data: dict) -> BytesIO:
     """
     Fills the BlueTable.docx template tables with the provided data dict.
     Returns the filled file as a BytesIO stream.
     """
+    data = resolve_plan_combination(data)
     data = apply_acceptance_rules(data)
     doc = docx.Document(template_path)
     
@@ -91,6 +155,7 @@ def fill_blue_table_docx(template_path: str, data: dict) -> BytesIO:
         "Relation": data.get("bene_relation", ""),
         "Occupation": data.get("occupation", ""),
         "Agent CODE/Name": data.get("agent", ""),
+        "Product Name": data.get("product_name", ""),
         "Plan": data.get("plan", ""),
         "Deductible": data.get("deductible", ""),
         "Premium": data.get("premium", ""),
