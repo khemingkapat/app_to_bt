@@ -52,6 +52,7 @@ BLUETABLE_FIELDS = [
     ("Child 3 DOB", "c3_dob"),
     ("Child 3 ID", "c3_id_card_no"),
     ("Child 3 Nationality", "c3_nationality"),
+    ("Child 3 Beneficiary", "c3_beneficiary"),
     ("Child 3 Relation", "c3_bene_relation"),
     ("Child 3 Occupation", "c3_occupation"),
     ("Child 3 Acceptance Conditions", "c3_acceptance_conditions"),
