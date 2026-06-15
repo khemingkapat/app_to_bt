@@ -21,6 +21,7 @@ from src.blue_table_tools import (
     clear_field,
     manual_edit_field,
     AssignFieldParams,
+    fill_blue_table_docx,
 )
 
 # ── helpers ────────────────────────────────────────────────────────────────
@@ -253,14 +254,26 @@ if st.session_state.done:
 
     with col_dl:
         st.subheader("Export")
-        # TODO: Generate Pre-Filled Official PDF As Truth Anchor for Signature
-        result_json = json.dumps(st.session_state.bt_data, ensure_ascii=False, indent=2)
-        st.download_button(
-            "⬇ Download BlueTable JSON",
-            data=result_json,
-            file_name="bluetable_filled.json",
-            mime="application/json",
-        )
+        
+        import os
+        template_docx_path = "./resources/BlueTable.docx"
+        
+        if os.path.exists(template_docx_path):
+            with st.spinner("Generating filled BlueTable DOCX..."):
+                try:
+                    docx_stream = fill_blue_table_docx(template_docx_path, st.session_state.bt_data)
+                    st.download_button(
+                        "⬇ Download Filled DOCX",
+                        data=docx_stream.getvalue(),
+                        file_name="bluetable_filled.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        use_container_width=True,
+                        type="primary"
+                    )
+                except Exception as e:
+                    st.error(f"Failed to generate DOCX: {e}")
+        else:
+            st.error(f"Template DOCX not found at: {template_docx_path}")
         if st.button("🔄 Start Over"):
             for k in [
                 "pdf_bytes",
