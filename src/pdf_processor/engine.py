@@ -15,6 +15,15 @@ VALUES_FILE = "./outputs/extracted_values.json"
 
 def load_registry(registry_path: str = REGISTRY_FILE) -> dict:
     """Helper to load the registry."""
+    if not os.path.exists(registry_path):
+        example_path = registry_path.replace(".json", ".example.json")
+        if os.path.exists(example_path):
+            import shutil
+            try:
+                os.makedirs(os.path.dirname(registry_path), exist_ok=True)
+                shutil.copy(example_path, registry_path)
+            except Exception:
+                pass
     if os.path.exists(registry_path):
         try:
             with open(registry_path, "r", encoding="utf-8") as f:

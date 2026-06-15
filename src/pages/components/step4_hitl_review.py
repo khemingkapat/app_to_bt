@@ -14,8 +14,10 @@ def render_step4(form_data: dict, setup: dict) -> None:
         st.subheader("🔵 Compiled BlueTable Fields")
 
         from src.blue_table_tools.schema import BLUETABLE_FIELDS
+        from src.blue_table_tools.docx_generator import resolve_plan_combination
         from src.blue_table_tools import apply_acceptance_rules
 
+        form_data = resolve_plan_combination(form_data)
         form_data = apply_acceptance_rules(form_data)
 
         rows = []
