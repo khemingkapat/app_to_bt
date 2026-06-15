@@ -40,8 +40,29 @@ def save_cache_incremental():
     save_cache(st.session_state.pdf_id, st.session_state.field_mapping)
 
 
+def save_choices_to_registry(pdf_id: str, field_name: str, choices_map: dict):
+    if not pdf_id:
+        return
+    import json
+    registry_path = "./outputs/pdf_registry.json"
+    try:
+        with open(registry_path, "r", encoding="utf-8") as f:
+            registry = json.load(f)
+    except Exception:
+        registry = {}
+        
+    if pdf_id in registry:
+        for f in registry[pdf_id].get("fields", []):
+            if f.get("name") == field_name:
+                f["choices_map"] = choices_map
+                break
+                
+        with open(registry_path, "w", encoding="utf-8") as f:
+            json.dump(registry, f, indent=4, ensure_ascii=False)
+
+
 def render_page_with_highlight(
-    pdf_bytes: bytes, page_num: int, field: dict, resolution: int = 120
+    pdf_bytes: bytes, page_num: int, field: dict, resolution: int = 120, highlight_choice_value: str = None
 ):
     try:
         import fitz
@@ -56,10 +77,15 @@ def render_page_with_highlight(
         if kind == "radio":
             for w in field.get("widgets", []):
                 c = w.get("coords")
+                choice_val = w.get("choice_value", "")
                 if c and w.get("page") == page_num:
                     rect = fitz.Rect(c["x0"], pdf_h - c["y1"], c["x1"], pdf_h - c["y0"])
-                    page.draw_rect(rect, color=(1, 0.63, 0), fill=(1, 0.9, 0, 0.4), width=2)
-                    choice_val = w.get("choice_value", "")
+                    
+                    if highlight_choice_value and choice_val == highlight_choice_value:
+                        page.draw_rect(rect, color=(0.9, 0.1, 0.1), fill=(0.9, 0.1, 0.1, 0.4), width=3)
+                    else:
+                        page.draw_rect(rect, color=(1, 0.63, 0), fill=(1, 0.9, 0, 0.15), width=1.5)
+                        
                     if choice_val:
                         # Draw label text slightly above the top-left of the box
                         point = fitz.Point(c["x0"], pdf_h - c["y1"] - 3)
@@ -339,7 +365,53 @@ left, mid, right = st.columns([5, 4, 1], gap="large")
 
 # ── LEFT: PDF preview ──────────────────────────────────────────────────────
 with left:
-    img = render_page_with_highlight(pdf_bytes, field_page, current_field)
+    field_mappings = product_config.get("field_mappings", {})
+    mapping_meta = field_mappings.get(field_name, {})
+    field_label = mapping_meta.get("label", "")
+    field_section = mapping_meta.get("section", "")
+    
+    # Check registry choice mappings first, fallback to config
+    choices_map = current_field.get("choices_map", {})
+    if choices_map is None:
+        choices_map = {}
+    
+    # Merge with mapping_meta choices if any are present
+    meta_choices = mapping_meta.get("choices", {})
+    if meta_choices:
+        for k, v in meta_choices.items():
+            if k not in choices_map:
+                choices_map[k] = v
+
+    highlight_choice = None
+    widgets_list = current_field.get("widgets", [])
+    choice_options = [w.get("choice_value", "") for w in widgets_list if w.get("choice_value")]
+    
+    if field_kind == "radio" and choice_options:
+        st.write("🔧 **Choice Mapping Assistant**")
+        col_c_sel, col_c_lbl = st.columns([2, 3])
+        with col_c_sel:
+            selected_choice = st.selectbox(
+                "Select checkbox to locate & label:",
+                options=choice_options,
+                format_func=lambda val: f"{val} ({choices_map.get(val, 'No Label')})",
+                key=f"sel_choice_{field_name}"
+            )
+            highlight_choice = selected_choice
+            
+        with col_c_lbl:
+            current_choice_label = choices_map.get(selected_choice, "")
+            new_choice_label = st.text_input(
+                f"Readable label for choice `{selected_choice}`:",
+                value=current_choice_label,
+                key=f"choice_lbl_{field_name}_{selected_choice}"
+            )
+            if new_choice_label != current_choice_label:
+                choices_map[selected_choice] = new_choice_label
+                current_field["choices_map"] = choices_map
+                save_choices_to_registry(st.session_state.pdf_id, field_name, choices_map)
+                st.rerun()
+
+    img = render_page_with_highlight(pdf_bytes, field_page, current_field, highlight_choice_value=highlight_choice)
     if img:
         buf = BytesIO()
         img.save(buf, format="PNG")
@@ -355,11 +427,6 @@ with left:
     else:
         st.info("No preview available for this field.")
 
-    field_mappings = product_config.get("field_mappings", {})
-    mapping_meta = field_mappings.get(field_name, {})
-    field_label = mapping_meta.get("label", "")
-    field_section = mapping_meta.get("section", "")
-    choices_map = mapping_meta.get("choices", {})
     value_to_assign = choices_map.get(source_value, source_value)
 
     if field_label:
