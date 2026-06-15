@@ -12,33 +12,72 @@ The architecture uses a unified, dual-pathway ingestion model designed to absorb
 
 ```mermaid
 graph TD
-    sel[1. Intake Source Selection]
+    sel[1. Intake Source Selection<br><i>Landing Page</i>]
 
-    %% Path A: PDF Processing File Upload
-    sel -->|Option A: Raw PDF Upload| up[2. Upload Filled Application PDF]
-    up --> has_translated{3. Is Structural Map Template Available?}
+    %% ───────────────────────────────────────────
+    %% PATH A: PDF Processing File Upload
+    %% ───────────────────────────────────────────
+    sel -->|Option A: Raw PDF Upload| up[2a. Upload Filled Application PDF]
+    up --> pdf_type{3a. PDF Structure Detection}
 
-    %% Template Translation Engine
-    has_translated -->|No| trans_ui[4. Visual Admin Tool: Interactive Click-and-Match UI]
-    trans_ui -->|Done| save_trans[5. Save Structural Schema Mapping Template JSON]
-    save_trans --> extraction
+    %% AcroForm PDF (has interactive fields)
+    pdf_type -->|AcroForm PDF| walk[4a. Recursive Field Walker<br><i>Extracts fields, coords, values</i>]
 
-    %% Extraction
-    has_translated -->|Yes| extraction[6. Dynamic Data Extraction Engine]
-    extraction --> HITL[7. Human-in-the-Loop Quality Gate]
+    %% Flattened PDF (printed/scanned, no fields)
+    pdf_type -->|Flattened PDF| anchor[4a′. Word-Anchor Fallback<br><i>Match text anchors → registry</i>]
+    anchor --> coord_extract[5a′. Coordinate-Based Text Extraction<br><i>Read text from stored bounding boxes</i>]
+    coord_extract --> cache_check
 
-    %% Path B: E-Form Digital Portal (Upfront Gate)
-    sel -->|Option B: Digital Portal| eform[2b. Interactive Digital E-Form]
-    eform --> health_check{3b. Algorithmic Health Check Medical Underwriting Gate}
+    walk --> cache_check{5a. Assignment Cache Available?}
 
-    %% E-Form Branch Decisions
-    health_check -->|Hard Fail / Critical Condition| rejected((4b. Terminate Application: Auto-Rejected))
-    health_check -->|Pass / Minor Health Issue| personal_info[5b. Dynamic Profile Completion & Data Structuring]
-    personal_info --> HITL
+    %% Cache hit: restore previous mappings
+    cache_check -->|Yes: Restore Cache| field_iter
+    cache_check -->|No: Start Fresh| field_iter
 
-    %% System Convergence & Outputs
-    HITL --> BT[(8a. Export Clean Row to Company BlueTable)]
-    HITL --> app[8b. Generate Pre-Filled Official PDF As Truth Anchor for Signature]
+    %% Field-by-field mapping UI
+    field_iter[6a. Field-by-Field Iterative Mapping<br><i>3-pane layout: PDF preview ∣ BlueTable form ∣ navigation</i>]
+    field_iter --> save_cache[7a. Save Assignment Cache + Registry]
+
+    %% ⚠️ TODO: Visual click-and-match canvas for unknown PDFs
+    %% trans_ui[Visual Admin Tool: Interactive Click-and-Match UI]
+    %% Status: NOT YET IMPLEMENTED — currently all mapping is field-by-field
+
+    save_cache --> resolve_a[8a. Resolve Plan Combination + Acceptance Rules]
+    resolve_a --> HITL_A[9a. Review & Export]
+
+    %% ───────────────────────────────────────────
+    %% PATH B: Digital E-Form Portal (4-Step Wizard)
+    %% ───────────────────────────────────────────
+    sel -->|Option B: Digital Portal| step1[2b. Step 1 — Health Pre-Screening Gate<br><i>Critical conditions checklist</i>]
+
+    step1 -->|Any Critical Condition| rejected((Auto-Declined<br>Workflow Terminates))
+    step1 -->|All Clear| step2[3b. Step 2 — Plan Comparison Sandbox<br><i>Live premium calculator with family discounts</i>]
+
+    step2 --> step3[4b. Step 3 — Personal Details Intake<br><i>Main insured, spouse, children forms</i>]
+
+    step3 --> step4[5b. Step 4 — HITL Review & Approval<br><i>Compiled BlueTable verification</i>]
+
+    %% ───────────────────────────────────────────
+    %% CONVERGENCE: Both pathways produce dual outputs
+    %% ───────────────────────────────────────────
+    HITL_A --> BT
+    step4 --> BT
+
+    BT[(Output 1: Filled BlueTable DOCX<br><i>5-table document: main + spouse + 3 children</i>)]
+    PDF_OUT[Output 2: Pre-Filled Official AcroForm PDF<br><i>Truth anchor for wet signature</i>]
+
+    HITL_A --> PDF_OUT
+    step4 --> PDF_OUT
+
+    %% ───────────────────────────────────────────
+    %% ADMIN TOOLS (separate from main pipelines)
+    %% ───────────────────────────────────────────
+    cfg[⚙️ Config Manager<br><i>Link product config JSON to PDF templates</i>]
+    cfg -.->|Reads| registry[(pdf_registry.json)]
+    cfg -.->|Writes| config_dir[(config/*.json)]
+
+    %% 🔲 TODO: Central Admin Verification Queue Dashboard (Phase 5)
+    %% queue[Admin Queue: Review pending submissions from both pathways]
 ```
 
 ### **Detailed Method Breakdown**
