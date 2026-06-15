@@ -395,8 +395,10 @@ if st.session_state.done:
     col_res, col_dl = st.columns([3, 1])
     with col_res:
         st.subheader("BlueTable Summary")
+        from src.blue_table_tools.docx_generator import resolve_plan_combination
         from src.blue_table_tools import apply_acceptance_rules
 
+        st.session_state.bt_data = resolve_plan_combination(st.session_state.bt_data)
         st.session_state.bt_data = apply_acceptance_rules(st.session_state.bt_data)
         for label, key in BLUETABLE_FIELDS:
             val = st.session_state.bt_data.get(key, "")
@@ -655,8 +657,10 @@ with mid:
                         )
 
     # ── 2. BlueTable Fields Below Plan Options Mapping ──
+    from src.blue_table_tools.docx_generator import resolve_plan_combination
     from src.blue_table_tools import apply_acceptance_rules
 
+    st.session_state.bt_data = resolve_plan_combination(st.session_state.bt_data)
     st.session_state.bt_data = apply_acceptance_rules(st.session_state.bt_data)
     status_keys = {
         "acceptance_conditions",

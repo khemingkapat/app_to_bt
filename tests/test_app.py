@@ -15,12 +15,43 @@ FLATTEN_PDF = str(repo_root / "resources" / "PrintedApplication.pdf")
 
 # ── Module-level setup ─────────────────────────────────────────────────────
 
+import shutil
+
+backup_dir = outputs_dir / "backup_test_temp"
+backup_files = {}
+
 
 def setup_module():
-    """Runs once before all tests — wipes any real (non-example) JSON outputs."""
+    """Runs once before all tests — backs up and wipes any real (non-example) JSON outputs."""
+    if backup_dir.exists():
+        shutil.rmtree(backup_dir)
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    
     for f in outputs_dir.glob("*.json"):
         if ".example." not in f.name:
+            shutil.copy(f, backup_dir / f.name)
+            backup_files[f.name] = True
             f.unlink()
+
+
+def teardown_module():
+    """Runs once after all tests — restores backed-up files, or copies from example files if they don't exist."""
+    # 1. Restore from backup
+    for f_name in backup_files:
+        backup_file = backup_dir / f_name
+        if backup_file.exists():
+            shutil.copy(backup_file, outputs_dir / f_name)
+            
+    # 2. Cleanup backup folder
+    if backup_dir.exists():
+        shutil.rmtree(backup_dir)
+        
+    # 3. For any missing non-example json files, copy from .example.json
+    for f in outputs_dir.glob("*.example.json"):
+        real_name = f.name.replace(".example.json", ".json")
+        real_path = outputs_dir / real_name
+        if not real_path.exists():
+            shutil.copy(f, real_path)
 
 
 # ── Tests ──────────────────────────────────────────────────────────────────
