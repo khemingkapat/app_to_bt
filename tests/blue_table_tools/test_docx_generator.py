@@ -154,3 +154,27 @@ def test_resolve_plan_combination():
     }
     resolved = resolve_plan_combination(data)
     assert resolved["plan"] == "ESSENTIAL2-IPD DD 20,000 (127)"
+
+    # Test EasyCare Visa combination lookup (legacy format)
+    data = {
+        "plan": "VISA Plan 1",
+        "deductible": "100k"
+    }
+    resolved = resolve_plan_combination(data)
+    assert resolved["plan"] == "VISA1 DD 100,000 (201)"
+    assert resolved["deductible"] == "100,000"
+
+    # Test new direct product plan prefix format (ESSENTIAL and VISA)
+    data = {
+        "plan": "ESSENTIAL2-IPD",
+        "deductible": "20k"
+    }
+    resolved = resolve_plan_combination(data)
+    assert resolved["plan"] == "ESSENTIAL2-IPD DD 20,000 (127)"
+
+    data = {
+        "plan": "VISA1",
+        "deductible": "100k"
+    }
+    resolved = resolve_plan_combination(data)
+    assert resolved["plan"] == "VISA1 DD 100,000 (201)"

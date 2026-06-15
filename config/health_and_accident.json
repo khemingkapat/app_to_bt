@@ -1044,46 +1044,83 @@
         "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 20,000": "197",
         "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 40,000": "198",
         "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 100,000": "199",
-        "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 200,000": "200"
+        "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 200,000": "200",
+        "VISA1 DD 100,000": "201",
+        "VISA1 DD 200,000": "202",
+        "VISA1 DD 300,000": "203",
+        "VISA2 DD 100,000": "204",
+        "VISA2 DD 200,000": "205",
+        "VISA2 DD 300,000": "206"
     },
     "product_options": {
-        "plan_tier": {
-            "label": "Plan Tier",
-            "bt_key": "plan",
+        "product_name": {
+            "label": "Selected Product",
+            "bt_key": "product_name",
             "choices": [
-                "Plan 1",
-                "Plan 2",
-                "Plan 3",
-                "Plan 4"
+                "ESSENTIAL",
+                "EASYCARE"
             ]
         },
-        "optional_benefit": {
-            "label": "Optional Benefit",
-            "bt_key": "plan",
-            "choices": [
-                "IPD",
-                "IPD+OPD",
-                "IPD+OPD+WELLNESS"
-            ]
-        },
-        "opd_choice": {
-            "label": "OPD Choice Limit",
-            "bt_key": "plan",
-            "choices": [
-                "3k * 30 times / year",
-                "50k per year"
-            ]
-        },
-        "deductible": {
-            "label": "Deductible",
-            "bt_key": "deductible",
-            "choices": [
-                "0",
-                "20k",
-                "40k",
-                "100k",
-                "200k"
-            ]
+        "products": {
+            "SmartCare Essential": {
+                "plan_tier": {
+                    "label": "Plan Tier",
+                    "bt_key": "plan",
+                    "choices": [
+                        "ESSENTIAL1",
+                        "ESSENTIAL2",
+                        "ESSENTIAL3",
+                        "ESSENTIAL4"
+                    ]
+                },
+                "optional_benefit": {
+                    "label": "Optional Benefit",
+                    "bt_key": "plan",
+                    "choices": [
+                        "IPD",
+                        "IPD+OPD",
+                        "IPD+OPD+WELLNESS"
+                    ]
+                },
+                "opd_choice": {
+                    "label": "OPD Choice Limit",
+                    "bt_key": "plan",
+                    "choices": [
+                        "3k * 30 times / year",
+                        "50k per year"
+                    ]
+                },
+                "deductible": {
+                    "label": "Deductible",
+                    "bt_key": "deductible",
+                    "choices": [
+                        "0",
+                        "20k",
+                        "40k",
+                        "100k",
+                        "200k"
+                    ]
+                }
+            },
+            "EasyCare Visa": {
+                "plan_tier": {
+                    "label": "Plan Tier",
+                    "bt_key": "plan",
+                    "choices": [
+                        "VISA1",
+                        "VISA2"
+                    ]
+                },
+                "deductible": {
+                    "label": "Deductible",
+                    "bt_key": "deductible",
+                    "choices": [
+                        "100k",
+                        "200k",
+                        "300k"
+                    ]
+                }
+            }
         }
     }
 }

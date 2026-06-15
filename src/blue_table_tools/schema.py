@@ -9,6 +9,7 @@ BLUETABLE_FIELDS = [
     ("Relation", "bene_relation"),
     ("Occupation", "occupation"),
     ("Agent CODE/Name", "agent"),
+    ("Product Name", "product_name"),
     ("Plan", "plan"),
     ("Deductible", "deductible"),
     ("Premium", "premium"),
