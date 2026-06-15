@@ -227,6 +227,7 @@ def init_state():
         "pdf_id": None,
         "cache_saved": False,
         "field_mapping": {},
+        "product_config": product_config,
     }
     for _, key in BLUETABLE_FIELDS:
         defaults[f"input_{key}"] = ""
@@ -273,6 +274,10 @@ if st.session_state.pdf_bytes is None:
             entry = registry_dict.get(pdf_id, {})
             fields = entry.get("fields", [])
             st.session_state.all_fields = sorted(fields, key=sort_key)
+
+            from src.pdf_processor.inverter import load_config_by_pdf_id
+            st.session_state.product_config = load_config_by_pdf_id(pdf_id)
+            st.session_state.bt_data["pdf_id"] = pdf_id
 
             # ── Bug fix: guard against empty field list (unrecognised flattened PDF) ──
             if not st.session_state.all_fields:
@@ -492,8 +497,9 @@ left, mid, right = st.columns([5, 5, 1], gap="large")
 
 # ── LEFT: PDF preview ──────────────────────────────────────────────────────
 with left:
-    field_mappings = product_config.get("field_mappings", {})
-    mapping_meta = field_mappings.get(field_name, {})
+    mapping_meta = st.session_state.field_mapping.get(field_name, {})
+    if isinstance(mapping_meta, str):
+        mapping_meta = {"bt_key": mapping_meta}
     field_label = mapping_meta.get("label", "")
     field_section = mapping_meta.get("section", "")
 
@@ -577,7 +583,8 @@ with mid:
         save_cache_incremental()
 
     # ── 1. Plan Options Mapping at the Top of BlueTable Block ──
-    product_options = product_config.get("product_options", {})
+    product_config_live = st.session_state.get("product_config", {})
+    product_options = product_config_live.get("product_options", {})
     if product_options:
         st.caption(
             "Highlight a checkbox on the left, then click an option below to map it."
