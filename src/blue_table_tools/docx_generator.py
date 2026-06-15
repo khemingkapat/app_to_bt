@@ -30,11 +30,50 @@ def calculate_age(dob_str: str) -> str:
         
     return ""
 
+def apply_acceptance_rules(data: dict) -> dict:
+    """
+    Automatically populates the 'Acceptance Conditions' for each member block
+    based on the presence of exclusions.
+    - Clean case: 'Accepted'
+    - Case with exclusions: 'Accepted with exclusion'
+    """
+    updated = data.copy()
+    blocks = [
+        ("name", "exclusions", "acceptance_conditions"),
+        ("sp_name", "sp_exclusions", "sp_acceptance_conditions"),
+        ("c1_name", "c1_exclusions", "c1_acceptance_conditions"),
+        ("c2_name", "c2_exclusions", "c2_acceptance_conditions"),
+        ("c3_name", "c3_exclusions", "c3_acceptance_conditions"),
+    ]
+    
+    # Values of exclusions that indicate a "clean" case (no exclusions)
+    clean_indicators = {
+        "", "none", "none.", "n/a", "na", "no", "no exclusion", 
+        "no exclusions", "-", "clean", "nil", "no pre-existing conditions"
+    }
+    
+    for name_key, excl_key, status_key in blocks:
+        name_val = str(updated.get(name_key) or "").strip()
+        if name_val:
+            excl_val = str(updated.get(excl_key) or "").strip()
+            # Remove trailing/leading spaces and lowercase for check
+            check_val = excl_val.lower().rstrip(".")
+            if not check_val or check_val in clean_indicators:
+                updated[status_key] = "Accepted"
+            else:
+                updated[status_key] = "Accepted with exclusion"
+        else:
+            # If the person doesn't exist, clear acceptance conditions
+            updated[status_key] = ""
+            
+    return updated
+
 def fill_blue_table_docx(template_path: str, data: dict) -> BytesIO:
     """
     Fills the BlueTable.docx template tables with the provided data dict.
     Returns the filled file as a BytesIO stream.
     """
+    data = apply_acceptance_rules(data)
     doc = docx.Document(template_path)
     
     # Table 0: Main Insured

@@ -246,10 +246,12 @@ if st.session_state.done:
     col_res, col_dl = st.columns([3, 1])
     with col_res:
         st.subheader("BlueTable Summary")
+        from src.blue_table_tools import apply_acceptance_rules
+        st.session_state.bt_data = apply_acceptance_rules(st.session_state.bt_data)
         for label, key in BLUETABLE_FIELDS:
-            val = st.session_state.get(f"input_{key}", "")
+            val = st.session_state.bt_data.get(key, "")
             if val:
-                st.session_state.bt_data[key] = val
+                st.session_state[f"input_{key}"] = val
                 st.markdown(f"**{label}**: {val}")
 
     with col_dl:
@@ -389,6 +391,20 @@ with mid:
         st.session_state.assigned = new_assigned
         st.session_state.field_mapping = new_field_mapping
         save_cache_incremental()
+
+    from src.blue_table_tools import apply_acceptance_rules
+    st.session_state.bt_data = apply_acceptance_rules(st.session_state.bt_data)
+    status_keys = {
+        "acceptance_conditions",
+        "sp_acceptance_conditions",
+        "c1_acceptance_conditions",
+        "c2_acceptance_conditions",
+        "c3_acceptance_conditions"
+    }
+    for key in status_keys:
+        if key in st.session_state.bt_data:
+            if st.session_state.get(f"input_{key}") != st.session_state.bt_data[key]:
+                st.session_state[f"input_{key}"] = st.session_state.bt_data[key]
 
     with st.container(height=800):
         for label, key in BLUETABLE_FIELDS:
