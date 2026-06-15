@@ -20,3 +20,7 @@ streamlit.log
 
 resources/BlueTable.docx
 
+resources/*
+!resources/*.example.json
+
+
