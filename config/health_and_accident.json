@@ -1045,5 +1045,45 @@
         "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 40,000": "198",
         "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 100,000": "199",
         "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 200,000": "200"
+    },
+    "product_options": {
+        "plan_tier": {
+            "label": "Plan Tier",
+            "bt_key": "plan",
+            "choices": [
+                "Plan 1",
+                "Plan 2",
+                "Plan 3",
+                "Plan 4"
+            ]
+        },
+        "optional_benefit": {
+            "label": "Optional Benefit",
+            "bt_key": "plan",
+            "choices": [
+                "IPD",
+                "IPD+OPD",
+                "IPD+OPD+WELLNESS"
+            ]
+        },
+        "opd_choice": {
+            "label": "OPD Choice Limit",
+            "bt_key": "plan",
+            "choices": [
+                "3k * 30 times / year",
+                "50k per year"
+            ]
+        },
+        "deductible": {
+            "label": "Deductible",
+            "bt_key": "deductible",
+            "choices": [
+                "0",
+                "20k",
+                "40k",
+                "100k",
+                "200k"
+            ]
+        }
     }
 }
