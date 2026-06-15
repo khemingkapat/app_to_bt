@@ -17,3 +17,6 @@ outputs/*
 !outputs/*.example.*
 
 streamlit.log
+
+resources/BlueTable.docx
+
