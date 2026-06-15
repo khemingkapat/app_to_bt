@@ -113,7 +113,7 @@ def test_flatten_pdf_flow(browser: Browser):
 
         expect(
             page.get_by_test_id("stDownloadButton").get_by_test_id(
-                "stBaseButton-secondary"
+                "stBaseButton-primary"
             )
         ).to_be_visible()
         expect(page.get_by_test_id("stJson")).to_contain_text('"name"')
@@ -145,6 +145,6 @@ def test_digital_eform_flow(page: Page):
 
     # Step 4: Verification
     expect(page.get_by_text("Application Submitted Successfully!")).to_be_visible()
-    expect(page.get_by_role("button", name="⬇️ Download BlueTable JSON Row")).to_be_visible()
+    expect(page.get_by_role("button", name="⬇️ Download Filled BlueTable DOCX")).to_be_visible()
     expect(page.get_by_role("button", name="⬇️ Download Pre-filled Official PDF")).to_be_visible()
 

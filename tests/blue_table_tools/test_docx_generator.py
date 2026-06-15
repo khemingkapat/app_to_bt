@@ -2,7 +2,7 @@ import os
 import docx
 import pytest
 from datetime import datetime
-from src.blue_table_tools.docx_generator import calculate_age, fill_blue_table_docx
+from src.blue_table_tools.docx_generator import calculate_age, fill_blue_table_docx, apply_acceptance_rules
 
 def test_calculate_age():
     # Test DD/MM/YYYY
@@ -92,3 +92,29 @@ def test_fill_blue_table_docx():
     assert t2_vals.get("Child # 1") == "Charlie Wonderland"
     assert t2_vals.get("Date of Birth") == "05/05/2018"
     assert t2_vals.get("Age") == calculate_age("05/05/2018")
+
+def test_apply_acceptance_rules():
+    # Clean case
+    data = {
+        "name": "Alice",
+        "exclusions": "None",
+        "sp_name": "Bob",
+        "sp_exclusions": "",
+        "c1_name": "",
+        "c1_exclusions": "Mild Asthma",
+    }
+    res = apply_acceptance_rules(data)
+    assert res["acceptance_conditions"] == "Accepted"
+    assert res["sp_acceptance_conditions"] == "Accepted"
+    assert res["c1_acceptance_conditions"] == ""
+
+    # Unclean case
+    data = {
+        "name": "Alice",
+        "exclusions": "Mild Asthma",
+        "sp_name": "Bob",
+        "sp_exclusions": "None.",
+    }
+    res = apply_acceptance_rules(data)
+    assert res["acceptance_conditions"] == "Accepted with exclusion"
+    assert res["sp_acceptance_conditions"] == "Accepted"
