@@ -1,10 +1,24 @@
 import json
 import os
+import shutil
+
+def ensure_cache_file(cache_path: str):
+    """Ensures that the cache_path file exists, copying from .example.json if missing."""
+    if not os.path.exists(cache_path):
+        example_path = cache_path.replace(".json", ".example.json")
+        if os.path.exists(example_path):
+            try:
+                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                shutil.copy(example_path, cache_path)
+            except Exception:
+                pass
+
 
 def load_cache(pdf_id: str, cache_path: str = "outputs/assignment_cache.json") -> dict:
     """Loads the assignment cache (field_mappings) for a specific pdf_id."""
     if not pdf_id:
         return {}
+    ensure_cache_file(cache_path)
     if os.path.exists(cache_path):
         try:
             with open(cache_path, "r", encoding="utf-8") as f:
@@ -23,6 +37,7 @@ def save_cache(pdf_id: str, field_mapping: dict, cache_path: str = "outputs/assi
     """Saves the assignment cache incrementally, preserving the product_config link."""
     if not pdf_id:
         return
+    ensure_cache_file(cache_path)
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
     global_cache = {}
     if os.path.exists(cache_path):
@@ -54,6 +69,7 @@ def get_product_config_name(pdf_id: str, cache_path: str = "outputs/assignment_c
     """Gets the product config filename associated with a pdf_id, or None if not found."""
     if not pdf_id:
         return None
+    ensure_cache_file(cache_path)
     if os.path.exists(cache_path):
         try:
             with open(cache_path, "r", encoding="utf-8") as f:

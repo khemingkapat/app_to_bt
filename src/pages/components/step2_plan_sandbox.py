@@ -1,5 +1,56 @@
+import re
 import streamlit as st
 from src.blue_table_tools import calculate_single_option_premium
+
+def resolve_eform_plan(plan_key: str, coverage_key: str, deductible_key: str, config: dict) -> str:
+    """
+    Translates raw sandbox parameters into a unified BlueTable plan key with combination code.
+    E.g., Plan 2, ipd_opd_3000, 0 -> ESSENTIAL2-IPD+OPD(3k * 30 times / year) DD 0 (131)
+    """
+    # 1. Determine plan tier (extract digit from 'Plan X')
+    m = re.search(r"\d+", plan_key)
+    plan_tier = m.group(0) if m else "1"
+    
+    # 2. Determine optional benefit and opd choice limit
+    optional_benefit = ""
+    opd_choice = ""
+    
+    if coverage_key == "ipd":
+        optional_benefit = "IPD"
+    elif coverage_key == "ipd_opd_3000":
+        optional_benefit = "IPD+OPD"
+        opd_choice = "3k * 30 times / year"
+    elif coverage_key == "ipd_opd_3000_wellness":
+        optional_benefit = "IPD+OPD+WELLNESS"
+        opd_choice = "3k * 30 times / year"
+    elif coverage_key == "ipd_opd_50000":
+        optional_benefit = "IPD+OPD"
+        opd_choice = "50k per year"
+    elif coverage_key == "ipd_opd_50000_wellness":
+        optional_benefit = "IPD+OPD+WELLNESS"
+        opd_choice = "50k per year"
+        
+    # 3. Format deductible amount (with comma separation)
+    try:
+        deductible_amount = f"{int(deductible_key):,}"
+    except Exception:
+        deductible_amount = deductible_key
+        
+    # 4. Build combination key
+    if optional_benefit == "IPD":
+        combo_key = f"ESSENTIAL{plan_tier}-IPD DD {deductible_amount}"
+    elif optional_benefit:
+        combo_key = f"ESSENTIAL{plan_tier}-{optional_benefit}({opd_choice}) DD {deductible_amount}"
+    else:
+        return plan_key
+        
+    # 5. Look up code in combinations_map
+    combo_map = config.get("combinations_map", {})
+    plan_code = combo_map.get(combo_key)
+    
+    if plan_code:
+        return f"{combo_key} ({plan_code})"
+    return combo_key
 
 def render_step2(setup: dict, config: dict) -> None:
     st.subheader("🎨 Step 2: Interactive Plan & Premium Sandbox")
@@ -36,12 +87,17 @@ def render_step2(setup: dict, config: dict) -> None:
         deductibles = config.get("pricing", {}).get("deductibles", [])
         ded_labels = {d["key"]: d["label"] for d in deductibles}
 
+        plans = config.get("plans", [])
+        plan_keys = [p["key"] for p in plans] if plans else ["Plan 1", "Plan 2", "Plan 3", "Plan 4"]
+        plan_labels = {p["key"]: p["label"] for p in plans} if plans else {}
+
         st.markdown("### **➕ Add Custom Combination to Compare**")
         col_new_plan, col_new_cov, col_new_ded = st.columns(3)
         with col_new_plan:
             new_plan = st.selectbox(
                 "Select Plan",
-                ["Plan 1", "Plan 2", "Plan 3", "Plan 4"],
+                plan_keys,
+                format_func=lambda x: plan_labels.get(x, x),
                 key="new_plan_sel"
             )
         with col_new_cov:
@@ -120,7 +176,8 @@ def render_step2(setup: dict, config: dict) -> None:
         r_plan = "| **Plan Tier** |"
         for opt in options_data:
             is_sel = (setup.get("selected_option_id") == opt["id"])
-            val = f"**{opt['plan']}**" if is_sel else f"{opt['plan']}"
+            lbl = plan_labels.get(opt["plan"], opt["plan"])
+            val = f"**{lbl}**" if is_sel else f"{lbl}"
             r_plan += f" {val} |"
 
         r_cov = "| **Coverage Type** |"
@@ -206,7 +263,9 @@ def render_step2(setup: dict, config: dict) -> None:
 
             chosen_opt = next(o for o in options_data if o["id"] == setup["selected_option_id"])
 
-            st.session_state.form_data["plan"] = chosen_opt["plan"]
+            st.session_state.form_data["plan"] = resolve_eform_plan(
+                chosen_opt["plan"], chosen_opt["coverage"], chosen_opt["deductible"], config
+            )
             st.session_state.form_data["deductible"] = ded_labels[chosen_opt["deductible"]]
             st.session_state.form_data["premium"] = f"{chosen_opt['res']['total']:,.0f}"
             st.session_state.step = 3
