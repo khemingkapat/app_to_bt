@@ -68,11 +68,58 @@ def apply_acceptance_rules(data: dict) -> dict:
             
     return updated
 
+def resolve_plan_combination(data: dict) -> dict:
+    """
+    Resolves the combined plan name and code from raw mapping fields
+    and updates the 'plan' and 'deductible' fields in the data dict.
+    """
+    updated = data.copy()
+    plan_val = str(updated.get("plan") or "").strip()
+    ded_val = str(updated.get("deductible") or "").strip()
+    
+    if "(" in plan_val and ")" in plan_val:
+        return updated
+        
+    parts = [p.strip() for p in plan_val.split("-") if p.strip()]
+    plan_tier = ""
+    benefit = ""
+    
+    valid_benefits = ("IPD", "IPD+OPD3k", "IPD+OPD50k", "IPD+OPD3k+Wellness", "IPD+OPD50k+Wellness")
+    
+    for p in parts:
+        if "Plan" in p:
+            plan_tier = p.replace("Plan", "").strip()
+        elif p in valid_benefits:
+            benefit = p
+            
+    deductible_amount = ded_val.replace("k", ",000")
+    if deductible_amount == "0,000":
+        deductible_amount = "0"
+         
+    if plan_tier and benefit:
+        benefit_key = benefit.replace("3k", "3000").replace("50k", "50000")
+        combo_key = f"ESSENTIAL{plan_tier}-{benefit_key} DD {deductible_amount}"
+        
+        try:
+            from src.pdf_processor.inverter import load_product_config
+            config = load_product_config("./config/health_and_accident.json")
+            combo_map = config.get("combinations_map", {})
+            plan_code = combo_map.get(combo_key)
+            if plan_code:
+                updated["plan"] = f"ESSENTIAL{plan_tier}-{benefit_key} DD {deductible_amount} ({plan_code})"
+                updated["deductible"] = deductible_amount
+        except Exception:
+            pass
+            
+    return updated
+
+
 def fill_blue_table_docx(template_path: str, data: dict) -> BytesIO:
     """
     Fills the BlueTable.docx template tables with the provided data dict.
     Returns the filled file as a BytesIO stream.
     """
+    data = resolve_plan_combination(data)
     data = apply_acceptance_rules(data)
     doc = docx.Document(template_path)
     

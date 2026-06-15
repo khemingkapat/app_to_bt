@@ -23,6 +23,13 @@ from src.blue_table_tools import (
     AssignFieldParams,
     fill_blue_table_docx,
 )
+from src.pdf_processor.inverter import load_product_config
+
+# Load product config mapping definitions
+try:
+    product_config = load_product_config("./config/health_and_accident.json")
+except Exception:
+    product_config = {}
 
 # ── helpers ────────────────────────────────────────────────────────────────
 
@@ -45,21 +52,25 @@ def render_page_with_highlight(
         page = doc[page_num - 1]
         pdf_h = page.rect.height
 
-        boxes = []
         kind = field.get("field_kind")
         if kind == "radio":
             for w in field.get("widgets", []):
                 c = w.get("coords")
                 if c and w.get("page") == page_num:
-                    boxes.append(c)
+                    rect = fitz.Rect(c["x0"], pdf_h - c["y1"], c["x1"], pdf_h - c["y0"])
+                    page.draw_rect(rect, color=(1, 0.63, 0), fill=(1, 0.9, 0, 0.4), width=2)
+                    choice_val = w.get("choice_value", "")
+                    if choice_val:
+                        # Draw label text slightly above the top-left of the box
+                        point = fitz.Point(c["x0"], pdf_h - c["y1"] - 3)
+                        # Remove leading slash for cleaner display in label, e.g. /Choice1 -> Choice1
+                        display_text = choice_val.lstrip("/")
+                        page.insert_text(point, display_text, fontsize=9, color=(0.8, 0, 0))
         else:
             c = field.get("coords")
             if c:
-                boxes.append(c)
-
-        for c in boxes:
-            rect = fitz.Rect(c["x0"], pdf_h - c["y1"], c["x1"], pdf_h - c["y0"])
-            page.draw_rect(rect, color=(1, 0.63, 0), fill=(1, 0.9, 0, 0.4), width=2)
+                rect = fitz.Rect(c["x0"], pdf_h - c["y1"], c["x1"], pdf_h - c["y0"])
+                page.draw_rect(rect, color=(1, 0.63, 0), fill=(1, 0.9, 0, 0.4), width=2)
 
         zoom = resolution / 72
         mat = fitz.Matrix(zoom, zoom)
@@ -344,11 +355,28 @@ with left:
     else:
         st.info("No preview available for this field.")
 
-    st.caption(
-        f"🔍 **{field_name}** &nbsp;|&nbsp; type: `{field_kind}` &nbsp;|&nbsp; page: {field_page}"
-    )
+    field_mappings = product_config.get("field_mappings", {})
+    mapping_meta = field_mappings.get(field_name, {})
+    field_label = mapping_meta.get("label", "")
+    field_section = mapping_meta.get("section", "")
+    choices_map = mapping_meta.get("choices", {})
+    value_to_assign = choices_map.get(source_value, source_value)
+
+    if field_label:
+        st.markdown(f"#### 📋 **{field_label}**")
+        st.caption(
+            f"Section: `{field_section}` &nbsp;|&nbsp; Field name: `{field_name}` &nbsp;|&nbsp; type: `{field_kind}` &nbsp;|&nbsp; page: {field_page}"
+        )
+    else:
+        st.caption(
+            f"🔍 **{field_name}** &nbsp;|&nbsp; type: `{field_kind}` &nbsp;|&nbsp; page: {field_page}"
+        )
+
     if source_value:
-        st.code(source_value, language=None)
+        if value_to_assign != source_value:
+            st.info(f"👉 **Selected Option:** {value_to_assign} (raw: `{source_value}`)")
+        else:
+            st.code(source_value, language=None)
 
 # ── MID: BlueTable ─────────────────────────────────────────────────────────
 with mid:
@@ -444,7 +472,7 @@ with mid:
                     "Assign",
                     key=f"assign_{key}_{idx}",
                     on_click=do_assign,
-                    args=(key, idx, source_value, field_name, label),
+                    args=(key, idx, value_to_assign, field_name, label),
                     use_container_width=True,
                 )
 
