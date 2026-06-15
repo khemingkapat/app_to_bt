@@ -8,12 +8,14 @@ CONFIG_FILE = "./config/health_and_accident.json"
 
 # TODO: Add support for secure PDF signature stamps and digital watermarking on filled applications.
 
+
 def load_product_config(config_path: str = CONFIG_FILE) -> dict:
     """Loads the product configuration schema."""
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
     raise FileNotFoundError(f"Configuration file not found at: {config_path}")
+
 
 def parse_date_part(date_str: str, part: str) -> str:
     """
@@ -22,7 +24,7 @@ def parse_date_part(date_str: str, part: str) -> str:
     """
     if not date_str:
         return ""
-    
+
     # Try separating by dashes or slashes
     parts = []
     if "-" in date_str:
@@ -44,7 +46,7 @@ def parse_date_part(date_str: str, part: str) -> str:
             year, month, day = parts[0], parts[1], parts[2]
     else:
         return date_str  # Return as is if unparseable
-        
+
     if part == "DD":
         return day.zfill(2)
     elif part == "MM":
@@ -52,6 +54,7 @@ def parse_date_part(date_str: str, part: str) -> str:
     elif part == "YYYY":
         return year
     return date_str
+
 
 def map_customer_data_to_pdf(customer_data: dict, config: dict) -> dict:
     """
@@ -64,14 +67,14 @@ def map_customer_data_to_pdf(customer_data: dict, config: dict) -> dict:
     for pdf_field, mapping in field_mappings.items():
         bt_key = mapping.get("bt_key")
         label = mapping.get("label", "").upper()
-        
+
         if bt_key not in customer_data:
             continue
-            
+
         value = customer_data[bt_key]
         if value is None:
             value = ""
-        
+
         # Handle date parts for DOB fields
         if "dob" in bt_key or "date" in bt_key:
             date_str = str(value)
@@ -85,13 +88,12 @@ def map_customer_data_to_pdf(customer_data: dict, config: dict) -> dict:
                 pdf_values[pdf_field] = date_str
         else:
             pdf_values[pdf_field] = str(value)
-            
+
     return pdf_values
 
+
 def fill_acroform_pdf(
-    input_pdf: Union[str, BytesIO],
-    customer_data: dict,
-    config_path: str = CONFIG_FILE
+    input_pdf: Union[str, BytesIO], customer_data: dict, config_path: str = CONFIG_FILE
 ) -> BytesIO:
     """
     Reads an interactive AcroForm PDF, populates its fields with customer data
