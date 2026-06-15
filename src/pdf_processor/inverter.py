@@ -105,6 +105,7 @@ def map_customer_data_to_pdf(customer_data: dict, config: dict, field_mappings: 
     Maps standard customer data fields to physical PDF AcroForm field values based on schema.
     Handles split fields like DOB.
     """
+    import re
     pdf_values = {}
     if field_mappings is None:
         field_mappings = config.get("field_mappings", {})
@@ -127,12 +128,39 @@ def map_customer_data_to_pdf(customer_data: dict, config: dict, field_mappings: 
         # Handle date parts for DOB fields
         if "dob" in bt_key or "date" in bt_key:
             date_str = str(value)
+            part = None
             if "DAY" in label or "(DD)" in label:
-                pdf_values[pdf_field] = parse_date_part(date_str, "DD")
+                part = "DD"
             elif "MONTH" in label or "(MM)" in label:
-                pdf_values[pdf_field] = parse_date_part(date_str, "MM")
+                part = "MM"
             elif "YEAR" in label or "(YYYY)" in label:
-                pdf_values[pdf_field] = parse_date_part(date_str, "YYYY")
+                part = "YYYY"
+            else:
+                # Fallback: check if there are multiple fields mapped to this bt_key
+                sibling_fields = []
+                for f, m in field_mappings.items():
+                    k = m.get("bt_key") if isinstance(m, dict) else m
+                    if k == bt_key:
+                        sibling_fields.append(f)
+                
+                if len(sibling_fields) > 1:
+                    def get_num(name):
+                        nums = re.findall(r"\d+", name)
+                        return int(nums[0]) if nums else 0
+                    sibling_fields.sort(key=get_num)
+                    try:
+                        idx = sibling_fields.index(pdf_field)
+                        if idx == 0:
+                            part = "DD"
+                        elif idx == 1:
+                            part = "MM"
+                        elif idx == 2:
+                            part = "YYYY"
+                    except ValueError:
+                        pass
+            
+            if part:
+                pdf_values[pdf_field] = parse_date_part(date_str, part)
             else:
                 pdf_values[pdf_field] = date_str
         else:
