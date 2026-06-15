@@ -61,6 +61,58 @@ def save_choices_to_registry(pdf_id: str, field_name: str, choices_map: dict):
             json.dump(registry, f, indent=4, ensure_ascii=False)
 
 
+def do_assign_choice_option(opt_key, choice_val, bt_key):
+    if st.session_state.pdf_id is None:
+        return
+    idx = st.session_state.field_idx
+    current_field = st.session_state.all_fields[idx]
+    field_name = current_field.get("name", "?")
+    
+    # Get the raw choice currently selected in the dropdown
+    raw_choice = st.session_state.get(f"sel_choice_{field_name}")
+    if not raw_choice:
+        return
+        
+    choices_map = current_field.get("choices_map", {})
+    if choices_map is None:
+        choices_map = {}
+        
+    # Set the mapping
+    choices_map[raw_choice] = choice_val
+    current_field["choices_map"] = choices_map
+    
+    # Save choice mapping back to pdf_registry.json
+    save_choices_to_registry(st.session_state.pdf_id, field_name, choices_map)
+    
+    # Update field mapping to target BlueTable key
+    st.session_state.field_mapping[field_name] = bt_key
+    
+    # If the PDF's current value is the one we just mapped, write it to bt_data
+    source_val = field_value_hint(current_field, st.session_state.values_map)
+    
+    # We update the actual value written to the BlueTable field
+    translated_val = choices_map.get(source_val, "")
+    if translated_val:
+        current_input = st.session_state.get(f"input_{bt_key}", "")
+        parts = [p.strip() for p in current_input.split("-") if p.strip()]
+        if translated_val not in parts:
+            new_val = f"{current_input}-{translated_val}" if current_input else translated_val
+            st.session_state[f"input_{bt_key}"] = new_val
+            st.session_state.bt_data[bt_key] = new_val
+            
+            # Record assignment log
+            st.session_state.assigned.append({
+                "field_name": field_name,
+                "bt_key": bt_key,
+                "bt_label": bt_key.capitalize(),
+                "value": new_val,
+                "field_idx": idx
+            })
+            
+    save_cache_incremental()
+    st.rerun()
+
+
 def render_page_with_highlight(
     pdf_bytes: bytes, page_num: int, field: dict, resolution: int = 120, highlight_choice_value: str = None
 ):
@@ -360,8 +412,8 @@ st.caption(
 )
 st.progress(pct)
 
-# ── 6. Two-pane layout ─────────────────────────────────────────────────────
-left, mid, right = st.columns([5, 4, 1], gap="large")
+# ── 6. Three-pane layout with navigation ───────────────────────────────────
+left, mid, right, nav = st.columns([5, 4, 4, 1], gap="medium")
 
 # ── LEFT: PDF preview ──────────────────────────────────────────────────────
 with left:
@@ -555,8 +607,34 @@ with mid:
                     use_container_width=True,
                 )
 
-# ── RIGHT: navigation ──────────────────────────────────────────────────────
+# ── RIGHT: plan options assignment ─────────────────────────────────────────
 with right:
+    st.markdown("#### ⚙️ Plan Options Mapping")
+    st.caption("Locate a checkbox in the PDF, then assign its choice key to the matching option below.")
+    
+    product_options = product_config.get("product_options", {})
+    
+    with st.container(height=800):
+        for opt_key, opt_data in product_options.items():
+            st.markdown(f"**{opt_data.get('label', opt_key)}**")
+            bt_key = opt_data.get("bt_key", "plan")
+            
+            for val in opt_data.get("choices", []):
+                col_val, col_btn = st.columns([3, 1])
+                with col_val:
+                    st.markdown(f"<span style='color:#ccc; font-size:0.9rem;'>{val}</span>", unsafe_allow_html=True)
+                with col_btn:
+                    st.button(
+                        "Assign",
+                        key=f"assign_opt_{opt_key}_{val}_{idx}",
+                        on_click=do_assign_choice_option,
+                        args=(opt_key, val, bt_key),
+                        use_container_width=True
+                    )
+            st.divider()
+
+# ── NAV: navigation ────────────────────────────────────────────────────────
+with nav:
     st.markdown("<div style='height:360px'></div>", unsafe_allow_html=True)
     if st.button("⬆️", disabled=(idx == 0), use_container_width=True, help="Previous"):
         st.session_state.field_idx -= 1
