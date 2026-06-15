@@ -118,8 +118,9 @@ def resolve_plan_combination(data: dict) -> dict:
             return updated
             
         try:
-            from src.pdf_processor.inverter import load_product_config
-            config = load_product_config("./config/health_and_accident.json")
+            from src.pdf_processor.inverter import load_config_by_pdf_id
+            pdf_id = data.get("pdf_id")
+            config = load_config_by_pdf_id(pdf_id)
             combo_map = config.get("combinations_map", {})
             plan_code = combo_map.get(combo_key)
             if plan_code:

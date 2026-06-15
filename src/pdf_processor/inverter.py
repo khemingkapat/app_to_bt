@@ -56,19 +56,68 @@ def parse_date_part(date_str: str, part: str) -> str:
     return date_str
 
 
-def map_customer_data_to_pdf(customer_data: dict, config: dict) -> dict:
+def load_config_by_pdf_id(pdf_id: str, config_dir: str = "./config") -> dict:
+    """
+    Finds and loads the product configuration JSON that matches the given pdf_id.
+    First checks outputs/assignment_cache.json for association, then scans config_dir files.
+    Falls back to loading config/health_and_accident.json if not found.
+    """
+    from src.blue_table_tools.cache import get_product_config_name
+    
+    # 1. Try to find the config file associated in assignment_cache
+    config_name = get_product_config_name(pdf_id)
+    if config_name:
+        path = os.path.join(config_dir, config_name)
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+
+    # 2. Scan the config directory for a matching pdf_id field
+    if pdf_id and os.path.exists(config_dir):
+        for filename in os.listdir(config_dir):
+            if filename.endswith(".json"):
+                path = os.path.join(config_dir, filename)
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        cfg = json.load(f)
+                        if cfg.get("pdf_id") == pdf_id:
+                            return cfg
+                except Exception:
+                    pass
+
+    # 3. Fallback to default
+    default_path = os.path.join(config_dir, "health_and_accident.json")
+    if os.path.exists(default_path):
+        try:
+            with open(default_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+            
+    return {}
+
+
+def map_customer_data_to_pdf(customer_data: dict, config: dict, field_mappings: dict = None) -> dict:
     """
     Maps standard customer data fields to physical PDF AcroForm field values based on schema.
     Handles split fields like DOB.
     """
     pdf_values = {}
-    field_mappings = config.get("field_mappings", {})
+    if field_mappings is None:
+        field_mappings = config.get("field_mappings", {})
 
     for pdf_field, mapping in field_mappings.items():
-        bt_key = mapping.get("bt_key")
-        label = mapping.get("label", "").upper()
+        if isinstance(mapping, dict):
+            bt_key = mapping.get("bt_key")
+            label = mapping.get("label", "").upper()
+        else:
+            bt_key = mapping
+            label = ""
 
-        if bt_key not in customer_data:
+        if not bt_key or bt_key not in customer_data:
             continue
 
         value = customer_data[bt_key]
@@ -97,17 +146,26 @@ def fill_acroform_pdf(
 ) -> BytesIO:
     """
     Reads an interactive AcroForm PDF, populates its fields with customer data
-    using the config schema, and returns a pre-filled PDF as a BytesIO stream.
+    using the config schema and assignment mapping, and returns a pre-filled PDF as a BytesIO stream.
     """
-    config = load_product_config(config_path)
-    pdf_values = map_customer_data_to_pdf(customer_data, config)
-
     # Load input PDF
     if isinstance(input_pdf, str):
         reader = PdfReader(input_pdf)
     else:
         input_pdf.seek(0)
         reader = PdfReader(input_pdf)
+
+    from src.pdf_processor.utils.pdf_info import get_pdf_file_id
+    pdf_id = get_pdf_file_id(reader)
+
+    # Load config dynamically by matching the pdf_id
+    config = load_config_by_pdf_id(pdf_id)
+    
+    # Load assignment mappings from assignment_cache.json
+    from src.blue_table_tools.cache import load_cache
+    field_mappings = load_cache(pdf_id)
+
+    pdf_values = map_customer_data_to_pdf(customer_data, config, field_mappings)
 
     writer = PdfWriter()
     writer.append(reader)
