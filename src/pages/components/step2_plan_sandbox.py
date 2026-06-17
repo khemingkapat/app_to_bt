@@ -244,6 +244,14 @@ def render_step2(setup: dict, config: dict) -> None:
         )
         setup["selected_option_id"] = next(o["id"] for o in options_data if o["name"] == selected_option)
 
+        policy_ver = st.radio(
+            "Policy Version",
+            options=["Thai", "English"],
+            index=0,
+            horizontal=True,
+            key="policy_version_radio"
+        )
+
         o_count = 1 + (1 if setup["cover_spouse"] else 0) + setup["child_count"]
         if o_count >= 2 and o_count <= 3:
             st.info("🎉 Family Volume Discount: **5% off** has been automatically applied to all options.")
@@ -268,5 +276,13 @@ def render_step2(setup: dict, config: dict) -> None:
             )
             st.session_state.form_data["deductible"] = ded_labels[chosen_opt["deductible"]]
             st.session_state.form_data["premium"] = f"{chosen_opt['res']['total']:,.0f}"
+            st.session_state.form_data["policy_version"] = policy_ver
+            
+            # Automatically set product_name based on plan
+            if "VISA" in chosen_opt["plan"].upper() or "EASYCARE" in chosen_opt["plan"].upper():
+                st.session_state.form_data["product_name"] = "EASYCARE"
+            else:
+                st.session_state.form_data["product_name"] = "ESSENTIAL"
+
             st.session_state.step = 3
             st.rerun()
