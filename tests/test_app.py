@@ -100,7 +100,7 @@ def test_acroform_pdf_flow(page: Page):
     page.get_by_role("button", name="✅").click()
     page.wait_for_timeout(1000)
 
-    expect(page.get_by_test_id("stJson")).to_contain_text('"name"')
+    expect(page.locator("table")).to_contain_text("name")
 
     # Reset
     page.get_by_test_id("stButton").get_by_test_id("stBaseButton-secondary").click()
@@ -121,7 +121,7 @@ def test_acroform_pdf_flow(page: Page):
     page.get_by_role("button", name="✅").click()
     page.wait_for_timeout(1000)
 
-    expect(page.get_by_test_id("stJson")).to_contain_text('"name_naja"')
+    expect(page.locator("table")).to_contain_text("name_naja")
 
 
 def test_flatten_pdf_flow(browser: Browser):
@@ -161,7 +161,7 @@ def test_flatten_pdf_flow(browser: Browser):
                     "stBaseButton-primary"
                 )
             ).to_be_visible()
-        expect(page.get_by_test_id("stJson")).to_contain_text('"name"')
+        expect(page.locator("table")).to_contain_text("name")
 
     finally:
         context.close()
