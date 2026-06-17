@@ -85,6 +85,7 @@ if not json_files:
 defaults = {
     "agent": "",
     "product_name": "",
+    "policy_version": "Thai",
     "plan": "",
     "deductible": "",
     "premium": "",
@@ -316,6 +317,61 @@ if not st.session_state.internal_submitted:
     m_col1, m_col2 = st.columns(2)
     render_keyboard_field("Agent CODE/Name", "agent", "E.g., AGENT007", required=True, validation_report=initial_report, col=m_col1)
     render_keyboard_field("Effective Date", "effective_date", "DD/MM/YYYY", required=True, validation_report=initial_report, col=m_col2)
+
+    # Render product name and policy version choices
+    m_col3, m_col4 = st.columns(2)
+    product_options = config.get("product_options", {})
+    prod_choices = product_options.get("product_name", {}).get("choices", ["ESSENTIAL", "EASYCARE"])
+    selected_prod = m_col3.selectbox("Selected Product", options=prod_choices, key="internal_input_product_name")
+    
+    policy_choices = product_options.get("policy_version", {}).get("choices", ["Thai", "English"])
+    selected_policy = m_col4.selectbox("Policy Version", options=policy_choices, key="internal_input_policy_version")
+    
+    # Save to form data
+    st.session_state.internal_form_data["product_name"] = selected_prod
+    st.session_state.internal_form_data["policy_version"] = selected_policy
+
+    # Plan, Deductible, Premium
+    m_col5, m_col6, m_col7 = st.columns(3)
+    prod_key_map = {
+        "ESSENTIAL": "SmartCare Essential",
+        "EASYCARE": "EasyCare Visa"
+    }
+    prod_display_name = prod_key_map.get(selected_prod, "SmartCare Essential")
+    prod_config = product_options.get("products", {}).get(prod_display_name, {})
+    
+    plan_choices = prod_config.get("plan_tier", {}).get("choices", ["ESSENTIAL1", "ESSENTIAL2", "ESSENTIAL3", "ESSENTIAL4"])
+    if selected_prod == "EASYCARE":
+        plan_choices = ["VISA1", "VISA2"]
+        
+    selected_plan = m_col5.selectbox("Plan Tier", options=plan_choices, key="internal_input_plan")
+    
+    ded_choices = prod_config.get("deductible", {}).get("choices", ["0", "20k", "40k", "100k", "200k"])
+    if selected_prod == "EASYCARE":
+        ded_choices = ["100k", "200k", "300k"]
+    selected_ded = m_col6.selectbox("Deductible", options=ded_choices, key="internal_input_deductible")
+    
+    # Save to form data
+    st.session_state.internal_form_data["plan"] = selected_plan
+    st.session_state.internal_form_data["deductible"] = selected_ded
+
+    # We can also add optional benefits for ESSENTIAL
+    selected_benefit = ""
+    selected_opd = ""
+    if selected_prod == "ESSENTIAL":
+        m_col8, m_col9 = st.columns(2)
+        opt_benefit_choices = prod_config.get("optional_benefit", {}).get("choices", ["IPD", "IPD+OPD", "IPD+OPD+WELLNESS"])
+        selected_benefit = m_col8.selectbox("Optional Benefit", options=opt_benefit_choices, key="internal_input_benefit")
+        
+        opd_choices = prod_config.get("opd_choice", {}).get("choices", ["3k * 30 times / year", "50k per year"])
+        selected_opd = m_col9.selectbox("OPD Choice Limit", options=opd_choices, key="internal_input_opd_choice")
+
+        # Save these components
+        st.session_state.internal_form_data["benefit"] = selected_benefit
+        st.session_state.internal_form_data["opd_choice"] = selected_opd
+    
+    # Premium text input
+    selected_premium = render_keyboard_field("Premium", "premium", "E.g., 35,000", required=True, validation_report=initial_report, col=m_col7)
     
     # SECTION 2: Main Insured Details
     st.markdown("<div class='section-header'>👤 Main Insured Details</div>", unsafe_allow_html=True)
@@ -436,11 +492,24 @@ else:
     if config and "pdf_id" in config:
         data_to_save["pdf_id"] = config["pdf_id"]
         
-    # Omit plan combination/code, product name, deductible, premium fields right now
-    data_to_save["product_name"] = ""
-    data_to_save["plan"] = ""
-    data_to_save["deductible"] = ""
-    data_to_save["premium"] = ""
+    # Construct plan value for resolve_plan_combination
+    if data_to_save.get("product_name") == "EASYCARE":
+        plan_val = data_to_save.get("plan", "")
+    else:
+        # ESSENTIAL
+        tier = data_to_save.get("plan", "") # e.g. ESSENTIAL1
+        benefit = data_to_save.get("benefit", "IPD") # e.g. IPD+OPD
+        opd = data_to_save.get("opd_choice", "") # e.g. 3k * 30 times / year
+        if benefit == "IPD":
+            plan_val = f"{tier}-IPD"
+        else:
+            plan_val = f"{tier}-{benefit}({opd})"
+
+    data_to_save["plan"] = plan_val
+    data_to_save["deductible"] = data_to_save.get("deductible", "")
+    data_to_save["premium"] = data_to_save.get("premium", "")
+    data_to_save["product_name"] = data_to_save.get("product_name", "")
+    data_to_save["policy_version"] = data_to_save.get("policy_version", "")
     
     data_to_save = resolve_plan_combination(data_to_save)
     data_to_save = apply_acceptance_rules(data_to_save)
