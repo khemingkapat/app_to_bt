@@ -1,5 +1,17 @@
 {
     "product_name": "Health and Accident Insurance",
+    "general_conditions": {
+        "SmartCare Essential": {
+            "Thai": "กรมธรรม์นี้มีระยะเวลารอคอย 30 วัน และ 120 วัน\nไม่คุ้มครองโรคที่เป็นมาก่อนทำประกัน (ถ้ามี)\nข้อยกเว้นทั่วไปตามเงื่อนไขของกรมธรรม์ \nความคุ้มครองเสริม เรื่องการดูแลสุขภาพ ต้องสำรองจ่ายก่อนและเคลมคืน\nหากท่านมีความจำเป็นต้องเข้ารับการรักษาโดยโรคเรื้อรัง บริษัทฯ อาจให้ท่านสำรองจ่ายก่อน และตั้งเบิกภายหลัง เพื่อตรวจสอบประวัติว่าเป็นมาก่อนทำประกันหรือไม่\nเงื่อนไขเพิ่มเติม กรุณาศึกษาได้จากกรมธรรม์ประกันสุขภาพของท่าน",
+            "English": "Waiting period 30 days & 120 days\nNot cover for pre-existing conditions (if any)\nGeneral Exclusions apply under the policy coverage\nOptional: Wellness benefits is valid for reimbursement basis\nIf you need to make a claim for some chronic diseases, you may be asked to pay first and claim back later, for investigation process\nMore conditions please refer to policy",
+            "Both": "Waiting period 30 days & 120 days / กรมธรรม์นี้มีระยะเวลารอคอย 30 วัน และ 120 วัน\nNot cover for pre-existing conditions (if any) / ไม่คุ้มครองโรคที่เป็นมาก่อนทำประกัน (ถ้ามี)\nGeneral Exclusions apply under the policy coverage / ข้อยกเว้นทั่วไปตามเงื่อนไขของกรมธรรม์ \nOptional: Wellness benefits is valid for reimbursement basis / ความคุ้มครองเสริม เรื่องการดูแลสุขภาพ ต้องสำรองจ่ายก่อนและเคลมคืน\nIf you need to make a claim for some chronic diseases, you may be asked to pay first and claim back later, for investigation process/ หากท่านมีความจำเป็นต้องเข้ารับการรักษาโดยโรคเรื้อรัง บริษัทฯ อาจให้ท่านสำรองจ่ายก่อน และตั้งเบิกภายหลัง เพื่อตรวจสอบประวัติว่าเป็นมาก่อนทำประกันหรือไม่\nMore conditions please refer to policy / เงื่อนไขเพิ่มเติม กรุณาศึกษาได้จากกรมธรรม์ประกันสุขภาพของท่าน"
+        },
+        "EasyCare Visa": {
+            "Thai": "กรมธรรม์นี้มีระยะเวลารอคอย 30 วัน และ 120 วัน\nไม่คุ้มครองโรคที่เป็นมาก่อนทำประกัน (ถ้ามี)\nข้อยกเว้นทั่วไปตามเงื่อนไขของกรมธรรม์ \nหากท่านมีความจำเป็นต้องเข้ารับการรักษาโดยโรคเรื้อรัง บริษัทฯ อาจให้ท่านสำรองจ่ายก่อน และตั้งเบิกภายหลัง เพื่อตรวจสอบประวัติว่าเป็นมาก่อนทำประกันหรือไม่\nเงื่อนไขเพิ่มเติม กรุณาศึกษาได้จากกรมธรรม์ประกันสุขภาพของท่าน",
+            "English": "Waiting period 30 days & 120 days\nNot cover for pre-existing conditions (if any)\nGeneral Exclusions apply under the policy coverage\nIf you need to make a claim for some chronic diseases, you may be asked to pay first and claim back later, for investigation process\nMore conditions please refer to policy",
+            "Both": "Waiting period 30 days & 120 days / กรมธรรม์นี้มีระยะเวลารอคอย 30 วัน และ 120 วัน\nNot cover for pre-existing conditions (if any) / ไม่คุ้มครองโรคที่เป็นมาก่อนทำประกัน (ถ้ามี)\nGeneral Exclusions apply under the policy coverage / ข้อยกเว้นทั่วไปตามเงื่อนไขของกรมธรรม์ \nIf you need to make a claim for some chronic diseases, you may be asked to pay first and claim back later, for investigation process/ หากท่านมีความจำเป็นต้องเข้ารับการรักษาโดยโรคเรื้อรัง บริษัทฯ อาจให้ท่านสำรองจ่ายก่อน และตั้งเบิกภายหลัง เพื่อตรวจสอบประวัติว่าเป็นมาก่อนทำประกันหรือไม่\nMore conditions please refer to policy / เงื่อนไขเพิ่มเติม กรุณาศึกษาได้จากกรมธรรม์ประกันสุขภาพของท่าน"
+        }
+    },
     "underwriting_rules": {
         "critical_conditions": [
             "Cancer",
@@ -670,6 +682,14 @@
             "choices": [
                 "ESSENTIAL",
                 "EASYCARE"
+            ]
+        },
+        "policy_version": {
+            "label": "Policy Version",
+            "bt_key": "policy_version",
+            "choices": [
+                "Thai",
+                "English"
             ]
         },
         "products": {
