@@ -87,6 +87,8 @@ def test_acroform_pdf_flow(page: Page):
 
     page.get_by_role("button", name="⬇️").click()
     page.wait_for_timeout(500)
+    page.get_by_text("✍️ Fields & Signature").click()
+    page.wait_for_timeout(500)
     page.get_by_role("button", name="Assign").first.click()
     page.wait_for_timeout(500)
     page.get_by_role("button", name="⬇️").click()
@@ -109,6 +111,8 @@ def test_acroform_pdf_flow(page: Page):
     page.get_by_test_id("stBaseButton-secondary").click()
     page.get_by_test_id("stFileUploaderDropzoneInput").set_input_files(ACROFORM_PDF)
     page.get_by_text("Field 1 of").wait_for()
+    page.get_by_text("✍️ Fields & Signature").click()
+    page.wait_for_timeout(500)
 
     page.get_by_role("textbox", name="Main Insured").dblclick()
     page.get_by_role("textbox", name="Main Insured").fill("name_naja")
