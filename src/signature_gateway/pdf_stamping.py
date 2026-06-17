@@ -19,18 +19,27 @@ def stamp_signature_on_pdf(
     sig_img_bytes: bytes,
     pdf_id: str = None,
     registry_dict: dict = None,
+    cache_mapping: dict = None,
 ) -> bytes:
-    """Stamps the PNG signature image onto the PDF page matching Text94 or last page as fallback."""
+    """Stamps the PNG signature image onto the PDF page matching the mapped signature field (defaults to Text94) or last page as fallback."""
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
 
     page_idx = None
     rect = None
 
+    # Resolve signature field name from cache mapping, defaulting to "Text94"
+    sig_field_name = "Text94"
+    if cache_mapping:
+        for field_name, mapped_key in cache_mapping.items():
+            if mapped_key == "signature":
+                sig_field_name = field_name
+                break
+
     if registry_dict and pdf_id:
         entry = registry_dict.get(pdf_id, {})
         fields = entry.get("fields", [])
         for field in fields:
-            if field.get("name") == "Text94":
+            if field.get("name") == sig_field_name:
                 coords = field.get("coords", {})
                 page_num = field.get("page", 5)
                 canvas_top = coords.get("canvas_top")

@@ -107,5 +107,56 @@ class TestSignatureGatewayVault(unittest.TestCase):
         vault.remove_entry(token)
         self.assertIsNone(vault.get_entry(token))
 
+    def test_stamp_signature_on_pdf_dynamic_alignment(self):
+        from src.signature_gateway.pdf_stamping import stamp_signature_on_pdf
+        from PIL import Image
+        import fitz
+        
+        # Create a blank 5-page document (since Text94 defaults to page 5)
+        doc = fitz.open()
+        for _ in range(5):
+            doc.new_page()
+        pdf_bytes = doc.write()
+        
+        # Create a mock 10x10 PNG
+        img = Image.new("RGBA", (10, 10), (0, 0, 0, 255))
+        img_bytes = BytesIO()
+        img.save(img_bytes, format="PNG")
+        sig_img_bytes = img_bytes.getvalue()
+        
+        # Registry mapping with a custom signature field
+        registry_dict = {
+            "test_pdf": {
+                "fields": [
+                    {
+                        "name": "CustomSignatureField",
+                        "page": 2,
+                        "coords": {
+                            "canvas_top": 100,
+                            "canvas_bottom": 120,
+                            "x0": 50,
+                            "x1": 150
+                        }
+                    }
+                ]
+            }
+        }
+        
+        # Case 1: Mapped signature field (CustomSignatureField)
+        cache_mapping = {
+            "CustomSignatureField": "signature",
+            "Text2": "name"
+        }
+        
+        # Stamp it
+        output_pdf = stamp_signature_on_pdf(
+            pdf_bytes=pdf_bytes,
+            sig_img_bytes=sig_img_bytes,
+            pdf_id="test_pdf",
+            registry_dict=registry_dict,
+            cache_mapping=cache_mapping
+        )
+        self.assertIsNotNone(output_pdf)
+
 if __name__ == "__main__":
     unittest.main()
