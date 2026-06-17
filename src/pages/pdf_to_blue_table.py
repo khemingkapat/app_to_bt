@@ -698,6 +698,43 @@ with mid:
         st.warning("⚠️ No plan configuration is available. Please upload or link a product configuration first.")
         st.page_link("src/pages/config_manager.py", label="Go to Product Config Manager ➡️", icon="⚙️")
 
+    # ── 1.5 Signature Field Mapping (General / Template Config) ──
+    st.markdown("---")
+    st.markdown("#### ✍️ Signature Location Mapping")
+    st.caption("Assign the currently highlighted PDF field as the signature zone for the customer.")
+
+    # Find if any field is currently mapped to "signature"
+    sig_field_name = "Not Mapped"
+    for fname, target in st.session_state.field_mapping.items():
+        if target == "signature":
+            sig_field_name = fname
+            break
+
+    col_sig_a, col_sig_b, col_sig_c = st.columns([5, 1.5, 1.5])
+    with col_sig_a:
+        st.markdown(
+            f"<div style='margin-top:6px; color:#cbd5e1; font-size:0.9rem;'>"
+            f"Mapped PDF Field: <code style='color:#fbbf24; font-weight:bold;'>{sig_field_name}</code>"
+            f"</div>",
+            unsafe_allow_html=True
+        )
+    with col_sig_b:
+        st.button(
+            "Assign",
+            key=f"assign_signature_{idx}",
+            on_click=do_assign,
+            args=("signature", idx, "", field_name, "Signature Field"),
+            use_container_width=True,
+        )
+    with col_sig_c:
+        st.button(
+            "Clear",
+            key=f"clear_signature_{idx}",
+            on_click=do_clear,
+            args=("signature",),
+            use_container_width=True,
+        )
+
     # ── 2. BlueTable Fields Below Plan Options Mapping ──
     from src.blue_table_tools.docx_generator import resolve_plan_combination
     from src.blue_table_tools import apply_acceptance_rules
