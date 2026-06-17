@@ -86,16 +86,23 @@ def test_acroform_pdf_flow(page: Page):
     expect(page.get_by_role("button", name="✅")).to_be_visible()
 
     page.get_by_role("button", name="⬇️").click()
+    page.wait_for_timeout(500)
     page.get_by_role("button", name="Assign").first.click()
+    page.wait_for_timeout(500)
     page.get_by_role("button", name="⬇️").click()
+    page.wait_for_timeout(500)
     page.get_by_role("button", name="⬇️").click()
+    page.wait_for_timeout(500)
     page.get_by_role("button", name="⬇️").click()
+    page.wait_for_timeout(500)
     page.get_by_role("button", name="✅").click()
+    page.wait_for_timeout(1000)
 
     expect(page.get_by_test_id("stJson")).to_contain_text('"name"')
 
     # Reset
     page.get_by_test_id("stButton").get_by_test_id("stBaseButton-secondary").click()
+    page.wait_for_timeout(500)
     expect(page.get_by_text("📋 PDF ➜ BlueTable Auto-Fill")).to_be_visible()
 
     # Second upload — verify cache restore + manual edit
@@ -106,7 +113,9 @@ def test_acroform_pdf_flow(page: Page):
     page.get_by_role("textbox", name="Main Insured").dblclick()
     page.get_by_role("textbox", name="Main Insured").fill("name_naja")
     page.get_by_role("textbox", name="Main Insured").press("Enter")
+    page.wait_for_timeout(1000)
     page.get_by_role("button", name="✅").click()
+    page.wait_for_timeout(1000)
 
     expect(page.get_by_test_id("stJson")).to_contain_text('"name_naja"')
 
@@ -181,6 +190,65 @@ def test_digital_eform_flow(page: Page):
 
     # Step 4: Verification
     expect(page.get_by_text("Application Submitted Successfully!")).to_be_visible()
+    if (repo_root / "resources" / "BlueTable.docx").exists():
+        expect(page.get_by_role("button", name="⬇️ Download Filled BlueTable DOCX")).to_be_visible()
+    expect(
+        page.get_by_role("button", name="⬇️ Download Pre-filled Official PDF")
+    ).to_be_visible()
+
+
+def test_internal_eform_flow(page: Page):
+    page.goto("http://localhost:8501")
+    page.get_by_role("button", name="Launch Internal E-Form ➡️").click()
+
+    expect(page.get_by_text("AXA Internal Fast-Entry E-Form Portal")).to_be_visible()
+    
+    # Fill Policy Details
+    page.get_by_role("textbox", name="Agent CODE/Name *").fill("AGENT001")
+    page.get_by_role("textbox", name="Agent CODE/Name *").press("Enter")
+    page.wait_for_timeout(800)
+
+    # Fill Main Insured Details
+    page.get_by_role("textbox", name="Full Name *").fill("Alex Mercer")
+    page.get_by_role("textbox", name="Full Name *").press("Enter")
+    page.wait_for_timeout(800)
+    page.get_by_role("textbox", name="Date of Birth *").fill("31/10/1990")
+    page.get_by_role("textbox", name="Date of Birth *").press("Enter")
+    page.wait_for_timeout(800)
+    page.get_by_role("textbox", name="ID Card / Passport No. *").fill("1234567890123")
+    page.get_by_role("textbox", name="ID Card / Passport No. *").press("Enter")
+    page.wait_for_timeout(800)
+    page.get_by_role("textbox", name="Personal / Present Address *").fill("123 BlueTable Boulevard, Bangkok, Thailand")
+    page.get_by_role("textbox", name="Personal / Present Address *").press("Enter")
+    page.wait_for_timeout(800)
+    page.get_by_role("textbox", name="Telephone No. *").fill("0812345678")
+    page.get_by_role("textbox", name="Telephone No. *").press("Enter")
+    page.wait_for_timeout(800)
+    page.get_by_role("textbox", name="Email Address *").fill("alex@mercer.com")
+    page.get_by_role("textbox", name="Email Address *").press("Enter")
+    page.wait_for_timeout(800)
+    page.get_by_role("textbox", name="Beneficiary Name *").fill("John Mercer")
+    page.get_by_role("textbox", name="Beneficiary Name *").press("Enter")
+    page.wait_for_timeout(800)
+    page.get_by_role("textbox", name="Relation to Beneficiary *").fill("Spouse")
+    page.get_by_role("textbox", name="Relation to Beneficiary *").press("Enter")
+    page.wait_for_timeout(800)
+    page.get_by_role("textbox", name="Occupation *").fill("Engineer")
+    page.get_by_role("textbox", name="Occupation *").press("Enter")
+    page.wait_for_timeout(800)
+    
+    # Fill Family config
+    page.get_by_role("textbox", name="Cover Spouse? (y/n) *").fill("no")
+    page.get_by_role("textbox", name="Cover Spouse? (y/n) *").press("Enter")
+    page.wait_for_timeout(800)
+    page.get_by_role("textbox", name="Number of Children (0-3) *").fill("0")
+    page.get_by_role("textbox", name="Number of Children (0-3) *").press("Enter")
+    page.wait_for_timeout(1000)
+
+    page.get_by_role("button", name="Generate Deliverables (Alt + S) 🚀").click()
+
+    # Verification
+    expect(page.get_by_text("Verification & Deliverables Generation")).to_be_visible()
     if (repo_root / "resources" / "BlueTable.docx").exists():
         expect(page.get_by_role("button", name="⬇️ Download Filled BlueTable DOCX")).to_be_visible()
     expect(
