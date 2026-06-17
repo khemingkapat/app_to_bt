@@ -721,7 +721,7 @@ with mid:
     with col_sig_b:
         st.button(
             "Assign",
-            key=f"assign_signature_{idx}",
+            key=f"assign_sig_loc_{idx}",
             on_click=do_assign,
             args=("signature", idx, "", field_name, "Signature Field"),
             use_container_width=True,
@@ -729,7 +729,7 @@ with mid:
     with col_sig_c:
         st.button(
             "Clear",
-            key=f"clear_signature_{idx}",
+            key=f"clear_sig_loc_{idx}",
             on_click=do_clear,
             args=("signature",),
             use_container_width=True,
