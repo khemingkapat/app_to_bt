@@ -18,7 +18,12 @@ def test_parse_date_part():
     assert parse_date_part("", "DD") == ""
 
 def test_map_customer_data_to_pdf():
+    import shutil
+    shutil.copy("outputs/assignment_cache.example.json", "outputs/assignment_cache.json")
+    
     config = load_product_config()
+    from src.blue_table_tools.cache import load_cache
+    field_mappings = load_cache("87ba7613a963df438482bbcd8c1612a0")
     customer_data = {
         "name": "Jane Doe",
         "dob": "1988-04-15",
@@ -28,7 +33,7 @@ def test_map_customer_data_to_pdf():
         "c1_dob": "2015-11-05"
     }
     
-    pdf_values = map_customer_data_to_pdf(customer_data, config)
+    pdf_values = map_customer_data_to_pdf(customer_data, config, field_mappings)
     
     # Check name mapping
     assert pdf_values.get("Text2") == "Jane Doe"
@@ -49,7 +54,11 @@ def test_map_customer_data_to_pdf():
     # Check child 1 name mapping
     assert pdf_values.get("Text39") == "Jimmy Doe"
 
+
 def test_fill_acroform_pdf():
+    import shutil
+    shutil.copy("outputs/assignment_cache.example.json", "outputs/assignment_cache.json")
+    
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     original_pdf_path = os.path.join(repo_root, "resources", "OriginalApplication.pdf")
     
