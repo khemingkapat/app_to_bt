@@ -60,9 +60,10 @@ st.markdown("""
 st.markdown("<h1 class='main-header'>🏥 AXA Health Insurance Application Portal</h1>", unsafe_allow_html=True)
 st.markdown("<div class='landing-desc'>A unified intake workflow platform designed for zero-error underwriting, automated data extraction, and human-in-the-loop validation.</div>", unsafe_allow_html=True)
 
-col_a, col_b, col_c = st.columns(3, gap="medium")
+# Row 1
+col_r1_a, col_r1_b = st.columns(2, gap="medium")
 
-with col_a:
+with col_r1_a:
     st.markdown("""
     <div class='path-card'>
         <div class='path-icon'>🚀</div>
@@ -73,7 +74,23 @@ with col_a:
     if st.button("Launch PDF to BlueTable Tool ➡️", key="btn_path_a", use_container_width=True):
         st.switch_page("src/pages/pdf_to_blue_table.py")
 
-with col_b:
+with col_r1_b:
+    st.markdown("""
+    <div class='path-card'>
+        <div class='path-icon'>📝</div>
+        <div class='path-title'>Pathway B: Digital E-Form</div>
+        <div class='path-desc'>Customer-facing digital onboarding journey with health pre-screening underwriting and plan comparison sandbox.</div>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("Launch Digital E-Form Portal ➡️", key="btn_path_b", use_container_width=True):
+        st.switch_page("src/pages/digital_eform.py")
+
+st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
+
+# Row 2
+col_r2_a, col_r2_b = st.columns(2, gap="medium")
+
+with col_r2_a:
     st.markdown("""
     <div class='path-card'>
         <div class='path-icon'>⌨️</div>
@@ -84,16 +101,16 @@ with col_b:
     if st.button("Launch Internal E-Form ➡️", key="btn_path_c", use_container_width=True, type="primary"):
         st.switch_page("src/pages/internal_eform.py")
 
-with col_c:
+with col_r2_b:
     st.markdown("""
     <div class='path-card'>
-        <div class='path-icon'>📝</div>
-        <div class='path-title'>Pathway B: Digital E-Form</div>
-        <div class='path-desc'>Customer-facing digital onboarding journey with health pre-screening underwriting and plan comparison sandbox.</div>
+        <div class='path-icon'>✍️</div>
+        <div class='path-title'>Signature Gateway</div>
+        <div class='path-desc'>Secure, database-free portal to generate timing-safe customer signing links, verify identities, and capture digital signatures.</div>
     </div>
     """, unsafe_allow_html=True)
-    if st.button("Launch Digital E-Form Portal ➡️", key="btn_path_b", use_container_width=True):
-        st.switch_page("src/pages/digital_eform.py")
+    if st.button("Launch Signature Gateway ➡️", key="btn_signature_gateway", use_container_width=True):
+        st.switch_page("src/pages/signature_gateway.py")
 
 st.divider()
 st.caption("Internal administrative utility for AXA Health and Accident Insurance operations.")
