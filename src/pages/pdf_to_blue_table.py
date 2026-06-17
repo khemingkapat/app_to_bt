@@ -283,6 +283,46 @@ def sort_key(f):
         return (page, round(coords.get("canvas_top", 9999), -1), coords.get("x0", 9999))
 
 
+def find_field_by_coords(page_num: int, pdf_x: float, pdf_y: float, all_fields: list, pdf_h: float) -> tuple:
+    """
+    Returns (field_idx, widget_idx) of the field containing the point, or (None, None).
+    """
+    for f_idx, field in enumerate(all_fields):
+        # We only check fields on the current page
+        f_page = field.get("page")
+        if f_page is None:
+            widgets = field.get("widgets", [])
+            if widgets:
+                f_page = widgets[0].get("page", 1)
+            else:
+                f_page = 1
+        if f_page != page_num:
+            continue
+            
+        kind = field.get("field_kind")
+        if kind == "radio":
+            for w_idx, w in enumerate(field.get("widgets", [])):
+                c = w.get("coords")
+                w_page = w.get("page", 1)
+                if c and w_page == page_num:
+                    left_x = c["x0"]
+                    right_x = c["x1"]
+                    top_y = pdf_h - c["y1"]
+                    bottom_y = pdf_h - c["y0"]
+                    if (left_x - 3 <= pdf_x <= right_x + 3) and (min(top_y, bottom_y) - 3 <= pdf_y <= max(top_y, bottom_y) + 3):
+                        return f_idx, w_idx
+        else:
+            c = field.get("coords")
+            if c:
+                left_x = c["x0"]
+                right_x = c["x1"]
+                top_y = pdf_h - c["y1"]
+                bottom_y = pdf_h - c["y0"]
+                if (left_x - 3 <= pdf_x <= right_x + 3) and (min(top_y, bottom_y) - 3 <= pdf_y <= max(top_y, bottom_y) + 3):
+                    return f_idx, 0
+    return None, None
+
+
 # ── session-state bootstrap ────────────────────────────────────────────────
 
 
@@ -451,31 +491,24 @@ if n_fields == 0:
 # Only trigger done when explicitly set — idx >= n_fields is no longer used
 # as the completion signal to avoid false positives on cache-restored sessions.
 if st.session_state.done:
-    st.success("✅ All fields processed!")
+    st.success("✅ All fields processed successfully!")
 
     if not st.session_state.get("cache_saved") and st.session_state.pdf_id:
         save_cache(st.session_state.pdf_id, st.session_state.field_mapping)
         st.session_state.cache_saved = True
 
-    col_res, col_dl = st.columns([3, 1])
-    with col_res:
-        st.subheader("BlueTable Summary")
+    # Center the finished status and download button in the middle
+    col_l, col_m, col_r = st.columns([1, 2, 1])
+    with col_m:
+        st.markdown("<h3 style='text-align: center;'>🎉 Compilation Complete!</h3>", unsafe_allow_html=True)
+        
         from src.blue_table_tools.docx_generator import resolve_plan_combination
         from src.blue_table_tools import apply_acceptance_rules
 
         st.session_state.bt_data = resolve_plan_combination(st.session_state.bt_data)
         st.session_state.bt_data = apply_acceptance_rules(st.session_state.bt_data)
-        for label, key in BLUETABLE_FIELDS:
-            val = st.session_state.bt_data.get(key, "")
-            if val:
-                st.session_state[f"input_{key}"] = val
-                st.markdown(f"**{label}**: {val}")
-
-    with col_dl:
-        st.subheader("Export")
-
+        
         import os
-
         template_docx_path = "./resources/BlueTable.docx"
 
         if os.path.exists(template_docx_path):
@@ -485,7 +518,7 @@ if st.session_state.done:
                         template_docx_path, st.session_state.bt_data
                     )
                     st.download_button(
-                        "⬇ Download Filled DOCX",
+                        "⬇️ Download Filled BlueTable DOCX",
                         data=docx_stream.getvalue(),
                         file_name="bluetable_filled.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -496,7 +529,8 @@ if st.session_state.done:
                     st.error(f"Failed to generate DOCX: {e}")
         else:
             st.error(f"Template DOCX not found at: {template_docx_path}")
-        if st.button("🔄 Start Over"):
+            
+        if st.button("🔄 Start Over", use_container_width=True):
             for k in [
                 "pdf_bytes",
                 "all_fields",
@@ -516,8 +550,22 @@ if st.session_state.done:
                 st.session_state.pop(f"input_{key}", None)
             st.rerun()
 
-    st.subheader("Assignment Log")
-    st.json(st.session_state.assigned)
+    st.write("---")
+    st.subheader("📋 BlueTable Preview")
+
+    # Render preview as a structured table
+    preview_rows = []
+    for label, key in BLUETABLE_FIELDS:
+        val = st.session_state.bt_data.get(key, "")
+        if val:
+            st.session_state[f"input_{key}"] = val
+            preview_rows.append({"Field Label": label, "Value": val})
+
+    if preview_rows:
+        st.table(preview_rows)
+    else:
+        st.info("No values have been mapped yet.")
+
     st.stop()
 
 # ── 4. Current field & Choice Wizard ───────────────────────────────────────
@@ -693,6 +741,29 @@ with mid:
                             use_container_width=True,
                         )
 
+            # Policy Version mapping row
+            policy_version_opt = product_options.get("policy_version", {})
+            if policy_version_opt:
+                label = policy_version_opt.get("label", "Policy Version")
+                bt_key = policy_version_opt.get("bt_key", "policy_version")
+                choices = policy_version_opt.get("choices", [])
+
+                cols = st.columns([2] + [2] * len(choices))
+                with cols[0]:
+                    st.markdown(
+                        f"<span style='font-size:0.85rem; font-weight:bold;'>{label}</span>",
+                        unsafe_allow_html=True,
+                    )
+                for i, val in enumerate(choices):
+                    with cols[i + 1]:
+                        st.button(
+                            val,
+                            key=f"assign_opt_policy_{val}_{idx}",
+                            on_click=do_assign_choice_option,
+                            args=("policy_version", val, bt_key),
+                            use_container_width=True,
+                        )
+
             # Determine detected product line from the PDF mapping state
             product_selection = st.session_state.bt_data.get("product_name", "")
             detected_product = "SmartCare Essential"
@@ -860,7 +931,27 @@ with mid:
 
 # ── RIGHT: navigation ──────────────────────────────────────────────────────
 with right:
-    st.markdown("<div style='height:360px'></div>", unsafe_allow_html=True)
+    pages = sorted(list(set(f.get("page", 1) for f in all_fields if f.get("page"))))
+    if pages:
+        try:
+            current_page_idx = pages.index(field_page)
+        except ValueError:
+            current_page_idx = 0
+            
+        jump_page = st.selectbox(
+            "Page",
+            options=pages,
+            index=current_page_idx,
+            key=f"jump_page_select_{idx}"
+        )
+        if jump_page != field_page:
+            first_field_idx = next((i for i, f in enumerate(all_fields) if f.get("page", 1) == jump_page), None)
+            if first_field_idx is not None:
+                st.session_state.field_idx = first_field_idx
+                st.session_state.widget_idx = 0
+                st.rerun()
+
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
     if st.button(
         "⬆️",
         disabled=(idx == 0 and st.session_state.widget_idx == 0),
