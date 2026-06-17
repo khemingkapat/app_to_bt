@@ -1,7 +1,7 @@
 import streamlit as st
 
 st.set_page_config(
-    page_title="AXA Health Insurance Application",
+    page_title="AXA Application Tools Portal",
     page_icon="🏥",
     layout="centered"
 )
@@ -11,9 +11,7 @@ st.markdown("""
     .main-header {
         font-size: 2.8rem;
         font-weight: 800;
-        background: linear-gradient(135deg, #002855 0%, #005a9c 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #002855;
         margin-bottom: 0.5rem;
         text-align: center;
     }
@@ -57,7 +55,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("<h1 class='main-header'>🏥 AXA Health Insurance Application Portal</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='main-header'>🏥 AXA Application Tools Portal</h1>", unsafe_allow_html=True)
 st.markdown("<div class='landing-desc'>A unified intake workflow platform designed for zero-error underwriting, automated data extraction, and human-in-the-loop validation.</div>", unsafe_allow_html=True)
 
 # Row 1
