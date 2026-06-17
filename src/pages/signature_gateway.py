@@ -17,6 +17,7 @@ from src.blue_table_tools.cache import load_cache
 from src.pdf_processor.inverter import fill_acroform_pdf
 from src.blue_table_tools.docx_generator import fill_blue_table_docx
 
+
 def get_network_ip() -> str:
     """Gets the local IP address of the machine on the network."""
     try:
@@ -38,7 +39,8 @@ st.set_page_config(
 )
 
 # Custom premium styling injected via CSS
-st.markdown("""
+st.markdown(
+    """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
 
@@ -184,17 +186,25 @@ table {
     margin-top: 4px;
 }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 
-def stamp_signature_on_pdf(pdf_bytes: bytes, sig_img_bytes: bytes, pdf_id: str = None, registry_dict: dict = None) -> bytes:
+def stamp_signature_on_pdf(
+    pdf_bytes: bytes,
+    sig_img_bytes: bytes,
+    pdf_id: str = None,
+    registry_dict: dict = None,
+) -> bytes:
     """Stamps the PNG signature image onto the PDF page matching Text94 or last page as fallback."""
     import fitz
+
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    
+
     page_idx = None
     rect = None
-    
+
     if registry_dict and pdf_id:
         entry = registry_dict.get(pdf_id, {})
         fields = entry.get("fields", [])
@@ -210,11 +220,13 @@ def stamp_signature_on_pdf(pdf_bytes: bytes, sig_img_bytes: bytes, pdf_id: str =
                     page_idx = page_num - 1
                     if 0 <= page_idx < len(doc):
                         # Scale down by 25% and shift up by 5% of the signature size (shifted up by 3 points)
-                        rect = fitz.Rect(x0 + 19, canvas_top - 11, x1 - 19, canvas_bottom + 21)
+                        rect = fitz.Rect(
+                            x0 + 19, canvas_top - 11, x1 - 19, canvas_bottom + 21
+                        )
                         break
                     else:
                         page_idx = None
-                        
+
     if page_idx is None or rect is None:
         page_idx = len(doc) - 1
         page = doc[page_idx]
@@ -225,10 +237,10 @@ def stamp_signature_on_pdf(pdf_bytes: bytes, sig_img_bytes: bytes, pdf_id: str =
         x1 = width * 0.88
         y1 = height * 0.86
         rect = fitz.Rect(x0, y0, x1, y1)
-        
+
     page = doc[page_idx]
     page.insert_image(rect, stream=sig_img_bytes)
-    
+
     out = BytesIO()
     doc.save(out)
     doc.close()
@@ -244,32 +256,38 @@ token_param = st.query_params.get("token")
 if token_param:
     # Look up the transaction in the vault
     entry = vault.get_entry(token_param)
-    
+
     if not entry:
         with st.container(border=True):
-            st.markdown("""
+            st.markdown(
+                """
             <span class='glass-card-trigger'></span>
             <div style="text-align: center; margin: 20px 0;">
                 <h3 style="margin-top: 0; color: #f87171;">❌ Secure Link Invalid or Expired</h3>
                 <p class='desc-text' style="color: #cbd5e1; font-size: 1.05rem;">This secure signing link is single-use, has expired, or is invalid. Please request your sales representative to generate a new signing link.</p>
             </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
         st.stop()
-        
+
     status = entry["status"]
-    
+
     if status == "signed":
         with st.container(border=True):
-            st.markdown(f"""
+            st.markdown(
+                f"""
             <span class='glass-card-trigger'></span>
             <div style="text-align: center; margin: 20px 0;">
                 <span class="status-pill status-signed">Signed Successfully</span>
                 <h3 style="margin-top: 15px;">✍️ Document Already Signed</h3>
                 <p class='desc-text' style="color: #cbd5e1; font-size: 1.05rem;">Thank you, <b>{entry['customer_name']}</b>. Your signature has already been submitted successfully, and the sales representative has been notified. You may close this browser tab.</p>
             </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
         st.stop()
-        
+
     # Identity Gate Check
     if not st.session_state.get("customer_verified"):
         with st.container(border=True):
@@ -277,11 +295,15 @@ if token_param:
                 f'<span class="glass-card-trigger"></span><h3 style="margin-top: 0; text-align: center;">🔐 Identity Verification</h3>'
                 f"<p style='text-align: center; color: #cbd5e1; margin-top: 10px;'>Welcome, <b>{entry['customer_name']}</b>. "
                 "For security purposes, please confirm your identity to review and sign your application.</p>",
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
-            
-            id_input = st.text_input("Enter your ID / Passport Number", type="password", key="customer_id_gate")
-            
+
+            id_input = st.text_input(
+                "Enter your ID / Passport Number",
+                type="password",
+                key="customer_id_gate",
+            )
+
             col_btn, _ = st.columns([1, 1])
             with col_btn:
                 if st.button("Verify & Proceed"):
@@ -289,27 +311,37 @@ if token_param:
                         st.error("Please enter your ID number.")
                     elif vault.verify_identity(token_param, id_input):
                         st.session_state.customer_verified = True
-                        st.success("Identity verified! Proceeding to document signing...")
+                        st.success(
+                            "Identity verified! Proceeding to document signing..."
+                        )
                         st.rerun()
                     else:
-                        st.error("❌ Identity verification failed. Please enter the correct ID/Passport number as provided to the sales representative.")
-                        
-            st.markdown('<p class="desc-text" style="font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: 15px; text-align: center;">Disclaimer: This verification check gates access to your filled application. Raw details are encrypted and deleted immediately upon success.</p>', unsafe_allow_html=True)
+                        st.error(
+                            "❌ Identity verification failed. Please enter the correct ID/Passport number as provided to the sales representative."
+                        )
+
+            st.markdown(
+                '<p class="desc-text" style="font-size: 0.8rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: 15px; text-align: center;">Disclaimer: This verification check gates access to your filled application. Raw details are encrypted and deleted immediately upon success.</p>',
+                unsafe_allow_html=True,
+            )
         st.stop()
-        
+
     # Customer Signature Interface
     with st.container(border=True):
         st.markdown(
             f'<span class="glass-card-trigger"></span><h2 style="margin-top: 0; text-align: center;">✍️ Sign Application</h2>'
             f"<p style='color: #cbd5e1; text-align: center; margin-bottom: 20px;'>Please draw your signature in the box below, then submit to complete the application.</p>",
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
-    
+
     st.subheader("Draw Your Signature")
-    st.markdown("<p class='desc-text'>Draw your signature using your finger, stylus, or mouse pointer in the box below.</p>", unsafe_allow_html=True)
-    
+    st.markdown(
+        "<p class='desc-text'>Draw your signature using your finger, stylus, or mouse pointer in the box below.</p>",
+        unsafe_allow_html=True,
+    )
+
     from streamlit_drawable_canvas import st_canvas
-    
+
     canvas_result = st_canvas(
         fill_color="rgba(255, 255, 255, 0)",
         stroke_width=3,
@@ -320,7 +352,7 @@ if token_param:
         drawing_mode="freedraw",
         key="canvas",
     )
-    
+
     col_submit, col_clear = st.columns([2, 1])
     with col_submit:
         if st.button("Submit Secure Signature"):
@@ -332,13 +364,19 @@ if token_param:
                 # Convert to RGB and count non-white pixels
                 non_white = np.any(img_data[:, :, :3] < 240, axis=-1)
                 pixels_drawn = np.sum(non_white)
-                
+
                 if pixels_drawn < 50:
-                    st.error("⚠️ Please draw your signature in the box before submitting.")
+                    st.error(
+                        "⚠️ Please draw your signature in the box before submitting."
+                    )
                 else:
-                    with st.spinner("Processing document generation and e-signature stamp..."):
+                    with st.spinner(
+                        "Processing document generation and e-signature stamp..."
+                    ):
                         # Convert canvas signature to PIL and remove white background (make it transparent)
-                        pil_img = Image.fromarray(img_data.astype(np.uint8)).convert("RGBA")
+                        pil_img = Image.fromarray(img_data.astype(np.uint8)).convert(
+                            "RGBA"
+                        )
                         datas = pil_img.getdata()
                         newData = []
                         for item in datas:
@@ -348,52 +386,64 @@ if token_param:
                             else:
                                 newData.append(item)
                         pil_img.putdata(newData)
-                        
+
                         sig_io = BytesIO()
                         pil_img.save(sig_io, format="PNG")
                         sig_png_bytes = sig_io.getvalue()
-                        
+
                         # Generate filled files from the stored PDF template bytes
                         bt = entry["bt_data"]
                         pdf_template_bytes = entry["pdf_bytes"]
-                        
+
                         # 1. Fill AcroForm interactive fields
-                        filled_pdf_stream = fill_acroform_pdf(BytesIO(pdf_template_bytes), bt)
+                        filled_pdf_stream = fill_acroform_pdf(
+                            BytesIO(pdf_template_bytes), bt
+                        )
                         filled_pdf_bytes = filled_pdf_stream.getvalue()
-                        
+
                         # 2. Stamp PNG signature using Text94 coordinate lookup
                         registry_dict = entry.get("registry_dict")
                         final_pdf_bytes = stamp_signature_on_pdf(
-                            filled_pdf_bytes, 
-                            sig_png_bytes, 
-                            entry.get("pdf_id"), 
-                            registry_dict
+                            filled_pdf_bytes,
+                            sig_png_bytes,
+                            entry.get("pdf_id"),
+                            registry_dict,
                         )
-                        
+
                         # 3. Fill the BlueTable docx tracker template
-                        filled_docx_stream = fill_blue_table_docx("resources/BlueTable.docx", bt)
+                        filled_docx_stream = fill_blue_table_docx(
+                            "resources/BlueTable.docx", bt
+                        )
                         final_docx_bytes = filled_docx_stream.getvalue()
-                        
+
                         # 4. Save to vault and flip status to signed
-                        vault.save_signed_documents(token_param, final_pdf_bytes, final_docx_bytes)
-                        
+                        vault.save_signed_documents(
+                            token_param, final_pdf_bytes, final_docx_bytes
+                        )
+
                     st.success("🎉 Signature submitted successfully!")
                     st.rerun()
             else:
                 st.error("Please draw your signature.")
-                
+
     with col_clear:
         if st.button("Clear Canvas"):
             st.rerun()
-            
-    st.markdown("<hr style='border-color: rgba(255,255,255,0.08); margin-top: 25px;'>", unsafe_allow_html=True)
-    
+
+    st.markdown(
+        "<hr style='border-color: rgba(255,255,255,0.08); margin-top: 25px;'>",
+        unsafe_allow_html=True,
+    )
+
     # Read-only Summary Table on the bottom
     st.subheader("📋 Application Details Summary")
-    st.markdown("<p class='desc-text' style='margin-bottom: 15px;'>Please review your pre-filled details below for accuracy.</p>", unsafe_allow_html=True)
-    
+    st.markdown(
+        "<p class='desc-text' style='margin-bottom: 15px;'>Please review your pre-filled details below for accuracy.</p>",
+        unsafe_allow_html=True,
+    )
+
     bt = entry["bt_data"]
-    
+
     # Premium styled HTML table format
     table_html = f"""
     <table style="width: 100%; border-collapse: collapse; border: 1px solid rgba(255,255,255,0.08); background: rgba(15,23,42,0.3); border-radius: 8px; font-size: 0.95rem; margin-bottom: 15px;">
@@ -450,36 +500,46 @@ if token_param:
 # PATHWAY A: Sales Rep Portal
 # ==============================================================================
 else:
-    st.markdown('<div class="portal-title">AXA Signature Gateway</div>', unsafe_allow_html=True)
-    st.markdown('<div class="portal-subtitle">Secure, Database-Free Customer Document Signing</div>', unsafe_allow_html=True)
-    
+    st.markdown(
+        '<div class="portal-title">AXA Signature Gateway</div>', unsafe_allow_html=True
+    )
+    st.markdown(
+        '<div class="portal-subtitle">Secure, Database-Free Customer Document Signing</div>',
+        unsafe_allow_html=True,
+    )
+
     col_input, col_status = st.columns([1, 1])
-    
+
     with col_input:
         with st.container(border=True):
             st.markdown(
                 '<span class="glass-card-trigger"></span><h3 style="margin-top: 0;">📤 Generate Secure Link</h3>'
                 '<p class="desc-text">Upload the pre-filled AcroForm PDF application from app-to-bt to create a single-use customer portal link.</p>',
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
-            
+
             uploaded = st.file_uploader("Select Application PDF File", type=["pdf"])
-            
+
             if uploaded:
                 # Check if this PDF has already been processed in the current session
                 # to avoid re-parsing on every UI interaction
                 file_bytes = uploaded.getvalue()
-                
+
                 with st.spinner("Extracting template ID and structural fields..."):
                     try:
-                        pdf_id, registry_dict, values_dict = update_pdf_registry(BytesIO(file_bytes))
+                        pdf_id, registry_dict, values_dict = update_pdf_registry(
+                            BytesIO(file_bytes)
+                        )
                         cache_mapping = load_cache(pdf_id)
                     except Exception as e:
                         st.error(f"Error parsing PDF: {e}")
                         st.stop()
-                        
+
                 if not cache_mapping:
-                    st.markdown('<hr style="border-color: rgba(255,255,255,0.08);">', unsafe_allow_html=True)
+                    st.markdown(
+                        '<hr style="border-color: rgba(255,255,255,0.08);">',
+                        unsafe_allow_html=True,
+                    )
                     st.warning(
                         "⚠️ **Unknown PDF Template**\n\n"
                         "This PDF template has no saved field mapping yet. "
@@ -490,33 +550,44 @@ else:
                     bt_data = vault.extract_bt_data(
                         registry_dict.get(pdf_id, {}).get("fields", []),
                         cache_mapping,
-                        values_dict
+                        values_dict,
                     )
                     bt_data["pdf_id"] = pdf_id
-                    
+
                     customer_name = bt_data.get("name", "").strip()
                     identity_id = bt_data.get("id_card_no", "").strip()
-                    
+
                     if not customer_name:
-                        st.warning("⚠️ Could not extract 'customer_name' (name field) from layout. Please check template mapping.")
+                        st.warning(
+                            "⚠️ Could not extract 'customer_name' (name field) from layout. Please check template mapping."
+                        )
                     if not identity_id:
-                        st.warning("⚠️ Could not extract 'identity_id' (id_card_no field) from layout. Please check template mapping.")
-                    
+                        st.warning(
+                            "⚠️ Could not extract 'identity_id' (id_card_no field) from layout. Please check template mapping."
+                        )
+
                     # Mask identity_id for security display
                     masked_id = identity_id
                     if len(identity_id) > 4:
                         masked_id = "*" * (len(identity_id) - 4) + identity_id[-4:]
-                    
-                    st.markdown('<hr style="border-color: rgba(255,255,255,0.08);">', unsafe_allow_html=True)
+
+                    st.markdown(
+                        '<hr style="border-color: rgba(255,255,255,0.08);">',
+                        unsafe_allow_html=True,
+                    )
                     st.markdown("##### Resolved Customer Details")
-                    st.write(f"👤 **Name:** {customer_name if customer_name else 'Unknown'}")
-                    st.write(f"💳 **ID Card / Passport:** `{masked_id if masked_id else 'Not found'}`")
-                    
+                    st.write(
+                        f"👤 **Name:** {customer_name if customer_name else 'Unknown'}"
+                    )
+                    st.write(
+                        f"💳 **ID Card / Passport:** `{masked_id if masked_id else 'Not found'}`"
+                    )
+
                     if customer_name and identity_id:
                         if st.button("Generate Secure Customer Link"):
                             # Generate unique token
                             token = secrets.token_hex(16)
-                            
+
                             # Add token entry to vault, storing PDF bytes as well
                             vault.add_entry(
                                 token=token,
@@ -529,23 +600,28 @@ else:
                             # Save the raw PDF bytes specifically in the entry (not displayed/exposed)
                             vault.get_entry(token)["pdf_bytes"] = file_bytes
                             vault.get_entry(token)["registry_dict"] = registry_dict
-                            
+
                             # Save token state to check status
                             st.session_state.active_token = token
                             st.session_state.active_customer = customer_name
                             st.rerun()
-                            
+
     with col_status:
         with st.container(border=True):
-            st.markdown('<span class="glass-card-trigger"></span><h3 style="margin-top: 0;">📊 Active Session Status</h3>', unsafe_allow_html=True)
-            
+            st.markdown(
+                '<span class="glass-card-trigger"></span><h3 style="margin-top: 0;">📊 Active Session Status</h3>',
+                unsafe_allow_html=True,
+            )
+
             active_token = st.session_state.get("active_token")
-            
+
             if not active_token:
-                st.info("No active signing link session. Generate a link to start monitoring.")
+                st.info(
+                    "No active signing link session. Generate a link to start monitoring."
+                )
             else:
                 entry = vault.get_entry(active_token)
-                
+
                 if not entry:
                     st.warning("⚠️ Session has expired or been cleared.")
                     if st.button("Start New Session"):
@@ -553,7 +629,8 @@ else:
                         st.rerun()
                 else:
                     # Browser notification permission requester helper
-                    st.markdown("""
+                    st.markdown(
+                        """
                     <div style="margin-bottom: 15px;">
                         <button onclick="requestPermission()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #cbd5e1; border-radius: 6px; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; width: 100%;">
                             🔔 Enable Desktop Notifications
@@ -574,24 +651,30 @@ else:
                         }
                         </script>
                     </div>
-                    """, unsafe_allow_html=True)
-                    
+                    """,
+                        unsafe_allow_html=True,
+                    )
+
                     # Construct query parameters link
                     host = st.context.headers.get("host", "localhost:8502")
                     # Resolve to local network IP if localhost/127.0.0.1 is used
                     if "localhost" in host or "127.0.0.1" in host:
                         net_ip = get_network_ip()
-                        host = host.replace("localhost", net_ip).replace("127.0.0.1", net_ip)
-                    
-                    protocol = "https" if st.context.headers.get("x-forwarded-proto") == "https" else "http"
-                    base_url = f"{protocol}://{host}"
-                    
-                    share_link = f"{base_url}/?token={active_token}"
-                    
-                    st.markdown(f"**Customer:** {entry['customer_name']}")
-                    
+                        host = host.replace("localhost", net_ip).replace(
+                            "127.0.0.1", net_ip
+                        )
 
-                    
+                    protocol = (
+                        "https"
+                        if st.context.headers.get("x-forwarded-proto") == "https"
+                        else "http"
+                    )
+                    base_url = f"{protocol}://{host}"
+
+                    share_link = f"{base_url}/?token={active_token}"
+
+                    st.markdown(f"**Customer:** {entry['customer_name']}")
+
                     # Link share block with Clipboard copy button
                     st.markdown("**Secure Customer Link:**")
                     copy_html = f"""
@@ -635,9 +718,12 @@ else:
                     </div>
                     """
                     st.markdown(copy_html, unsafe_allow_html=True)
-                    
-                    st.markdown("<hr style='border-color: rgba(255,255,255,0.08);'>", unsafe_allow_html=True)
-                    
+
+                    st.markdown(
+                        "<hr style='border-color: rgba(255,255,255,0.08);'>",
+                        unsafe_allow_html=True,
+                    )
+
                     # Active Status Polling Fragment
                     @st.fragment(run_every=3)
                     def check_status_fragment(token):
@@ -646,11 +732,13 @@ else:
                         if not e:
                             st.warning("Session expired.")
                             return
-                        
+
                         # Expiry TTL progress/countdown
-                        elapsed = (datetime.now(timezone.utc) - e["created_at"]).total_seconds()
+                        elapsed = (
+                            datetime.now(timezone.utc) - e["created_at"]
+                        ).total_seconds()
                         remaining = int(e["ttl_seconds"] - elapsed)
-                        
+
                         if remaining <= 0:
                             st.error("⏳ Secure Link Expired")
                             vault.remove_entry(token)
@@ -659,27 +747,34 @@ else:
                             mins = remaining // 60
                             secs = remaining % 60
                             st.info(f"⏳ Link expires in **{mins:02d}:{secs:02d}**")
-                        
+
                         status = e["status"]
-                        
+
                         if status == "pending":
-                            st.markdown("""
+                            st.markdown(
+                                """
                             <div style="text-align: center; margin: 15px 0;">
                                 <span class="status-pill status-pending">Pending Signature</span>
                                 <p class="desc-text">Waiting for customer to verify and sign...</p>
                             </div>
-                            """, unsafe_allow_html=True)
-                        
+                            """,
+                                unsafe_allow_html=True,
+                            )
+
                         elif status == "signed":
-                            st.markdown("""
+                            st.markdown(
+                                """
                             <div style="text-align: center; margin: 15px 0;">
                                 <span class="status-pill status-signed">Signed Successfully</span>
                             </div>
-                            """, unsafe_allow_html=True)
-                            
+                            """,
+                                unsafe_allow_html=True,
+                            )
+
                             # Fire desktop browser notification (once only)
                             if not st.session_state.get(f"notified_{token}"):
-                                st.markdown(f"""
+                                st.markdown(
+                                    f"""
                                 <script>
                                 if (Notification.permission === 'granted') {{
                                     new Notification("AXA Signature Gateway", {{
@@ -688,11 +783,13 @@ else:
                                     }});
                                 }}
                                 </script>
-                                """, unsafe_allow_html=True)
+                                """,
+                                    unsafe_allow_html=True,
+                                )
                                 st.session_state[f"notified_{token}"] = True
-                            
+
                             st.markdown("#### 📥 Download Completed Documents")
-                            
+
                             col_pdf, col_docx = st.columns(2)
                             with col_pdf:
                                 st.download_button(
@@ -708,15 +805,22 @@ else:
                                     file_name=f"BlueTable_{e['customer_name'].replace(' ', '_')}.docx",
                                     mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                                 )
-                                
+
                             # Complete transaction / Clear vault button for compliance
-                            st.markdown("<hr style='border-color: rgba(255,255,255,0.08);'>", unsafe_allow_html=True)
-                            if st.button("🧹 Clear Transaction & PII (Compliance Complete)"):
+                            st.markdown(
+                                "<hr style='border-color: rgba(255,255,255,0.08);'>",
+                                unsafe_allow_html=True,
+                            )
+                            if st.button(
+                                "🧹 Clear Transaction & PII (Compliance Complete)"
+                            ):
                                 vault.remove_entry(token)
                                 del st.session_state.active_token
                                 if f"notified_{token}" in st.session_state:
                                     del st.session_state[f"notified_{token}"]
-                                st.success("Vault entry and document bytes successfully purged.")
+                                st.success(
+                                    "Vault entry and document bytes successfully purged."
+                                )
                                 st.rerun()
-                    
+
                     check_status_fragment(active_token)
