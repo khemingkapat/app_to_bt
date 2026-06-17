@@ -17,9 +17,9 @@ json_files = []
 if os.path.exists(config_dir):
     json_files = sorted([f for f in os.listdir(config_dir) if f.endswith(".json")])
 
-if "health_and_accident.json" in json_files:
-    json_files.remove("health_and_accident.json")
-    json_files.insert(0, "health_and_accident.json")
+if "health_and_accident_insurance.json" in json_files:
+    json_files.remove("health_and_accident_insurance.json")
+    json_files.insert(0, "health_and_accident_insurance.json")
 
 if not json_files:
     st.warning("⚠️ No plan configuration is available. Please upload or link a product configuration first.")

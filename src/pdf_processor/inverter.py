@@ -4,7 +4,7 @@ from io import BytesIO
 from typing import Union
 from pypdf import PdfReader, PdfWriter
 
-CONFIG_FILE = "./config/health_and_accident.json"
+CONFIG_FILE = "./config/health_and_accident_insurance.json"
 
 # TODO: Add support for secure PDF signature stamps and digital watermarking on filled applications.
 
@@ -60,7 +60,7 @@ def load_config_by_pdf_id(pdf_id: str, config_dir: str = "./config") -> dict:
     """
     Finds and loads the product configuration JSON that matches the given pdf_id.
     First checks outputs/assignment_cache.json for association, then scans config_dir files.
-    Falls back to loading config/health_and_accident.json if not found.
+    Falls back to loading config/health_and_accident_insurance.json if not found.
     """
     from src.blue_table_tools.cache import get_product_config_name
     
@@ -89,7 +89,7 @@ def load_config_by_pdf_id(pdf_id: str, config_dir: str = "./config") -> dict:
                     pass
 
     # 3. Fallback to default
-    default_path = os.path.join(config_dir, "health_and_accident.json")
+    default_path = os.path.join(config_dir, "health_and_accident_insurance.json")
     if os.path.exists(default_path):
         try:
             with open(default_path, "r", encoding="utf-8") as f:

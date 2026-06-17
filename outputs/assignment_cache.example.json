@@ -1,6 +1,6 @@
 {
     "UNKNOWN_ID": {
-        "product_config": "health_and_accident.json",
+        "product_config": "health_and_accident_insurance.json",
         "field_mappings": {
             "CHPLAN 01": {
                 "bt_key": "product_name",

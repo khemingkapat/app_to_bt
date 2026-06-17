@@ -50,7 +50,7 @@ def save_cache(pdf_id: str, field_mapping: dict, cache_path: str = "outputs/assi
     entry = global_cache.get(pdf_id, {})
     if not isinstance(entry, dict) or "field_mappings" not in entry:
         # If it was flat, extract product config if possible, or use default
-        prod_config = "health_and_accident.json"
+        prod_config = "health_and_accident_insurance.json"
         if isinstance(entry, dict) and "product_config" in entry:
             prod_config = entry["product_config"]
         entry = {
