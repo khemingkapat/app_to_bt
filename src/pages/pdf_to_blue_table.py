@@ -27,7 +27,7 @@ from src.pdf_processor.inverter import load_product_config
 
 # Load product config mapping definitions
 try:
-    product_config = load_product_config("./config/health_and_accident.json")
+    product_config = load_product_config("./config/health_and_accident_insurance.json")
 except Exception:
     product_config = {}
 
