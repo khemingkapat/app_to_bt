@@ -219,9 +219,13 @@ def stamp_signature_on_pdf(
                 if all(v is not None for v in [canvas_top, canvas_bottom, x0, x1]):
                     page_idx = page_num - 1
                     if 0 <= page_idx < len(doc):
-                        # Scale down by 25% and shift up by 5% of the signature size (shifted up by 3 points)
+                        # Scale down by 25% and shift up by 25% of the canvas height
+                        h = canvas_bottom - canvas_top
                         rect = fitz.Rect(
-                            x0 + 19, canvas_top - 11, x1 - 19, canvas_bottom + 21
+                            x0 + 19,
+                            canvas_top - 11 - (0.25 * h),
+                            x1 - 19,
+                            canvas_bottom + 21 - (0.25 * h),
                         )
                         break
                     else:
