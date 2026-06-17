@@ -144,7 +144,13 @@
             "Group14": "SKIPPED",
             "Text81": "SKIPPED",
             "Text82": "SKIPPED",
-            "Group15": "SKIPPED",
+            "Group15": {
+                "bt_key": "policy_version",
+                "choices_map": {
+                    "/Choice1": "Thai",
+                    "/Choice2": "English"
+                }
+            },
             "Check Box2": "SKIPPED",
             "Text83": "tax_id",
             "Text84": "tax_id",
@@ -156,7 +162,7 @@
             "Text89": "SKIPPED",
             "Text90": "SKIPPED",
             "Check Box4": "SKIPPED",
-            "Text94": "SKIPPED",
+            "Text94": "signature",
             "Text91": "SKIPPED",
             "Text92": "SKIPPED",
             "Text93": "SKIPPED",

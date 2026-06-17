@@ -2585,7 +2585,11 @@
                             "canvas_bottom": 516.67
                         }
                     }
-                ]
+                ],
+                "choices_map": {
+                    "/Choice1": "Thai",
+                    "/Choice2": "English"
+                }
             },
             {
                 "field_kind": "checkbox",
