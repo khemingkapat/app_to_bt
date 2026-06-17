@@ -78,6 +78,12 @@ def resolve_plan_combination(data: dict) -> dict:
     plan_val = str(updated.get("plan") or "").strip()
     ded_val = str(updated.get("deductible") or "").strip()
     
+    if not updated.get("product_name") and plan_val:
+        if "ESSENTIAL" in plan_val.upper() or "SMARTCARE" in plan_val.upper():
+            updated["product_name"] = "ESSENTIAL"
+        elif "VISA" in plan_val.upper() or "EASYCARE" in plan_val.upper():
+            updated["product_name"] = "EASYCARE"
+
     if not plan_val:
         return updated
         
@@ -169,6 +175,16 @@ def fill_blue_table_docx(template_path: str, data: dict) -> BytesIO:
     if not age and data.get("dob"):
         age = calculate_age(data["dob"])
         
+    policy_ver = data.get("policy_version", "")
+    policy_ver_val = ""
+    if policy_ver:
+        if str(policy_ver).lower() in ("thai", "th"):
+            policy_ver_val = "TH"
+        elif str(policy_ver).lower() in ("english", "en"):
+            policy_ver_val = "EN"
+        else:
+            policy_ver_val = str(policy_ver)
+
     t0_mapping = {
         "Main Insured": data.get("name", ""),
         "Date of Birth": data.get("dob", ""),
@@ -180,6 +196,7 @@ def fill_blue_table_docx(template_path: str, data: dict) -> BytesIO:
         "Occupation": data.get("occupation", ""),
         "Agent CODE/Name": data.get("agent", ""),
         "Product Name": data.get("product_name", ""),
+        "Policy Version": policy_ver_val,
         "Plan": data.get("plan", ""),
         "Deductible": data.get("deductible", ""),
         "Premium": data.get("premium", ""),
@@ -283,6 +300,49 @@ def fill_blue_table_docx(template_path: str, data: dict) -> BytesIO:
         
         for row in table.rows:
             col0_text = row.cells[0].text.strip()
+            if "General Conditions" in col0_text:
+                prod_name = str(data.get("product_name") or "").upper()
+                resolved_prod_name = "SmartCare Essential"
+                if "EASYCARE" in prod_name or "VISA" in prod_name:
+                    row.cells[0].text = "General Conditions:\nEasyCare Visa\n"
+                    resolved_prod_name = "EasyCare Visa"
+                else:
+                    row.cells[0].text = "General Conditions:\nSmartCare Essential\n"
+                    resolved_prod_name = "SmartCare Essential"
+
+                # Look up general conditions from config
+                try:
+                    from src.pdf_processor.inverter import load_config_by_pdf_id
+                    pdf_id = data.get("pdf_id")
+                    config = load_config_by_pdf_id(pdf_id)
+                    gen_conds = config.get("general_conditions", {})
+                    prod_rules = gen_conds.get(resolved_prod_name, {})
+                    
+                    policy_ver = str(data.get("policy_version") or "").lower()
+                    if policy_ver in ("thai", "th"):
+                        target_lang = "Thai"
+                    elif policy_ver in ("english", "en"):
+                        target_lang = "English"
+                    else:
+                        target_lang = "Both"
+                        
+                    resolved_msg = prod_rules.get(target_lang)
+                    if not resolved_msg:
+                        for fallback_lang in (target_lang, "Both", "Thai", "English"):
+                            for k, v in prod_rules.items():
+                                if k.lower() == fallback_lang.lower():
+                                    resolved_msg = v
+                                    break
+                            if resolved_msg:
+                                break
+                    if not resolved_msg and prod_rules:
+                        resolved_msg = list(prod_rules.values())[0]
+                        
+                    if resolved_msg:
+                        set_cell_text(row.cells[1], resolved_msg)
+                except Exception:
+                    set_cell_text(row.cells[1], "[General Conditions Placeholder]")
+
             if col0_text in mapping:
                 set_cell_text(row.cells[1], mapping[col0_text])
 
