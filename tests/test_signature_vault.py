@@ -4,17 +4,8 @@ import unittest
 from datetime import datetime, timezone
 from io import BytesIO
 
-# Add the project root and signature_gateway directory to path
-_current_dir = os.path.dirname(os.path.abspath(__file__))
-_project_root = os.path.abspath(os.path.join(_current_dir, ".."))
-_sg_dir = os.path.join(_project_root, "signature_gateway")
-
-if _project_root not in sys.path:
-    sys.path.insert(0, _project_root)
-if _sg_dir not in sys.path:
-    sys.path.insert(0, _sg_dir)
-
-import vault
+# Import vault from the package
+from src.signature_gateway import vault
 
 class TestSignatureGatewayVault(unittest.TestCase):
     def setUp(self):
