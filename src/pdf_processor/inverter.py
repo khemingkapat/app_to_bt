@@ -97,6 +97,17 @@ def load_config_by_pdf_id(pdf_id: str, config_dir: str = "./config") -> dict:
         except Exception:
             pass
             
+    # Fallback to the first available json configuration file if default doesn't exist
+    if os.path.exists(config_dir):
+        json_files = sorted([f for f in os.listdir(config_dir) if f.endswith(".json")])
+        if json_files:
+            path = os.path.join(config_dir, json_files[0])
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+            
     return {}
 
 
