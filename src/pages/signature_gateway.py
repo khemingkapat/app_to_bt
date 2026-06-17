@@ -38,14 +38,7 @@ st.markdown(
 
 /* Main page backdrop styling */
 .stApp {
-    background: linear-gradient(135deg, #0b132b, #1c2541, #0b132b) !important;
-    color: #ffffff !important;
     font-family: 'Inter', sans-serif !important;
-}
-
-/* Sidebar overrides if visible */
-[data-testid="stSidebar"] {
-    background-color: #0b132b !important;
 }
 
 /* Titles and Headers */
@@ -57,38 +50,36 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .portal-title {
-    background: linear-gradient(135deg, #818cf8, #38bdf8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
     font-size: 2.5rem;
     font-weight: 800;
+    color: #ffffff;
     margin-bottom: 0.5rem;
     text-align: center;
 }
 
 .portal-subtitle {
-    color: #94a3b8;
+    color: #cbd5e1;
     text-align: center;
     margin-bottom: 2rem;
     font-size: 1.1rem;
 }
 
-/* Glassmorphism Cards for targeted Columns and Containers */
+/* Dark Card containers matching the dark mode layout */
 div[data-testid="stContainer"]:has(.glass-card-trigger), [data-testid="column"]:has(.glass-card-trigger) {
     background: rgba(30, 41, 59, 0.45) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 16px !important;
-    padding: 28px !important;
-    box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.4) !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
     margin-bottom: 24px !important;
     transition: all 0.3s ease !important;
 }
 
 div[data-testid="stContainer"]:has(.glass-card-trigger):hover, [data-testid="column"]:has(.glass-card-trigger):hover {
-    border-color: rgba(99, 102, 241, 0.25) !important;
-    box-shadow: 0 12px 48px 0 rgba(99, 102, 241, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.05) !important;
 }
 
 /* Status Indicator */
@@ -126,26 +117,26 @@ div[data-testid="stContainer"]:has(.glass-card-trigger):hover, [data-testid="col
 }
 
 .stTextInput>div>div>input:focus {
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2) !important;
 }
 
-/* Customize Streamlit Buttons */
+/* Customize Streamlit Buttons to use AXA navy blue gradient */
 .stButton>button {
-    background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
+    background: linear-gradient(135deg, #002855, #005691) !important;
     color: white !important;
     font-weight: 600 !important;
     border: none !important;
     border-radius: 8px !important;
     padding: 10px 20px !important;
-    box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.3) !important;
+    box-shadow: 0 4px 14px 0 rgba(0, 40, 85, 0.2) !important;
     transition: all 0.3s ease !important;
 }
 
 .stButton>button:hover {
     transform: translateY(-2px) !important;
-    box-shadow: 0 6px 20px 0 rgba(79, 70, 229, 0.5) !important;
-    background: linear-gradient(135deg, #4338ca, #4f46e5) !important;
+    box-shadow: 0 6px 20px 0 rgba(0, 40, 85, 0.3) !important;
+    background: linear-gradient(135deg, #001f42, #004475) !important;
 }
 
 .stButton>button:active {
@@ -155,11 +146,11 @@ div[data-testid="stContainer"]:has(.glass-card-trigger):hover, [data-testid="col
 /* Link area styling */
 .copyable-link {
     background: rgba(15, 23, 42, 0.8);
-    border: 1px dashed rgba(99, 102, 241, 0.4);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
     border-radius: 8px;
     padding: 16px;
     font-family: monospace;
-    color: #a5b4fc;
+    color: #cbd5e1;
     font-size: 0.95rem;
     margin: 12px 0;
     word-break: break-all;
@@ -168,7 +159,7 @@ div[data-testid="stContainer"]:has(.glass-card-trigger):hover, [data-testid="col
 
 /* Table styling override */
 table {
-    color: #e2e8f0 !important;
+    color: #ffffff !important;
 }
 
 /* Help descriptions */
@@ -216,7 +207,7 @@ if token_param:
             <span class='glass-card-trigger'></span>
             <div style="text-align: center; margin: 20px 0;">
                 <span class="status-pill status-signed">Signed Successfully</span>
-                <h3 style="margin-top: 15px;">✍️ Document Already Signed</h3>
+                <h3 style="margin-top: 15px; color: #ffffff;">✍️ Document Already Signed</h3>
                 <p class='desc-text' style="color: #cbd5e1; font-size: 1.05rem;">Thank you, <b>{entry['customer_name']}</b>. Your signature has already been submitted successfully, and the sales representative has been notified. You may close this browser tab.</p>
             </div>
             """,
@@ -228,7 +219,7 @@ if token_param:
     if not st.session_state.get("customer_verified"):
         with st.container(border=True):
             st.markdown(
-                f'<span class="glass-card-trigger"></span><h3 style="margin-top: 0; text-align: center;">🔐 Identity Verification</h3>'
+                f'<span class="glass-card-trigger"></span><h3 style="margin-top: 0; text-align: center; color: #ffffff;">🔐 Identity Verification</h3>'
                 f"<p style='text-align: center; color: #cbd5e1; margin-top: 10px;'>Welcome, <b>{entry['customer_name']}</b>. "
                 "For security purposes, please confirm your identity to review and sign your application.</p>",
                 unsafe_allow_html=True,
@@ -265,7 +256,7 @@ if token_param:
     # Customer Signature Interface
     with st.container(border=True):
         st.markdown(
-            f'<span class="glass-card-trigger"></span><h2 style="margin-top: 0; text-align: center;">✍️ Sign Application</h2>'
+            f'<span class="glass-card-trigger"></span><h2 style="margin-top: 0; text-align: center; color: #ffffff;">✍️ Sign Application</h2>'
             f"<p style='color: #cbd5e1; text-align: center; margin-bottom: 20px;'>Please draw your signature in the box below, then submit to complete the application.</p>",
             unsafe_allow_html=True,
         )
@@ -385,8 +376,8 @@ if token_param:
     table_html = f"""
     <table style="width: 100%; border-collapse: collapse; border: 1px solid rgba(255,255,255,0.08); background: rgba(15,23,42,0.3); border-radius: 8px; font-size: 0.95rem; margin-bottom: 15px;">
       <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);">
-        <th style="padding: 12px; text-align: left; color: #818cf8; font-weight: 600;">Field Description</th>
-        <th style="padding: 12px; text-align: left; color: #818cf8; font-weight: 600;">Pre-filled Information</th>
+        <th style="padding: 12px; text-align: left; color: #ffffff; font-weight: 600;">Field Description</th>
+        <th style="padding: 12px; text-align: left; color: #ffffff; font-weight: 600;">Pre-filled Information</th>
       </tr>
       <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
         <td style="padding: 10px; font-weight: 500; color: #cbd5e1;">Main Applicant Name</td>
@@ -658,7 +649,7 @@ else:
                                 document.body.removeChild(ta);
                             }}
                         }})('{share_link}')" 
-                            style="background: linear-gradient(135deg, #4f46e5, #6366f1); color: white; font-weight: 600; border: none; border-radius: 8px; padding: 10px 20px; box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.3); cursor: pointer; width: 100%; transition: all 0.3s ease;">
+                            style="background: linear-gradient(135deg, #002855, #005691); color: white; font-weight: 600; border: none; border-radius: 8px; padding: 10px 20px; box-shadow: 0 4px 14px 0 rgba(0, 40, 85, 0.2); cursor: pointer; width: 100%; transition: all 0.3s ease;">
                             📋 Copy Link to Clipboard
                         </button>
                     </div>
