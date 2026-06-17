@@ -655,21 +655,29 @@ else:
                         unsafe_allow_html=True,
                     )
 
-                    # Construct query parameters link
-                    host = st.context.headers.get("host", "localhost:8502")
-                    # Resolve to local network IP if localhost/127.0.0.1 is used
-                    if "localhost" in host or "127.0.0.1" in host:
-                        net_ip = get_network_ip()
-                        host = host.replace("localhost", net_ip).replace(
-                            "127.0.0.1", net_ip
-                        )
+                    # Construct query parameters link. If PORTAL_BASE_URL is set in environment, use it.
+                    # Otherwise, auto-detect from request headers (handling domain DNS names & proxies).
+                    base_url = os.environ.get("PORTAL_BASE_URL")
+                    if base_url:
+                        base_url = base_url.rstrip("/")
+                    else:
+                        host = st.context.headers.get("x-forwarded-host")
+                        if not host:
+                            host = st.context.headers.get("host", "localhost:8501")
+                        
+                        # Resolve to local network IP if localhost/127.0.0.1 is used
+                        if "localhost" in host or "127.0.0.1" in host:
+                            net_ip = get_network_ip()
+                            host = host.replace("localhost", net_ip).replace(
+                                "127.0.0.1", net_ip
+                            )
 
-                    protocol = (
-                        "https"
-                        if st.context.headers.get("x-forwarded-proto") == "https"
-                        else "http"
-                    )
-                    base_url = f"{protocol}://{host}"
+                        protocol = (
+                            "https"
+                            if st.context.headers.get("x-forwarded-proto") == "https"
+                            else "http"
+                        )
+                        base_url = f"{protocol}://{host}"
 
                     share_link = f"{base_url}/?token={active_token}"
 
