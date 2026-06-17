@@ -17,8 +17,12 @@ def assign_field(params: AssignFieldParams) -> tuple[str, dict, list, dict]:
     Core logic for assigning a field value.
     Updates and returns the current_input value, bt_data dict, assigned list, and field_mapping.
     """
+    current_input = params.current_input
+    if params.bt_key == "plan" and " DD " in current_input:
+        current_input = current_input.split(" DD ")[0].strip()
+
     val_to_write = params.src_val if params.src_val and not params.src_val.startswith("/") else ""
-    new_val = f"{params.current_input}-{val_to_write}" if params.current_input else val_to_write
+    new_val = f"{current_input}-{val_to_write}" if current_input else val_to_write
 
     params.bt_data[params.bt_key] = new_val
     params.field_mapping[params.field_name] = params.bt_key

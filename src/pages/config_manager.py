@@ -81,7 +81,7 @@ with tab_paste:
             st.error(f"Invalid JSON text: {e}")
 
 # Target filename
-default_filename = "health_and_accident.json"
+default_filename = "health_and_accident_insurance.json"
 if config_json and "product_name" in config_json:
     clean_name = config_json["product_name"].lower().replace(" ", "_")
     default_filename = f"{clean_name}.json"

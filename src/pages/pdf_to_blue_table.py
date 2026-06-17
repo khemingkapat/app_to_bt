@@ -27,7 +27,7 @@ from src.pdf_processor.inverter import load_product_config
 
 # Load product config mapping definitions
 try:
-    product_config = load_product_config("./config/health_and_accident.json")
+    product_config = load_product_config("./config/health_and_accident_insurance.json")
 except Exception:
     product_config = {}
 
@@ -98,27 +98,22 @@ def do_assign_choice_option(opt_key, choice_val, bt_key):
     source_val = field_value_hint(current_field, st.session_state.values_map)
 
     # We update the actual value written to the BlueTable field
-    translated_val = choices_map.get(source_val, "")
-    if translated_val:
-        current_input = st.session_state.get(f"input_{bt_key}", "")
-        parts = [p.strip() for p in current_input.split("-") if p.strip()]
-        if translated_val not in parts:
-            new_val = (
-                f"{current_input}-{translated_val}" if current_input else translated_val
-            )
-            st.session_state[f"input_{bt_key}"] = new_val
-            st.session_state.bt_data[bt_key] = new_val
+    bt_labels = {key: label for label, key in BLUETABLE_FIELDS}
+    new_val = rebuild_bt_value(bt_key)
+    st.session_state[f"input_{bt_key}"] = new_val
+    st.session_state.bt_data[bt_key] = new_val
 
-            # Record assignment log
-            st.session_state.assigned.append(
-                {
-                    "field_name": field_name,
-                    "bt_key": bt_key,
-                    "bt_label": bt_key.capitalize(),
-                    "value": new_val,
-                    "field_idx": idx,
-                }
-            )
+    # Remove existing log entries for this bt_key to prevent duplicate/stale logs
+    st.session_state.assigned = [a for a in st.session_state.assigned if a.get("bt_key") != bt_key]
+    st.session_state.assigned.append(
+        {
+            "field_name": field_name,
+            "bt_key": bt_key,
+            "bt_label": bt_labels.get(bt_key, bt_key.capitalize()),
+            "value": new_val,
+            "field_idx": idx,
+        }
+    )
 
     # Go to next choice/field choice-by-choice
     st.session_state.widget_idx += 1
@@ -195,6 +190,65 @@ def render_page_with_highlight(
 
 def field_value_hint(f: dict, values_map: dict) -> str:
     return values_map.get(f.get("name", ""), "")
+
+
+def get_field_product_line(mapping: dict) -> str:
+    """Returns 'SmartCare Essential', 'EasyCare Visa', or 'Both' based on choice values."""
+    if not isinstance(mapping, dict):
+        return "Both"
+    choices_map = mapping.get("choices_map", {})
+    values = set(choices_map.values())
+    
+    essential_unique = {"ESSENTIAL1", "ESSENTIAL2", "ESSENTIAL3", "ESSENTIAL4", "IPD", "IPD+OPD", "IPD+OPD+WELLNESS", "3k * 30 times / year", "50k per year", "0", "20k", "40k"}
+    visa_unique = {"VISA1", "VISA2", "300k"}
+    
+    if values & essential_unique:
+        return "SmartCare Essential"
+    if values & visa_unique:
+        return "EasyCare Visa"
+        
+    return "Both"
+
+
+def rebuild_bt_value(bt_key: str) -> str:
+    parts = []
+    if not st.session_state.get("all_fields") or not st.session_state.get("field_mapping") or not st.session_state.get("values_map"):
+        return ""
+        
+    # Determine currently selected product line
+    product_selection = st.session_state.bt_data.get("product_name", "")
+    selected_product_line = "SmartCare Essential"
+    if "EASYCARE" in product_selection:
+        selected_product_line = "EasyCare Visa"
+        
+    for field in st.session_state.all_fields:
+        fname = field.get("name")
+        if not fname:
+            continue
+        mapping = st.session_state.field_mapping.get(fname)
+        if not mapping:
+            continue
+        
+        target_key = mapping.get("bt_key") if isinstance(mapping, dict) else mapping
+        if target_key != bt_key:
+            continue
+            
+        # Ignore fields that correspond to the non-selected product line
+        field_prod_line = get_field_product_line(mapping)
+        if field_prod_line != "Both" and field_prod_line != selected_product_line:
+            continue
+            
+        src_val = st.session_state.values_map.get(fname, "")
+        if isinstance(mapping, dict):
+            choices_map = mapping.get("choices_map", {})
+            val = choices_map.get(src_val, "")
+        else:
+            val = src_val if src_val and not src_val.startswith("/") else ""
+            
+        if val and val not in parts:
+            parts.append(val)
+            
+    return "-".join(parts)
 
 
 def sort_key(f):
@@ -297,64 +351,39 @@ if st.session_state.pdf_bytes is None:
                 st.session_state.field_mapping = cache.copy()
                 bt_labels = {key: label for label, key in BLUETABLE_FIELDS}
 
+                # Apply choices_map back to fields
                 for field in st.session_state.all_fields:
                     fname = field.get("name", "?")
-                    if fname not in cache:
-                        continue
+                    if fname in cache:
+                        bt_key_entry = cache[fname]
+                        if isinstance(bt_key_entry, dict):
+                            field["choices_map"] = bt_key_entry.get("choices_map", {})
 
-                    bt_key_entry = cache[fname]
-                    if isinstance(bt_key_entry, dict):
-                        bt_key = bt_key_entry.get("bt_key")
-                        choices_map = bt_key_entry.get("choices_map", {})
-                        # Apply choices_map back to field in session state so mapping assistant sees it
-                        field["choices_map"] = choices_map
-                    else:
-                        bt_key = bt_key_entry
-                        choices_map = field.get("choices_map", {}) or {}
-
-                    if bt_key == "SKIPPED":
-                        # Record the skip but do NOT advance field_idx
+                # Determine all unique assigned bt_keys
+                unique_keys = set()
+                for fname, entry in cache.items():
+                    if entry == "SKIPPED":
                         if fname not in st.session_state.skipped:
                             st.session_state.skipped.append(fname)
                     else:
-                        lbl = bt_labels.get(bt_key, bt_key)
-                        src_val = values_dict.get(fname, "")
+                        bt_key = entry.get("bt_key") if isinstance(entry, dict) else entry
+                        unique_keys.add(bt_key)
 
-                        # Translate radio choices if they exist in choices_map
-                        if src_val in choices_map:
-                            val_to_write = choices_map[src_val]
-                        else:
-                            val_to_write = (
-                                src_val
-                                if src_val and not src_val.startswith("/")
-                                else ""
-                            )
-
-                        current = st.session_state.get(f"input_{bt_key}", "")
-                        if val_to_write:
-                            parts = [p.strip() for p in current.split("-") if p.strip()]
-                            if val_to_write not in parts:
-                                new_val = (
-                                    f"{current}-{val_to_write}"
-                                    if current
-                                    else val_to_write
-                                )
-                            else:
-                                new_val = current
-                        else:
-                            new_val = current
-
-                        st.session_state[f"input_{bt_key}"] = new_val
-                        st.session_state.bt_data[bt_key] = new_val
-                        st.session_state.assigned.append(
-                            {
-                                "field_name": fname,
-                                "bt_key": bt_key,
-                                "bt_label": lbl,
-                                "value": new_val,
-                                "field_idx": 0,  # placeholder; not used for navigation
-                            }
-                        )
+                # Rebuild values for all mapped keys
+                for bt_key in unique_keys:
+                    val = rebuild_bt_value(bt_key)
+                    st.session_state[f"input_{bt_key}"] = val
+                    st.session_state.bt_data[bt_key] = val
+                    
+                    # Find first field name mapping to this key for reference in the log
+                    ref_fname = next((fname for fname, entry in cache.items() if (entry.get("bt_key") if isinstance(entry, dict) else entry) == bt_key), "?")
+                    st.session_state.assigned.append({
+                        "field_name": ref_fname,
+                        "bt_key": bt_key,
+                        "bt_label": bt_labels.get(bt_key, bt_key),
+                        "value": val,
+                        "field_idx": 0,
+                    })
                 # field_idx intentionally stays at 0 — user reviews from field 1
                 # with values already pre-populated from the cache.
 
@@ -559,7 +588,17 @@ with mid:
             current_input=current_input,
         )
         new_val, new_bt_data, new_assigned, new_field_mapping = assign_field(params)
-        st.session_state[f"input_{k}"] = new_val
+        
+        # Overwrite with rebuilt value in reading order
+        rebuilt = rebuild_bt_value(k)
+        st.session_state[f"input_{k}"] = rebuilt
+        new_bt_data[k] = rebuilt
+        
+        # Keep assigned log entries in sync
+        for a in new_assigned:
+            if a.get("field_name") == f_name and a.get("bt_key") == k:
+                a["value"] = rebuilt
+
         st.session_state.bt_data = new_bt_data
         st.session_state.assigned = new_assigned
         st.session_state.field_mapping = new_field_mapping
@@ -655,6 +694,9 @@ with mid:
                             args=(opt_key, val, bt_key),
                             use_container_width=True,
                         )
+    else:
+        st.warning("⚠️ No plan configuration is available. Please upload or link a product configuration first.")
+        st.page_link("src/pages/config_manager.py", label="Go to Product Config Manager ➡️", icon="⚙️")
 
     # ── 2. BlueTable Fields Below Plan Options Mapping ──
     from src.blue_table_tools.docx_generator import resolve_plan_combination
@@ -663,6 +705,8 @@ with mid:
     st.session_state.bt_data = resolve_plan_combination(st.session_state.bt_data)
     st.session_state.bt_data = apply_acceptance_rules(st.session_state.bt_data)
     status_keys = {
+        "plan",
+        "deductible",
         "acceptance_conditions",
         "sp_acceptance_conditions",
         "c1_acceptance_conditions",
