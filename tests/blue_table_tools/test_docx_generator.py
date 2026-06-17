@@ -187,3 +187,52 @@ def test_resolve_plan_combination():
     }
     resolved = resolve_plan_combination(data)
     assert resolved["plan"] == "VISA1 DD 100,000 (201)"
+
+
+def test_policy_version_and_general_conditions():
+    template_path = "./resources/BlueTable.docx"
+    if not os.path.exists(template_path):
+        pytest.skip("BlueTable.docx template not found")
+        
+    data_ess = {
+        "name": "John Doe",
+        "product_name": "ESSENTIAL",
+        "policy_version": "Thai",
+    }
+    
+    stream_ess = fill_blue_table_docx(template_path, data_ess)
+    doc_ess = docx.Document(stream_ess)
+    
+    t0 = doc_ess.tables[0]
+    t0_vals = {row.cells[0].text.strip(): row.cells[1].text.strip() for row in t0.rows}
+    t0_labels = [row.cells[0].text.strip() for row in t0.rows]
+    
+    assert t0_vals.get("Policy Version") == "TH"
+    gen_row_label = next(l for l in t0_labels if "General Conditions" in l)
+    assert gen_row_label == "General Conditions:\nSmartCare Essential"
+    
+    # Check that cell 1 has correct general conditions text from config
+    from src.pdf_processor.inverter import load_config_by_pdf_id
+    config = load_config_by_pdf_id(None)
+    expected_msg_ess = config["general_conditions"]["SmartCare Essential"]["Thai"]
+    assert t0_vals.get(gen_row_label) == expected_msg_ess
+
+    data_visa = {
+        "name": "John Doe",
+        "product_name": "EASYCARE",
+        "policy_version": "English",
+    }
+    
+    stream_visa = fill_blue_table_docx(template_path, data_visa)
+    doc_visa = docx.Document(stream_visa)
+    
+    t0_visa = doc_visa.tables[0]
+    t0_visa_vals = {row.cells[0].text.strip(): row.cells[1].text.strip() for row in t0_visa.rows}
+    t0_visa_labels = [row.cells[0].text.strip() for row in t0_visa.rows]
+    
+    assert t0_visa_vals.get("Policy Version") == "EN"
+    gen_row_label_visa = next(l for l in t0_visa_labels if "General Conditions" in l)
+    assert gen_row_label_visa == "General Conditions:\nEasyCare Visa"
+    
+    expected_msg_visa = config["general_conditions"]["EasyCare Visa"]["English"]
+    assert t0_visa_vals.get(gen_row_label_visa) == expected_msg_visa
