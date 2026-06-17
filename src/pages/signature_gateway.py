@@ -8,15 +8,8 @@ import numpy as np
 import streamlit as st
 from PIL import Image
 
-# Ensure we can import app_to_bt modules correctly
-_current_dir = os.path.dirname(os.path.abspath(__file__))
-_parent_dir = os.path.abspath(os.path.join(_current_dir, ".."))
-if _current_dir not in sys.path:
-    sys.path.insert(0, _current_dir)
-if _parent_dir not in sys.path:
-    sys.path.insert(0, _parent_dir)
-
-import vault
+# Import local vault
+import signature_gateway.vault as vault
 
 # Import app_to_bt modules
 from src.pdf_processor.engine import update_pdf_registry
