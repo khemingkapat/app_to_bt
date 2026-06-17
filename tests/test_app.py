@@ -59,9 +59,9 @@ def teardown_module():
 
 def test_landing_page(page: Page):
     page.goto("http://localhost:8501")
-    expect(page).to_have_title(re.compile("AXA Health Insurance Application"))
+    expect(page).to_have_title(re.compile("AXA Application Tools Portal"))
     expect(
-        page.get_by_role("heading", name="🏥 AXA Health Insurance Application Portal")
+        page.get_by_role("heading", name="🏥 AXA Application Tools Portal")
     ).to_be_visible()
 
 
@@ -87,6 +87,8 @@ def test_acroform_pdf_flow(page: Page):
 
     page.get_by_role("button", name="⬇️").click()
     page.wait_for_timeout(500)
+    page.get_by_text("✍️ Fields & Signature").click()
+    page.wait_for_timeout(500)
     page.get_by_role("button", name="Assign").first.click()
     page.wait_for_timeout(500)
     page.get_by_role("button", name="⬇️").click()
@@ -109,6 +111,8 @@ def test_acroform_pdf_flow(page: Page):
     page.get_by_test_id("stBaseButton-secondary").click()
     page.get_by_test_id("stFileUploaderDropzoneInput").set_input_files(ACROFORM_PDF)
     page.get_by_text("Field 1 of").wait_for()
+    page.get_by_text("✍️ Fields & Signature").click()
+    page.wait_for_timeout(500)
 
     page.get_by_role("textbox", name="Main Insured").dblclick()
     page.get_by_role("textbox", name="Main Insured").fill("name_naja")

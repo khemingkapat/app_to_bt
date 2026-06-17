@@ -25,4 +25,10 @@ layout {
             args "develop" "--command" "agy" "-c"
         }
     }
+
+    tab name="lazygit" {
+        pane command="nix" {
+            args "develop" "--command" "lazygit"
+        }
+    }
 }

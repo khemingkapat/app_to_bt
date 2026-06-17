@@ -104,7 +104,9 @@ def do_assign_choice_option(opt_key, choice_val, bt_key):
     st.session_state.bt_data[bt_key] = new_val
 
     # Remove existing log entries for this bt_key to prevent duplicate/stale logs
-    st.session_state.assigned = [a for a in st.session_state.assigned if a.get("bt_key") != bt_key]
+    st.session_state.assigned = [
+        a for a in st.session_state.assigned if a.get("bt_key") != bt_key
+    ]
     st.session_state.assigned.append(
         {
             "field_name": field_name,
@@ -198,29 +200,46 @@ def get_field_product_line(mapping: dict) -> str:
         return "Both"
     choices_map = mapping.get("choices_map", {})
     values = set(choices_map.values())
-    
-    essential_unique = {"ESSENTIAL1", "ESSENTIAL2", "ESSENTIAL3", "ESSENTIAL4", "IPD", "IPD+OPD", "IPD+OPD+WELLNESS", "3k * 30 times / year", "50k per year", "0", "20k", "40k"}
+
+    essential_unique = {
+        "ESSENTIAL1",
+        "ESSENTIAL2",
+        "ESSENTIAL3",
+        "ESSENTIAL4",
+        "IPD",
+        "IPD+OPD",
+        "IPD+OPD+WELLNESS",
+        "3k * 30 times / year",
+        "50k per year",
+        "0",
+        "20k",
+        "40k",
+    }
     visa_unique = {"VISA1", "VISA2", "300k"}
-    
+
     if values & essential_unique:
         return "SmartCare Essential"
     if values & visa_unique:
         return "EasyCare Visa"
-        
+
     return "Both"
 
 
 def rebuild_bt_value(bt_key: str) -> str:
     parts = []
-    if not st.session_state.get("all_fields") or not st.session_state.get("field_mapping") or not st.session_state.get("values_map"):
+    if (
+        not st.session_state.get("all_fields")
+        or not st.session_state.get("field_mapping")
+        or not st.session_state.get("values_map")
+    ):
         return ""
-        
+
     # Determine currently selected product line
     product_selection = st.session_state.bt_data.get("product_name", "")
     selected_product_line = "SmartCare Essential"
     if "EASYCARE" in product_selection:
         selected_product_line = "EasyCare Visa"
-        
+
     for field in st.session_state.all_fields:
         fname = field.get("name")
         if not fname:
@@ -228,26 +247,26 @@ def rebuild_bt_value(bt_key: str) -> str:
         mapping = st.session_state.field_mapping.get(fname)
         if not mapping:
             continue
-        
+
         target_key = mapping.get("bt_key") if isinstance(mapping, dict) else mapping
         if target_key != bt_key:
             continue
-            
+
         # Ignore fields that correspond to the non-selected product line
         field_prod_line = get_field_product_line(mapping)
         if field_prod_line != "Both" and field_prod_line != selected_product_line:
             continue
-            
+
         src_val = st.session_state.values_map.get(fname, "")
         if isinstance(mapping, dict):
             choices_map = mapping.get("choices_map", {})
             val = choices_map.get(src_val, "")
         else:
             val = src_val if src_val and not src_val.startswith("/") else ""
-            
+
         if val and val not in parts:
             parts.append(val)
-            
+
     return "-".join(parts)
 
 
@@ -330,6 +349,7 @@ if st.session_state.pdf_bytes is None:
             st.session_state.all_fields = sorted(fields, key=sort_key)
 
             from src.pdf_processor.inverter import load_config_by_pdf_id
+
             st.session_state.product_config = load_config_by_pdf_id(pdf_id)
             st.session_state.bt_data["pdf_id"] = pdf_id
 
@@ -366,7 +386,9 @@ if st.session_state.pdf_bytes is None:
                         if fname not in st.session_state.skipped:
                             st.session_state.skipped.append(fname)
                     else:
-                        bt_key = entry.get("bt_key") if isinstance(entry, dict) else entry
+                        bt_key = (
+                            entry.get("bt_key") if isinstance(entry, dict) else entry
+                        )
                         unique_keys.add(bt_key)
 
                 # Rebuild values for all mapped keys
@@ -374,16 +396,30 @@ if st.session_state.pdf_bytes is None:
                     val = rebuild_bt_value(bt_key)
                     st.session_state[f"input_{bt_key}"] = val
                     st.session_state.bt_data[bt_key] = val
-                    
+
                     # Find first field name mapping to this key for reference in the log
-                    ref_fname = next((fname for fname, entry in cache.items() if (entry.get("bt_key") if isinstance(entry, dict) else entry) == bt_key), "?")
-                    st.session_state.assigned.append({
-                        "field_name": ref_fname,
-                        "bt_key": bt_key,
-                        "bt_label": bt_labels.get(bt_key, bt_key),
-                        "value": val,
-                        "field_idx": 0,
-                    })
+                    ref_fname = next(
+                        (
+                            fname
+                            for fname, entry in cache.items()
+                            if (
+                                entry.get("bt_key")
+                                if isinstance(entry, dict)
+                                else entry
+                            )
+                            == bt_key
+                        ),
+                        "?",
+                    )
+                    st.session_state.assigned.append(
+                        {
+                            "field_name": ref_fname,
+                            "bt_key": bt_key,
+                            "bt_label": bt_labels.get(bt_key, bt_key),
+                            "value": val,
+                            "field_idx": 0,
+                        }
+                    )
                 # field_idx intentionally stays at 0 — user reviews from field 1
                 # with values already pre-populated from the cache.
 
@@ -588,12 +624,12 @@ with mid:
             current_input=current_input,
         )
         new_val, new_bt_data, new_assigned, new_field_mapping = assign_field(params)
-        
+
         # Overwrite with rebuilt value in reading order
         rebuilt = rebuild_bt_value(k)
         st.session_state[f"input_{k}"] = rebuilt
         new_bt_data[k] = rebuilt
-        
+
         # Keep assigned log entries in sync
         for a in new_assigned:
             if a.get("field_name") == f_name and a.get("bt_key") == k:
@@ -623,61 +659,23 @@ with mid:
         st.session_state.field_mapping = new_field_mapping
         save_cache_incremental()
 
-    # ── 1. Plan Options Mapping at the Top of BlueTable Block ──
-    product_config_live = st.session_state.get("product_config", {})
-    product_options = product_config_live.get("product_options", {})
-    if product_options:
-        st.caption(
-            "Highlight a checkbox on the left, then click an option below to map it."
-        )
+    tab_plan, tab_fields = st.tabs(["📋 Plan Options", "✍️ Fields & Signature"])
 
-        # Selected Product mapping row
-        product_name_opt = product_options.get("product_name", {})
-        if product_name_opt:
-            label = product_name_opt.get("label", "Selected Product")
-            bt_key = product_name_opt.get("bt_key", "product_name")
-            choices = product_name_opt.get("choices", [])
+    with tab_plan:
+        # ── 1. Plan Options Mapping at the Top of BlueTable Block ──
+        product_config_live = st.session_state.get("product_config", {})
+        product_options = product_config_live.get("product_options", {})
+        if product_options:
+            st.caption(
+                "Highlight a checkbox on the left, then click an option below to map it."
+            )
 
-            cols = st.columns([2] + [2] * len(choices))
-            with cols[0]:
-                st.markdown(
-                    f"<span style='font-size:0.85rem; font-weight:bold;'>{label}</span>",
-                    unsafe_allow_html=True,
-                )
-            for i, val in enumerate(choices):
-                with cols[i + 1]:
-                    st.button(
-                        val,
-                        key=f"assign_opt_prod_{val}_{idx}",
-                        on_click=do_assign_choice_option,
-                        args=("product_name", val, bt_key),
-                        use_container_width=True,
-                    )
-
-        # Determine detected product line from the PDF mapping state
-        product_selection = st.session_state.bt_data.get("product_name", "")
-        detected_product = "SmartCare Essential"
-        if "EASYCARE" in product_selection:
-            detected_product = "EasyCare Visa"
-
-        # Let the user select which product line options to view/map, defaulting to the detected one
-        product_list = ["SmartCare Essential", "EasyCare Visa"]
-        default_idx = product_list.index(detected_product) if detected_product in product_list else 0
-        
-        selected_product = st.selectbox(
-            "Select Product Line Options to Map",
-            options=product_list,
-            index=default_idx,
-            key=f"prod_select_box_{idx}"
-        )
-
-        st.markdown(f"**Options for {selected_product}**")
-        opts = product_options.get("products", {}).get(selected_product, {})
-        with st.container(border=True):
-            for opt_key, opt_data in opts.items():
-                label = opt_data.get("label", opt_key)
-                bt_key = opt_data.get("bt_key", "plan")
-                choices = opt_data.get("choices", [])
+            # Selected Product mapping row
+            product_name_opt = product_options.get("product_name", {})
+            if product_name_opt:
+                label = product_name_opt.get("label", "Selected Product")
+                bt_key = product_name_opt.get("bt_key", "product_name")
+                choices = product_name_opt.get("choices", [])
 
                 cols = st.columns([2] + [2] * len(choices))
                 with cols[0]:
@@ -689,88 +687,176 @@ with mid:
                     with cols[i + 1]:
                         st.button(
                             val,
-                            key=f"assign_opt_{opt_key}_{val}_{idx}",
+                            key=f"assign_opt_prod_{val}_{idx}",
                             on_click=do_assign_choice_option,
-                            args=(opt_key, val, bt_key),
+                            args=("product_name", val, bt_key),
                             use_container_width=True,
                         )
-    else:
-        st.warning("⚠️ No plan configuration is available. Please upload or link a product configuration first.")
-        st.page_link("src/pages/config_manager.py", label="Go to Product Config Manager ➡️", icon="⚙️")
 
-    # ── 2. BlueTable Fields Below Plan Options Mapping ──
-    from src.blue_table_tools.docx_generator import resolve_plan_combination
-    from src.blue_table_tools import apply_acceptance_rules
+            # Determine detected product line from the PDF mapping state
+            product_selection = st.session_state.bt_data.get("product_name", "")
+            detected_product = "SmartCare Essential"
+            if "EASYCARE" in product_selection:
+                detected_product = "EasyCare Visa"
 
-    st.session_state.bt_data = resolve_plan_combination(st.session_state.bt_data)
-    st.session_state.bt_data = apply_acceptance_rules(st.session_state.bt_data)
-    status_keys = {
-        "plan",
-        "deductible",
-        "acceptance_conditions",
-        "sp_acceptance_conditions",
-        "c1_acceptance_conditions",
-        "c2_acceptance_conditions",
-        "c3_acceptance_conditions",
-    }
-    for key in status_keys:
-        if key in st.session_state.bt_data:
-            if st.session_state.get(f"input_{key}") != st.session_state.bt_data[key]:
-                st.session_state[f"input_{key}"] = st.session_state.bt_data[key]
+            # Let the user select which product line options to view/map, defaulting to the detected one
+            product_list = ["SmartCare Essential", "EasyCare Visa"]
+            default_idx = (
+                product_list.index(detected_product)
+                if detected_product in product_list
+                else 0
+            )
 
-    with st.container(height=350):
-        for label, key in BLUETABLE_FIELDS:
-            existing_val = st.session_state.bt_data.get(key, "")
-            col_a, col_b, col_c = st.columns([5, 1.5, 1.5])
+            selected_product = st.selectbox(
+                "Select Product Line Options to Map",
+                options=product_list,
+                index=default_idx,
+                key=f"prod_select_box_{idx}",
+            )
 
-            with col_a:
-                st.markdown(
-                    f"<span style='color:white; font-size:0.85rem;'>{label}</span>",
-                    unsafe_allow_html=True,
-                )
-                edited_val = st.text_input(
-                    label,
-                    value=existing_val,
-                    key=f"input_{key}",
-                    placeholder="—",
-                    label_visibility="collapsed",
-                )
+            st.markdown(f"**Options for {selected_product}**")
+            opts = product_options.get("products", {}).get(selected_product, {})
+            with st.container(border=True):
+                for opt_key, opt_data in opts.items():
+                    label = opt_data.get("label", opt_key)
+                    bt_key = opt_data.get("bt_key", "plan")
+                    choices = opt_data.get("choices", [])
 
-            # Keep bt_data live as user types
-            if edited_val != existing_val:
-                new_bt_data, new_assigned = manual_edit_field(
-                    key,
-                    label,
-                    edited_val,
-                    st.session_state.bt_data,
-                    st.session_state.assigned,
-                )
-                st.session_state.bt_data = new_bt_data
-                st.session_state.assigned = new_assigned
+                    cols = st.columns([2] + [2] * len(choices))
+                    with cols[0]:
+                        st.markdown(
+                            f"<span style='font-size:0.85rem; font-weight:bold;'>{label}</span>",
+                            unsafe_allow_html=True,
+                        )
+                    for i, val in enumerate(choices):
+                        with cols[i + 1]:
+                            st.button(
+                                val,
+                                key=f"assign_opt_{opt_key}_{val}_{idx}",
+                                on_click=do_assign_choice_option,
+                                args=(opt_key, val, bt_key),
+                                use_container_width=True,
+                            )
+        else:
+            st.warning(
+                "⚠️ No plan configuration is available. Please upload or link a product configuration first."
+            )
+            st.page_link(
+                "src/pages/config_manager.py",
+                label="Go to Product Config Manager ➡️",
+                icon="⚙️",
+            )
 
-            with col_b:
-                st.markdown(
-                    "<div style='margin-top:28px'></div>", unsafe_allow_html=True
-                )
-                st.button(
-                    "Assign",
-                    key=f"assign_{key}_{idx}",
-                    on_click=do_assign,
-                    args=(key, idx, value_to_assign, field_name, label),
-                    use_container_width=True,
-                )
+    with tab_fields:
+        # ── 1.5 Signature Field Mapping (General / Template Config) ──
+        # Find if any field is currently mapped to "signature"
+        sig_field_name = "Not Mapped"
+        for fname, target in st.session_state.field_mapping.items():
+            if target == "signature":
+                sig_field_name = fname
+                break
 
-            with col_c:
-                st.markdown(
-                    "<div style='margin-top:28px'></div>", unsafe_allow_html=True
-                )
-                st.button(
-                    "Clear",
-                    key=f"clear_{key}_{idx}",
-                    on_click=do_clear,
-                    args=(key,),
-                    use_container_width=True,
-                )
+        col_sig_a, col_sig_b, col_sig_c = st.columns([5, 1.5, 1.5])
+        with col_sig_a:
+            st.markdown(
+                f"<div style='margin-top:6px; color:#cbd5e1; font-size:0.9rem;'>"
+                f"Mapped PDF Field: <code style='color:#fbbf24; font-weight:bold;'>{sig_field_name}</code>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
+        with col_sig_b:
+            st.button(
+                "Assign Signature",
+                key=f"assign_sig_loc_{idx}",
+                on_click=do_assign,
+                args=("signature", idx, "", field_name, "Signature Field"),
+                use_container_width=True,
+            )
+        with col_sig_c:
+            st.button(
+                "Clear",
+                key=f"clear_sig_loc_{idx}",
+                on_click=do_clear,
+                args=("signature",),
+                use_container_width=True,
+            )
+
+        # ── 2. BlueTable Fields Below Plan Options Mapping ──
+        from src.blue_table_tools.docx_generator import resolve_plan_combination
+        from src.blue_table_tools import apply_acceptance_rules
+
+        st.session_state.bt_data = resolve_plan_combination(st.session_state.bt_data)
+        st.session_state.bt_data = apply_acceptance_rules(st.session_state.bt_data)
+        status_keys = {
+            "plan",
+            "deductible",
+            "acceptance_conditions",
+            "sp_acceptance_conditions",
+            "c1_acceptance_conditions",
+            "c2_acceptance_conditions",
+            "c3_acceptance_conditions",
+        }
+        for key in status_keys:
+            if key in st.session_state.bt_data:
+                if (
+                    st.session_state.get(f"input_{key}")
+                    != st.session_state.bt_data[key]
+                ):
+                    st.session_state[f"input_{key}"] = st.session_state.bt_data[key]
+
+        with st.container(height=600):
+            for label, key in BLUETABLE_FIELDS:
+                existing_val = st.session_state.bt_data.get(key, "")
+                col_a, col_b, col_c = st.columns([5, 1.5, 1.5])
+
+                with col_a:
+                    st.markdown(
+                        f"<span style='color:white; font-size:0.85rem;'>{label}</span>",
+                        unsafe_allow_html=True,
+                    )
+                    edited_val = st.text_input(
+                        label,
+                        value=existing_val,
+                        key=f"input_{key}",
+                        placeholder="—",
+                        label_visibility="collapsed",
+                    )
+
+                # Keep bt_data live as user types
+                if edited_val != existing_val:
+                    new_bt_data, new_assigned = manual_edit_field(
+                        key,
+                        label,
+                        edited_val,
+                        st.session_state.bt_data,
+                        st.session_state.assigned,
+                    )
+                    st.session_state.bt_data = new_bt_data
+                    st.session_state.assigned = new_assigned
+
+                with col_b:
+                    st.markdown(
+                        "<div style='margin-top:28px'></div>", unsafe_allow_html=True
+                    )
+                    st.button(
+                        "Assign",
+                        key=f"assign_{key}_{idx}",
+                        on_click=do_assign,
+                        args=(key, idx, value_to_assign, field_name, label),
+                        use_container_width=True,
+                    )
+
+                with col_c:
+                    st.markdown(
+                        "<div style='margin-top:28px'></div>", unsafe_allow_html=True
+                    )
+                    st.button(
+                        "Clear",
+                        key=f"clear_{key}_{idx}",
+                        on_click=do_clear,
+                        args=(key,),
+                        use_container_width=True,
+                    )
 
 # ── RIGHT: navigation ──────────────────────────────────────────────────────
 with right:
