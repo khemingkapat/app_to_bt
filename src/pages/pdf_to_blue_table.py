@@ -798,10 +798,13 @@ with mid:
         }
         for key in status_keys:
             if key in st.session_state.bt_data:
-                if st.session_state.get(f"input_{key}") != st.session_state.bt_data[key]:
+                if (
+                    st.session_state.get(f"input_{key}")
+                    != st.session_state.bt_data[key]
+                ):
                     st.session_state[f"input_{key}"] = st.session_state.bt_data[key]
 
-        with st.container(height=350):
+        with st.container(height=600):
             for label, key in BLUETABLE_FIELDS:
                 existing_val = st.session_state.bt_data.get(key, "")
                 col_a, col_b, col_c = st.columns([5, 1.5, 1.5])
