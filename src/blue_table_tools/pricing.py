@@ -1,7 +1,7 @@
 import math
 from src.pdf_processor.inverter import load_product_config
 
-CONFIG_PATH = "./config/health_and_accident.json"
+CONFIG_PATH = "./config/health_and_accident_insurance.json"
 
 # TODO: Implement multi-product support (e.g. personal accident, travel plans) and configurable discount thresholds.
 

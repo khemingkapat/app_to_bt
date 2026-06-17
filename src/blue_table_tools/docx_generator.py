@@ -73,36 +73,58 @@ def resolve_plan_combination(data: dict) -> dict:
     Resolves the combined plan name and code from raw mapping fields
     and updates the 'plan' and 'deductible' fields in the data dict.
     """
+    import re
     updated = data.copy()
     plan_val = str(updated.get("plan") or "").strip()
     ded_val = str(updated.get("deductible") or "").strip()
     
-    if "(" in plan_val and ")" in plan_val:
+    if not plan_val:
         return updated
         
-    parts = [p.strip() for p in plan_val.split("-") if p.strip()]
     plan_tier = ""
     optional_benefit = ""
     opd_choice = ""
     is_visa = False
     
-    valid_benefits = ("IPD", "IPD+OPD", "IPD+OPD+WELLNESS")
-    valid_opd_choices = ("3k * 30 times / year", "50k per year")
-    
-    for p in parts:
-        if p.startswith("ESSENTIAL"):
-            plan_tier = p.replace("ESSENTIAL", "").strip()
-        elif p.startswith("VISA"):
-            plan_tier = p.replace("VISA Plan", "").replace("VISA", "").strip()
-            is_visa = True
-        elif "Plan" in p:
-            plan_tier = p.replace("Plan", "").strip()
-        elif p in valid_benefits:
-            optional_benefit = p
-        elif p in valid_opd_choices:
-            opd_choice = p
-            
-    deductible_amount = ded_val.replace("k", ",000")
+    # Check if VISA
+    if "VISA" in plan_val:
+        is_visa = True
+        match = re.search(r"VISA\s*(?:Plan)?\s*(\d+)", plan_val, re.IGNORECASE)
+        if match:
+            plan_tier = match.group(1)
+        else:
+            match = re.search(r"Plan\s*(\d+)", plan_val, re.IGNORECASE)
+            if match:
+                plan_tier = match.group(1)
+    else:
+        # SmartCare Essential
+        match_ess = re.search(r"ESSENTIAL\s*(\d+)", plan_val, re.IGNORECASE)
+        if match_ess:
+            plan_tier = match_ess.group(1)
+        else:
+            match_plan = re.search(r"Plan\s*(\d+)", plan_val, re.IGNORECASE)
+            if match_plan:
+                plan_tier = match_plan.group(1)
+
+        # Extract benefit: IPD+OPD+WELLNESS or IPD+OPD or IPD
+        if "IPD+OPD+WELLNESS" in plan_val:
+            optional_benefit = "IPD+OPD+WELLNESS"
+        elif "IPD+OPD" in plan_val:
+            optional_benefit = "IPD+OPD"
+        elif "IPD" in plan_val:
+            optional_benefit = "IPD"
+
+        # Extract OPD choice (inside parentheses or after dash/space)
+        match_opd = re.search(r"\(([^)]+)\)", plan_val)
+        if match_opd:
+            opd_choice = match_opd.group(1).strip()
+        else:
+            parts = [p.strip() for p in plan_val.split("-")]
+            for p in parts:
+                if p in ("3k * 30 times / year", "50k per year"):
+                    opd_choice = p
+                    
+    deductible_amount = ded_val.replace("k", ",000").replace("K", ",000")
     if deductible_amount == "0,000":
         deductible_amount = "0"
          
@@ -130,6 +152,7 @@ def resolve_plan_combination(data: dict) -> dict:
             pass
             
     return updated
+
 
 
 def fill_blue_table_docx(template_path: str, data: dict) -> BytesIO:

@@ -147,13 +147,22 @@ def test_resolve_plan_combination():
     assert resolved["plan"] == "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 20,000 (107)"
     assert resolved["deductible"] == "20,000"
 
-    # Test already resolved plan (should skip)
+    # Test already resolved plan (should skip or re-resolve to same)
     data = {
         "plan": "ESSENTIAL2-IPD DD 20,000 (127)",
         "deductible": "20,000"
     }
     resolved = resolve_plan_combination(data)
     assert resolved["plan"] == "ESSENTIAL2-IPD DD 20,000 (127)"
+
+    # Test already resolved plan with a changed deductible (should re-resolve dynamically)
+    data = {
+        "plan": "ESSENTIAL2-IPD DD 20,000 (127)",
+        "deductible": "0"
+    }
+    resolved = resolve_plan_combination(data)
+    assert resolved["plan"] == "ESSENTIAL2-IPD DD 0 (126)"
+    assert resolved["deductible"] == "0"
 
     # Test EasyCare Visa combination lookup (legacy format)
     data = {
