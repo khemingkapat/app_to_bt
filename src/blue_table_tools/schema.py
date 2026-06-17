@@ -22,7 +22,6 @@ BLUETABLE_FIELDS = [
     ("TAX ID", "tax_id"),
     ("Acceptance Conditions", "acceptance_conditions"),
     ("Exclusions", "exclusions"),
-    ("Signature Field", "signature"),
     ("Spouse Name", "sp_name"),
     ("Spouse DOB", "sp_dob"),
     ("Spouse ID", "sp_id_card_no"),
