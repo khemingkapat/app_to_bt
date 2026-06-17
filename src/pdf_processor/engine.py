@@ -169,16 +169,13 @@ def update_pdf_registry(
     # Update global map entry
     registry.update(registry_dict)
 
-    # Save both files
+    # Save registry file (pure structural data, no personal info)
     os.makedirs(os.path.dirname(registry_path), exist_ok=True)
     with open(registry_path, "w", encoding="utf-8") as f:
         json.dump(registry, f, indent=4, ensure_ascii=False)
 
-    with open(values_path, "w", encoding="utf-8") as f:
-        json.dump(values_dict, f, indent=4, ensure_ascii=False)
-
     print(f"✅ Pure structural fields saved to: {registry_path}")
-    print(f"✅ Simple text values dictionary saved to: {values_path}\n" + "=" * 60)
+    print(f"✅ Simple text values dictionary kept in-memory for stateless processing\n" + "=" * 60)
 
     return pdf_id, registry_dict, values_dict
 
