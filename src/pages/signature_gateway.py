@@ -344,6 +344,7 @@ if token_param:
                             sig_png_bytes,
                             entry.get("pdf_id"),
                             registry_dict,
+                            entry.get("cache_mapping"),
                         )
 
                         # 3. Fill the BlueTable docx tracker template
@@ -536,6 +537,7 @@ else:
                             # Save the raw PDF bytes specifically in the entry (not displayed/exposed)
                             vault.get_entry(token)["pdf_bytes"] = file_bytes
                             vault.get_entry(token)["registry_dict"] = registry_dict
+                            vault.get_entry(token)["cache_mapping"] = cache_mapping
 
                             # Save token state to check status
                             st.session_state.active_token = token
