@@ -196,6 +196,160 @@ app.post('/api/generate-pdf', async (req, res) => {
     }
 });
 
+// ---------------------------------------------------------
+// SIGNATURE GATEWAY (SESSION VAULT API)
+// ---------------------------------------------------------
+
+const vault = require('./src/signature_gateway/vault');
+
+app.post('/api/vault/create', upload.single('pdf'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No PDF file provided.' });
+
+        const crypto = require('crypto');
+
+        // 1. Re-extract structure using engine
+        const { pdf_id, registry_dict, values_dict } = await processPdf(req.file.buffer, inMemoryRegistry);
+
+        // 2. Try to get cache mapping
+        const cachePath = path.join(__dirname, 'outputs', 'assignment_cache.json');
+        let cacheMapping = null;
+        if (fs.existsSync(cachePath)) {
+            const cache = JSON.parse(fs.readFileSync(cachePath, 'utf-8'));
+            if (cache[pdf_id] && cache[pdf_id].field_mappings) {
+                cacheMapping = cache[pdf_id].field_mappings;
+            }
+        }
+
+        if (!cacheMapping) {
+            return res.status(400).json({ error: 'Unknown PDF Template. Map it first.' });
+        }
+
+        const fields = registry_dict[pdf_id].fields || [];
+        const btData = vault.extractBtData(fields, cacheMapping, values_dict);
+        btData.pdf_id = pdf_id;
+
+        const customerName = btData.name || '';
+        const identityId = btData.id_card_no || '';
+
+        if (!customerName || !identityId) {
+            return res.status(400).json({ error: 'Missing customer name or identity ID in mapping' });
+        }
+
+        const token = crypto.randomBytes(16).toString('hex');
+
+        vault.addEntry(
+            token, pdf_id, customerName, identityId, btData,
+            req.file.buffer, registry_dict, cacheMapping
+        );
+
+        res.json({ success: true, token, customerName });
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to create vault entry', details: e.message });
+    }
+});
+
+app.get('/api/vault/verify', (req, res) => {
+    const { token } = req.query;
+    const entry = vault.getEntry(token);
+    if (!entry) return res.status(404).json({ error: 'Invalid or expired token' });
+
+    res.json({
+        success: true,
+        status: entry.status,
+        customerName: entry.customer_name
+    });
+});
+
+app.post('/api/vault/sign', async (req, res) => {
+    try {
+        const { token, identityId, signatureImageBase64 } = req.body;
+
+        if (!vault.verifyIdentity(token, identityId)) {
+            return res.status(403).json({ error: 'Identity verification failed or token invalid' });
+        }
+
+        const entry = vault.getEntry(token);
+        const { stampSignatureOnPdf } = require('./src/signature_gateway/pdf_stamping');
+        const { fillAcroformPdf } = require('./src/pdf_processor/inverter');
+        const { fillBlueTableDocx } = require('./src/blue_table_tools/docx_generator');
+
+        // Extract base64 part
+        const base64Data = signatureImageBase64.replace(/^data:image\/png;base64,/, "");
+        const sigBuffer = Buffer.from(base64Data, 'base64');
+
+        // 1. Fill AcroForm
+        const filledPdfBytes = await fillAcroformPdf(entry.pdf_bytes, entry.bt_data);
+
+        // 2. Stamp Signature
+        const finalPdfBytes = await stampSignatureOnPdf(
+            Buffer.from(filledPdfBytes),
+            sigBuffer,
+            entry.pdf_id,
+            entry.registry_dict,
+            entry.cache_mapping
+        );
+
+        // 3. Fill DOCX
+        const templateDocxPath = path.join(__dirname, 'resources', 'BlueTable.docx');
+        const templateDocxBuffer = fs.readFileSync(templateDocxPath);
+        const finalDocxBytes = fillBlueTableDocx(templateDocxBuffer, entry.bt_data);
+
+        vault.saveSignedDocuments(token, finalPdfBytes, finalDocxBytes);
+
+        res.json({ success: true });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Failed to sign document', details: e.message });
+    }
+});
+
+app.get('/api/vault/status', (req, res) => {
+    const { token } = req.query;
+    const entry = vault.getEntry(token);
+
+    if (!entry) return res.status(404).json({ error: 'Invalid or expired token' });
+
+    const elapsed = (Date.now() - entry.created_at) / 1000;
+    const remaining = Math.floor(entry.ttl_seconds - elapsed);
+
+    res.json({
+        success: true,
+        status: entry.status,
+        remaining_seconds: remaining,
+        customerName: entry.customer_name
+    });
+});
+
+app.get('/api/vault/download/:token/:type', (req, res) => {
+    const { token, type } = req.params;
+    const entry = vault.getEntry(token);
+
+    if (!entry || entry.status !== 'signed') {
+        return res.status(404).json({ error: 'Document not found or not signed' });
+    }
+
+    if (type === 'pdf') {
+        res.setHeader('Content-Disposition', `attachment; filename="Signed_${entry.customer_name.replace(/ /g, '_')}.pdf"`);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.send(Buffer.from(entry.signed_pdf_bytes));
+    } else if (type === 'docx') {
+        res.setHeader('Content-Disposition', `attachment; filename="BlueTable_${entry.customer_name.replace(/ /g, '_')}.docx"`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.send(Buffer.from(entry.signed_docx_bytes));
+    } else {
+        res.status(400).json({ error: 'Invalid type' });
+    }
+});
+
+app.post('/api/vault/clear', (req, res) => {
+    const { token } = req.body;
+    vault.removeEntry(token);
+    res.json({ success: true });
+});
+
 // Start the server if this file is run directly
 if (require.main === module) {
     app.listen(port, () => {

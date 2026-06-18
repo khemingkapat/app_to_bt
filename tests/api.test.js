@@ -129,3 +129,50 @@ describe('Document Generation API Endpoints', () => {
         expect(resPdf.status).toBe(400);
     });
 });
+
+describe('Signature Gateway Vault API Endpoints', () => {
+    let mockToken = null;
+    let mockIdentityId = "1234567890123";
+
+    it('POST /api/vault/create should fail without PDF', async () => {
+        const response = await request(app).post('/api/vault/create');
+        expect(response.status).toBe(400);
+    });
+
+    // Mock PDF creation is difficult without setting up the entire registry and cache context
+    // We will test the vault module directly instead of the Express wrapper
+
+    const vault = require('../src/signature_gateway/vault');
+
+    it('Vault module should add, get, verify, and remove entries', () => {
+        const token = "mock_token_123";
+
+        vault.addEntry(
+            token, "pdf_id_123", "John Doe", "A1B2C3D4", { name: "John" },
+            Buffer.from("fake_pdf"), {}, {}, 900
+        );
+
+        const entry = vault.getEntry(token);
+        expect(entry).toBeDefined();
+        expect(entry.customer_name).toBe("John Doe");
+        expect(entry.status).toBe("pending");
+
+        // Fails with wrong ID
+        expect(vault.verifyIdentity(token, "wrong_id")).toBe(false);
+
+        // Succeeds with correct ID, case insensitive and alphanumeric only
+        expect(vault.verifyIdentity(token, "a 1-b-2 c3d4!")).toBe(true);
+
+        // Verify ID is wiped after success
+        expect(vault.getEntry(token).identity_id).toBeNull();
+
+        vault.saveSignedDocuments(token, Buffer.from("signed_pdf"), Buffer.from("signed_docx"));
+
+        const signedEntry = vault.getEntry(token);
+        expect(signedEntry.status).toBe("signed");
+        expect(signedEntry.signed_pdf_bytes.toString()).toBe("signed_pdf");
+
+        vault.removeEntry(token);
+        expect(vault.getEntry(token)).toBeUndefined();
+    });
+});
