@@ -82,3 +82,50 @@ describe('Config Manager API Endpoints', () => {
         fs.unlinkSync(configPath);
     });
 });
+
+describe('Document Generation API Endpoints', () => {
+    const mockData = {
+        name: "John Doe",
+        dob: "10/05/1990",
+        id_card_no: "1234567890123",
+        product_name: "ESSENTIAL",
+        plan: "ESSENTIAL2-IPD",
+        deductible: "100k",
+        cover_spouse: "yes",
+        sp_name: "Jane Doe"
+    };
+
+    it('POST /api/generate-docx should return a DOCX buffer', async () => {
+        const response = await request(app)
+            .post('/api/generate-docx')
+            .send(mockData)
+            .responseType('blob'); // Ensure supertest handles binary data
+
+        expect(response.status).toBe(200);
+        expect(response.headers['content-type']).toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        expect(response.headers['content-disposition']).toBe('attachment; filename="bluetable_filled.docx"');
+        expect(response.body).toBeInstanceOf(Buffer);
+        expect(response.body.length).toBeGreaterThan(100);
+    });
+
+    it('POST /api/generate-pdf should return a PDF buffer', async () => {
+        const response = await request(app)
+            .post('/api/generate-pdf')
+            .send(mockData)
+            .responseType('blob'); // Ensure supertest handles binary data
+
+        expect(response.status).toBe(200);
+        expect(response.headers['content-type']).toBe('application/pdf');
+        expect(response.headers['content-disposition']).toBe('attachment; filename="PreFilled_Application.pdf"');
+        expect(response.body).toBeInstanceOf(Buffer);
+        expect(response.body.length).toBeGreaterThan(100);
+    });
+
+    it('POST endpoints should handle missing data', async () => {
+        const resDocx = await request(app).post('/api/generate-docx').send({});
+        expect(resDocx.status).toBe(400);
+
+        const resPdf = await request(app).post('/api/generate-pdf').send({});
+        expect(resPdf.status).toBe(400);
+    });
+});

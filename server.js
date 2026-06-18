@@ -135,6 +135,67 @@ app.post('/api/config', (req, res) => {
 });
 
 
+// POST endpoint to handle filling and downloading the BlueTable DOCX
+app.post('/api/generate-docx', async (req, res) => {
+    try {
+        const data = req.body;
+        if (!data || Object.keys(data).length === 0) {
+            return res.status(400).json({ error: 'Missing form data' });
+        }
+
+        const fs = require('fs');
+        const path = require('path');
+        const { fillBlueTableDocx } = require('./src/blue_table_tools/docx_generator');
+
+        const templatePath = path.join(__dirname, 'resources', 'BlueTable.docx');
+        if (!fs.existsSync(templatePath)) {
+            return res.status(404).json({ error: 'Template DOCX not found' });
+        }
+
+        const templateBuffer = fs.readFileSync(templatePath);
+        const filledBuffer = fillBlueTableDocx(templateBuffer, data);
+
+        res.setHeader('Content-Disposition', 'attachment; filename="bluetable_filled.docx"');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.send(filledBuffer);
+
+    } catch (error) {
+        console.error('Error generating DOCX:', error);
+        res.status(500).json({ error: 'Failed to generate DOCX', details: error.message });
+    }
+});
+
+// POST endpoint to handle generating the Pre-filled PDF using pdf-lib
+app.post('/api/generate-pdf', async (req, res) => {
+    try {
+        const data = req.body;
+        if (!data || Object.keys(data).length === 0) {
+            return res.status(400).json({ error: 'Missing form data' });
+        }
+
+        const fs = require('fs');
+        const path = require('path');
+        const { fillAcroformPdf } = require('./src/pdf_processor/inverter');
+
+        const templatePath = path.join(__dirname, 'resources', 'OriginalApplication.pdf');
+        if (!fs.existsSync(templatePath)) {
+            return res.status(404).json({ error: 'Template PDF not found' });
+        }
+
+        const templateBuffer = fs.readFileSync(templatePath);
+        const filledBytes = await fillAcroformPdf(templateBuffer, data);
+
+        res.setHeader('Content-Disposition', 'attachment; filename="PreFilled_Application.pdf"');
+        res.setHeader('Content-Type', 'application/pdf');
+        // Convert Uint8Array to Buffer for express.send
+        res.send(Buffer.from(filledBytes));
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        res.status(500).json({ error: 'Failed to generate PDF', details: error.message });
+    }
+});
+
 // Start the server if this file is run directly
 if (require.main === module) {
     app.listen(port, () => {
