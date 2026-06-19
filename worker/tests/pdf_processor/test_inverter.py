@@ -19,7 +19,17 @@ def test_parse_date_part():
 
 def test_map_customer_data_to_pdf():
     import shutil
-    shutil.copy("outputs/assignment_cache.example.json", "outputs/assignment_cache.json")
+
+    # Resolve correct paths for copying inputs
+    src = "outputs/assignment_cache.example.json"
+    dst = "outputs/assignment_cache.json"
+    if not os.path.exists(src):
+        parent_src = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", src))
+        parent_dst = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", dst))
+        if os.path.exists(parent_src):
+            src, dst = parent_src, parent_dst
+
+    shutil.copy(src, dst)
     
     config = load_product_config()
     from src.blue_table_tools.cache import load_cache
@@ -57,9 +67,19 @@ def test_map_customer_data_to_pdf():
 
 def test_fill_acroform_pdf():
     import shutil
-    shutil.copy("outputs/assignment_cache.example.json", "outputs/assignment_cache.json")
     
-    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    # Resolve correct paths for copying inputs
+    src = "outputs/assignment_cache.example.json"
+    dst = "outputs/assignment_cache.json"
+    if not os.path.exists(src):
+        parent_src = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", src))
+        parent_dst = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", dst))
+        if os.path.exists(parent_src):
+            src, dst = parent_src, parent_dst
+
+    shutil.copy(src, dst)
+
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     original_pdf_path = os.path.join(repo_root, "resources", "OriginalApplication.pdf")
     
     assert os.path.exists(original_pdf_path), f"Template not found at: {original_pdf_path}"
