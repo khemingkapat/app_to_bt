@@ -8,7 +8,7 @@ This document maps out the architecture migration plan into granular, trackable 
 | :--- | :--- | :--- | :--- | :--- |
 | **WP0** | Pioneer & Architecture Design | Khem / Antigravity | ✅ Done | |
 | **WP1** | Protobuf Codegen Verification | Jules / Khem | ✅ Done | |
-| **WP2** | Python gRPC Worker Service | Jules | 🔲 Ready | |
+| **WP2** | Python gRPC Worker Service | Jules | ✅ Done | |
 | **WP3** | Go Echo Gateway (Routing & Client) | Jules | 🔲 Ready | |
 | **WP4** | Docker Compose & Dev Tooling | Jules / Khem | 🔲 Ready | |
 
@@ -35,20 +35,20 @@ Confirm shared communication contract definitions for all 3 pathways (PDF to Blu
 
 ---
 
-### WP2: Python gRPC Worker Service 🔲
+### WP2: Python gRPC Worker Service ✅
 Implement the backend engine to expose logic pathways over gRPC.
 
 *   **WP2-1: gRPC Server Scaffolding (`worker/src/server.py`)** [Issue #28](https://github.com/khemingkapat/app_to_bt/issues/28)
-    *   Set up python gRPC server initialization.
-    *   Register `DocumentServiceServicer` interfaces.
+    *   ✅ Set up python gRPC server initialization.
+    *   ✅ Register `DocumentServiceServicer` interfaces.
 *   **WP2-2: PDF to Blue Table Handler (`ProcessPdf`)** [Issue #32](https://github.com/khemingkapat/app_to_bt/issues/32)
-    *   Integrate `pdf_processor.engine` to parse uploaded PDF layouts and return extracted field data and registry JSON.
+    *   ✅ Integrate `pdf_processor.engine` to parse uploaded PDF layouts and return extracted field data and registry JSON.
 *   **WP2-3: E-Form Generator Handlers (`GeneratePdf` / `GenerateDocx`)** [Issue #35](https://github.com/khemingkapat/app_to_bt/issues/35)
-    *   Integrate `blue_table_tools.docx_generator` to process form values and generate outputs.
-*   **WP2-4: Signature Stamping Handler (`StampSignature`)**
-    *   Integrate `signature_gateway` to stamp signature images on PDFs using structural coordinates.
+    *   ✅ Integrate `blue_table_tools.docx_generator` to process form values and generate outputs.
+*   **WP2-4: Signature Stamping Handler (`StampSignature`)** [Issue #37](https://github.com/khemingkapat/app_to_bt/issues/37)
+    *   ✅ Integrate `signature_gateway` to stamp signature images on PDFs using structural coordinates.
 *   **WP2-5: Integration Testing**
-    *   Add tests to run and verify the gRPC handlers.
+    *   ✅ Add tests to run and verify the gRPC handlers.
 
 ---
 
