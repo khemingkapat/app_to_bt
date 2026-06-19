@@ -79,4 +79,3 @@ Orchestrate local services and unify development environments.
     *   Add `docker-compose.yml` to run gateway and worker containers in a shared bridge network.
 *   **WP4-4: End-to-End Integration Verification**
     *   Verify request flow: Client ➔ Echo REST ➔ gRPC ➔ Worker ➔ Response.
-

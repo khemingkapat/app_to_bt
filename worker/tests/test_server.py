@@ -56,17 +56,45 @@ def test_process_pdf_integration(grpc_stub):
     assert "pages" in registry[response.pdf_id]
     assert "fields" in registry[response.pdf_id]
 
-def test_generate_pdf_mock(grpc_stub):
-    pdf_content = b"fake-pdf-content"
-    request = document_pb2.GeneratePdfRequest(pdf_bytes=pdf_content, form_data={})
-    response = grpc_stub.GeneratePdf(request)
-    assert response.pdf_bytes == pdf_content
+def test_generate_pdf_integration(grpc_stub):
+    # Load a real PDF from the resources directory
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    pdf_path = repo_root / "resources" / "OriginalApplication.pdf"
 
-def test_generate_docx_mock(grpc_stub):
-    docx_content = b"fake-docx-content"
-    request = document_pb2.GenerateDocxRequest(docx_bytes=docx_content, form_data={})
+    with open(pdf_path, "rb") as f:
+        pdf_bytes = f.read()
+
+    # Form data mapping to fields in OriginalApplication.pdf
+    form_data = {
+        "Full Name": "John Doe",
+        "Email": "john.doe@example.com"
+    }
+
+    request = document_pb2.GeneratePdfRequest(pdf_bytes=pdf_bytes, form_data=form_data)
+    response = grpc_stub.GeneratePdf(request)
+
+    assert len(response.pdf_bytes) > 0
+    assert response.pdf_bytes.startswith(b"%PDF-")
+
+def test_generate_docx_integration(grpc_stub):
+    # Create a minimal DOCX in memory
+    from docx import Document
+    from io import BytesIO
+
+    doc = Document()
+    doc.add_heading('Test Document', 0)
+    doc.add_table(rows=2, cols=2) # Add a table as the generator expects tables
+
+    docx_stream = BytesIO()
+    doc.save(docx_stream)
+    docx_bytes = docx_stream.getvalue()
+
+    request = document_pb2.GenerateDocxRequest(docx_bytes=docx_bytes, form_data={"name": "John Doe"})
     response = grpc_stub.GenerateDocx(request)
-    assert response.docx_bytes == docx_content
+
+    assert len(response.docx_bytes) > 0
+    # DOCX is a zip file, should start with PK
+    assert response.docx_bytes.startswith(b"PK")
 
 def test_stamp_signature_mock(grpc_stub):
     pdf_content = b"fake-pdf-content"
