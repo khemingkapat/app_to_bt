@@ -43,7 +43,7 @@ Implement the backend engine to expose logic pathways over gRPC.
     *   Register `DocumentServiceServicer` interfaces.
 *   **WP2-2: PDF to Blue Table Handler (`ProcessPdf`)** [Issue #32](https://github.com/khemingkapat/app_to_bt/issues/32)
     *   Integrate `pdf_processor.engine` to parse uploaded PDF layouts and return extracted field data and registry JSON.
-*   **WP2-3: E-Form Generator Handlers (`GeneratePdf` / `GenerateDocx`)**
+*   **WP2-3: E-Form Generator Handlers (`GeneratePdf` / `GenerateDocx`)** [Issue #35](https://github.com/khemingkapat/app_to_bt/issues/35)
     *   Integrate `blue_table_tools.docx_generator` to process form values and generate outputs.
 *   **WP2-4: Signature Stamping Handler (`StampSignature`)**
     *   Integrate `signature_gateway` to stamp signature images on PDFs using structural coordinates.
