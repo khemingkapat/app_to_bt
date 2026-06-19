@@ -1,7 +1,7 @@
 # 26-06-18: Architecture Transition to Go Echo & Python gRPC
 
 ## Context
-During our initial Node.js refactoring exploration, we evaluated the trade-offs of the system architecture under corporate-wide requirements (where **Availability**, **Consistency**, and **Accuracy** are top priorities). 
+During our initial Node.js refactoring exploration, we evaluated the trade-offs of the system architecture under corporate-wide requirements (where **Availability**, **Consistency**, and **Accuracy** are top priorities).
 
 While Go is the gold standard for availability, Go-native PDF/Docx processing libraries carry a high risk of layout/coordinate bugs for complex templates. We decided to keep the original verified Python PDF parser logic as a stateless microservice and implement the public-facing API Gateway, security middleware, and session vault in Go (Echo framework). The two services communicate over gRPC.
 

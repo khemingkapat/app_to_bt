@@ -26,7 +26,7 @@ if _version_not_supported:
 
 
 class DocumentServiceStub:
-    """DocumentService defines the RPC endpoints for PDF parsing, 
+    """DocumentService defines the RPC endpoints for PDF parsing,
     form pre-filling, signature stamping, and Word document generation.
     """
 
@@ -59,7 +59,7 @@ class DocumentServiceStub:
 
 
 class DocumentServiceServicer:
-    """DocumentService defines the RPC endpoints for PDF parsing, 
+    """DocumentService defines the RPC endpoints for PDF parsing,
     form pre-filling, signature stamping, and Word document generation.
     """
 
@@ -124,7 +124,7 @@ def add_DocumentServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class DocumentService:
-    """DocumentService defines the RPC endpoints for PDF parsing, 
+    """DocumentService defines the RPC endpoints for PDF parsing,
     form pre-filling, signature stamping, and Word document generation.
     """
 

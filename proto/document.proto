@@ -4,7 +4,7 @@ package document;
 
 option go_package = "gateway/proto/document;document";
 
-// DocumentService defines the RPC endpoints for PDF parsing, 
+// DocumentService defines the RPC endpoints for PDF parsing,
 // form pre-filling, signature stamping, and Word document generation.
 service DocumentService {
   // Parses a PDF file to extract its unique ID, form field values,
