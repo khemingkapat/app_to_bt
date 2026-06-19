@@ -19,4 +19,5 @@ outputs/*
 streamlit.log
 
 resources/BlueTable.docx
-
+health_and_accident_raw.json
+config/health_and_accident_insurance.json

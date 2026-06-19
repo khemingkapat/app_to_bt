@@ -11,6 +11,12 @@ CONFIG_FILE = "./config/health_and_accident_insurance.json"
 
 def load_product_config(config_path: str = CONFIG_FILE) -> dict:
     """Loads the product configuration schema."""
+    # Support running tests/scripts inside the worker directory
+    if not os.path.exists(config_path) and not config_path.startswith("/"):
+        parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", config_path))
+        if os.path.exists(parent_path):
+            config_path = parent_path
+
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -64,6 +70,12 @@ def load_config_by_pdf_id(pdf_id: str, config_dir: str = "./config") -> dict:
     """
     from src.blue_table_tools.cache import get_product_config_name
     
+    # Resolve correct paths when running inside the worker subfolder
+    if not os.path.exists(config_dir):
+        parent_config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", config_dir))
+        if os.path.exists(parent_config_dir):
+            config_dir = parent_config_dir
+
     # 1. Try to find the config file associated in assignment_cache
     config_name = get_product_config_name(pdf_id)
     if config_name:
