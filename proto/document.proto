@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package document;
+
+option go_package = "gateway/proto/document;document";
+
+// DocumentService defines the RPC endpoints for PDF parsing,
+// form pre-filling, signature stamping, and Word document generation.
+service DocumentService {
+  // Parses a PDF file to extract its unique ID, form field values,
+  // and structural layout data (pages, coordinates, word anchors).
+  rpc ProcessPdf (ProcessPdfRequest) returns (ProcessPdfResponse);
+
+  // Fills form values into an AcroForm PDF template.
+  rpc GeneratePdf (GeneratePdfRequest) returns (GeneratePdfResponse);
+
+  // Generates a filled Word (DOCX) document from a template.
+  rpc GenerateDocx (GenerateDocxRequest) returns (GenerateDocxResponse);
+
+  // Stamps a client's PNG signature image onto a PDF at the resolved coordinates.
+  rpc StampSignature (StampSignatureRequest) returns (StampSignatureResponse);
+}
+
+message ProcessPdfRequest {
+  bytes pdf_bytes = 1;
+}
+
+message ProcessPdfResponse {
+  string pdf_id = 1;
+  map<string, string> values = 2;
+  string registry_json = 3; // Serialized JSON containing pages, fields, and word anchors
+}
+
+message GeneratePdfRequest {
+  bytes pdf_bytes = 1;
+  map<string, string> form_data = 2;
+}
+
+message GeneratePdfResponse {
+  bytes pdf_bytes = 1;
+}
+
+message GenerateDocxRequest {
+  bytes docx_bytes = 1;
+  map<string, string> form_data = 2;
+}
+
+message GenerateDocxResponse {
+  bytes docx_bytes = 1;
+}
+
+message StampSignatureRequest {
+  bytes pdf_bytes = 1;
+  bytes signature_image_bytes = 2;
+  string pdf_id = 3;
+  string registry_json = 4;       // Serialized structural metadata of the PDF
+  string cache_mapping_json = 5;  // Serialized field mapping configuration
+}
+
+message StampSignatureResponse {
+  bytes pdf_bytes = 1;
+}

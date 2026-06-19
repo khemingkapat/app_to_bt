@@ -11,6 +11,18 @@ CONFIG_FILE = "./config/health_and_accident_insurance.json"
 
 def load_product_config(config_path: str = CONFIG_FILE) -> dict:
     """Loads the product configuration schema."""
+    # Support running tests/scripts inside the worker directory
+    if not os.path.exists(config_path) and not config_path.startswith("/"):
+        parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", config_path))
+        if os.path.exists(os.path.dirname(parent_path)):
+            config_path = parent_path
+
+    # Fallback to example file if the direct config is missing
+    if not os.path.exists(config_path) and config_path.endswith(".json"):
+        example_path = config_path.replace(".json", ".example.json")
+        if os.path.exists(example_path):
+            config_path = example_path
+
     if os.path.exists(config_path):
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
@@ -64,10 +76,20 @@ def load_config_by_pdf_id(pdf_id: str, config_dir: str = "./config") -> dict:
     """
     from src.blue_table_tools.cache import get_product_config_name
     
+    # Resolve correct paths when running inside the worker subfolder
+    if not os.path.exists(config_dir):
+        parent_config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", config_dir))
+        if os.path.exists(parent_config_dir):
+            config_dir = parent_config_dir
+
     # 1. Try to find the config file associated in assignment_cache
     config_name = get_product_config_name(pdf_id)
     if config_name:
         path = os.path.join(config_dir, config_name)
+        if not os.path.exists(path) and path.endswith(".json"):
+            example_path = path.replace(".json", ".example.json")
+            if os.path.exists(example_path):
+                path = example_path
         if os.path.exists(path):
             try:
                 with open(path, "r", encoding="utf-8") as f:
@@ -77,7 +99,7 @@ def load_config_by_pdf_id(pdf_id: str, config_dir: str = "./config") -> dict:
 
     # 2. Scan the config directory for a matching pdf_id field
     if pdf_id and os.path.exists(config_dir):
-        for filename in os.listdir(config_dir):
+        for filename in sorted(os.listdir(config_dir)):
             if filename.endswith(".json"):
                 path = os.path.join(config_dir, filename)
                 try:
@@ -90,6 +112,8 @@ def load_config_by_pdf_id(pdf_id: str, config_dir: str = "./config") -> dict:
 
     # 3. Fallback to default
     default_path = os.path.join(config_dir, "health_and_accident_insurance.json")
+    if not os.path.exists(default_path):
+        default_path = os.path.join(config_dir, "health_and_accident_insurance.example.json")
     if os.path.exists(default_path):
         try:
             with open(default_path, "r", encoding="utf-8") as f:

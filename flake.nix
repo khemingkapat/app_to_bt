@@ -47,6 +47,10 @@
     {
       devShells.${system}.default = pkgs.mkShell {
         buildInputs = with pkgs; [
+          go
+          protobuf
+          protoc-gen-go
+          protoc-gen-go-grpc
           uv
           python311
 

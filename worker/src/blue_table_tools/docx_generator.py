@@ -1,6 +1,7 @@
 import re
 from io import BytesIO
 from datetime import datetime
+from typing import Union
 import docx
 
 def calculate_age(dob_str: str) -> str:
@@ -161,14 +162,14 @@ def resolve_plan_combination(data: dict) -> dict:
 
 
 
-def fill_blue_table_docx(template_path: str, data: dict) -> BytesIO:
+def fill_blue_table_docx(template: Union[str, BytesIO], data: dict) -> BytesIO:
     """
     Fills the BlueTable.docx template tables with the provided data dict.
     Returns the filled file as a BytesIO stream.
     """
     data = resolve_plan_combination(data)
     data = apply_acceptance_rules(data)
-    doc = docx.Document(template_path)
+    doc = docx.Document(template)
     
     # Table 0: Main Insured
     age = data.get("age", "")
