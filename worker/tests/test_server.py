@@ -96,14 +96,32 @@ def test_generate_docx_integration(grpc_stub):
     # DOCX is a zip file, should start with PK
     assert response.docx_bytes.startswith(b"PK")
 
-def test_stamp_signature_mock(grpc_stub):
-    pdf_content = b"fake-pdf-content"
+def test_stamp_signature_integration(grpc_stub):
+    # Load a real PDF from the resources directory
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    pdf_path = repo_root / "resources" / "OriginalApplication.pdf"
+
+    with open(pdf_path, "rb") as f:
+        pdf_bytes = f.read()
+
+    # Create a sample PNG signature image using Pillow
+    from PIL import Image
+    from io import BytesIO
+    img = Image.new('RGBA', (100, 50), color=(255, 0, 0, 128))
+    sig_stream = BytesIO()
+    img.save(sig_stream, format="PNG")
+    sig_bytes = sig_stream.getvalue()
+
     request = document_pb2.StampSignatureRequest(
-        pdf_bytes=pdf_content,
-        signature_image_bytes=b"fake-sig",
-        pdf_id="some-id",
+        pdf_bytes=pdf_bytes,
+        signature_image_bytes=sig_bytes,
+        pdf_id="test-pdf-id",
         registry_json="{}",
         cache_mapping_json="{}"
     )
     response = grpc_stub.StampSignature(request)
-    assert response.pdf_bytes == pdf_content
+
+    assert len(response.pdf_bytes) > 0
+    assert response.pdf_bytes.startswith(b"%PDF-")
+    # Stamped PDF should be different from original
+    assert response.pdf_bytes != pdf_bytes

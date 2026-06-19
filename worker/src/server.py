@@ -18,10 +18,11 @@ from proto import document_pb2_grpc
 from pdf_processor.engine import process_pdf
 from pdf_processor.inverter import fill_acroform_pdf
 from blue_table_tools.docx_generator import fill_blue_table_docx
+from signature_gateway.pdf_stamping import stamp_signature_on_pdf
 
 class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
     """
-    Mock implementation of DocumentService for initial scaffolding and testing.
+    Implementation of DocumentService for processing and generating documents.
     """
     def ProcessPdf(self, request, context):
         print("Received ProcessPdf request")
@@ -54,8 +55,23 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
 
     def StampSignature(self, request, context):
         print("Received StampSignature request")
+
+        registry_json = request.registry_json.strip() if request.registry_json else None
+        registry_dict = json.loads(registry_json) if registry_json else None
+
+        cache_mapping_json = request.cache_mapping_json.strip() if request.cache_mapping_json else None
+        cache_mapping_dict = json.loads(cache_mapping_json) if cache_mapping_json else None
+
+        stamped_pdf = stamp_signature_on_pdf(
+            pdf_bytes=request.pdf_bytes,
+            sig_img_bytes=request.signature_image_bytes,
+            pdf_id=request.pdf_id,
+            registry_dict=registry_dict,
+            cache_mapping=cache_mapping_dict
+        )
+
         return document_pb2.StampSignatureResponse(
-            pdf_bytes=request.pdf_bytes
+            pdf_bytes=stamped_pdf
         )
 
 def serve():
