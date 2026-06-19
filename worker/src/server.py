@@ -16,6 +16,8 @@ sys.path.insert(0, str(worker_dir / "src"))
 from proto import document_pb2
 from proto import document_pb2_grpc
 from pdf_processor.engine import process_pdf
+from pdf_processor.inverter import fill_acroform_pdf
+from blue_table_tools.docx_generator import fill_blue_table_docx
 
 class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
     """
@@ -34,14 +36,20 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
 
     def GeneratePdf(self, request, context):
         print("Received GeneratePdf request")
+        pdf_file = BytesIO(request.pdf_bytes)
+        # request.form_data is a gRPC MapComposite object, which behaves like a dict
+        output_pdf = fill_acroform_pdf(pdf_file, request.form_data)
         return document_pb2.GeneratePdfResponse(
-            pdf_bytes=request.pdf_bytes
+            pdf_bytes=output_pdf.getvalue()
         )
 
     def GenerateDocx(self, request, context):
         print("Received GenerateDocx request")
+        docx_file = BytesIO(request.docx_bytes)
+        # Convert gRPC map to a plain dict just in case the generator expects it
+        output_docx = fill_blue_table_docx(docx_file, dict(request.form_data))
         return document_pb2.GenerateDocxResponse(
-            docx_bytes=request.docx_bytes
+            docx_bytes=output_docx.getvalue()
         )
 
     def StampSignature(self, request, context):

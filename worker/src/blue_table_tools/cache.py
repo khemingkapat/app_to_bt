@@ -24,7 +24,7 @@ def load_cache(pdf_id: str, cache_path: str = "outputs/assignment_cache.json") -
     """Loads the assignment cache (field_mappings) for a specific pdf_id."""
     if not pdf_id:
         return {}
-    
+
     # Resolve parent path when running inside worker/ directory
     if not os.path.exists(cache_path) and not cache_path.startswith("/"):
         parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", cache_path))

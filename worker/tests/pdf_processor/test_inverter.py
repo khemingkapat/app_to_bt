@@ -19,7 +19,7 @@ def test_parse_date_part():
 
 def test_map_customer_data_to_pdf():
     import shutil
-    
+
     # Resolve correct paths for copying inputs
     src = "outputs/assignment_cache.example.json"
     dst = "outputs/assignment_cache.json"
@@ -28,7 +28,7 @@ def test_map_customer_data_to_pdf():
         parent_dst = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", dst))
         if os.path.exists(parent_src):
             src, dst = parent_src, parent_dst
-            
+
     shutil.copy(src, dst)
     
     config = load_product_config()
@@ -76,9 +76,9 @@ def test_fill_acroform_pdf():
         parent_dst = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", dst))
         if os.path.exists(parent_src):
             src, dst = parent_src, parent_dst
-            
+
     shutil.copy(src, dst)
-    
+
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     original_pdf_path = os.path.join(repo_root, "resources", "OriginalApplication.pdf")
     
