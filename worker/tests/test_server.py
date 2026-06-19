@@ -30,12 +30,31 @@ def grpc_stub(grpc_server):
     with grpc.insecure_channel(grpc_server) as channel:
         yield document_pb2_grpc.DocumentServiceStub(channel)
 
-def test_process_pdf_mock(grpc_stub):
-    request = document_pb2.ProcessPdfRequest(pdf_bytes=b"fake-pdf-content")
+def test_process_pdf_integration(grpc_stub):
+    # Load a real PDF from the resources directory
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    pdf_path = repo_root / "resources" / "OriginalApplication.pdf"
+
+    with open(pdf_path, "rb") as f:
+        pdf_bytes = f.read()
+
+    request = document_pb2.ProcessPdfRequest(pdf_bytes=pdf_bytes)
     response = grpc_stub.ProcessPdf(request)
-    assert response.pdf_id == "mock-pdf-id"
-    assert response.values["mock_key"] == "mock_value"
-    assert "registry" in response.registry_json
+
+    # Verify we get a valid PDF ID (SHA-256 hash usually)
+    assert len(response.pdf_id) > 0
+    assert response.pdf_id != "mock-pdf-id"
+
+    # Verify we got some extracted values
+    # OriginalApplication.pdf should have form fields
+    assert len(response.values) > 0
+
+    # Verify registry_json is valid JSON and contains structural data
+    import json
+    registry = json.loads(response.registry_json)
+    assert response.pdf_id in registry
+    assert "pages" in registry[response.pdf_id]
+    assert "fields" in registry[response.pdf_id]
 
 def test_generate_pdf_mock(grpc_stub):
     pdf_content = b"fake-pdf-content"

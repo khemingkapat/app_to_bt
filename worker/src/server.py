@@ -1,5 +1,7 @@
 import sys
 import os
+import json
+from io import BytesIO
 from pathlib import Path
 from concurrent import futures
 import grpc
@@ -13,6 +15,7 @@ sys.path.insert(0, str(worker_dir / "src"))
 
 from proto import document_pb2
 from proto import document_pb2_grpc
+from pdf_processor.engine import process_pdf
 
 class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
     """
@@ -20,10 +23,13 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
     """
     def ProcessPdf(self, request, context):
         print("Received ProcessPdf request")
+        pdf_file = BytesIO(request.pdf_bytes)
+        pdf_id, registry_dict, values_dict = process_pdf(pdf_file)
+
         return document_pb2.ProcessPdfResponse(
-            pdf_id="mock-pdf-id",
-            values={"mock_key": "mock_value"},
-            registry_json='{"mock": "registry"}'
+            pdf_id=pdf_id,
+            values=values_dict,
+            registry_json=json.dumps(registry_dict)
         )
 
     def GeneratePdf(self, request, context):
