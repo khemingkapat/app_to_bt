@@ -4,6 +4,12 @@ import shutil
 
 def ensure_cache_file(cache_path: str):
     """Ensures that the cache_path file exists, copying from .example.json if missing."""
+    # Resolve parent path when running inside worker/ directory
+    if not os.path.exists(cache_path) and not cache_path.startswith("/"):
+        parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", cache_path))
+        if os.path.exists(parent_path):
+            cache_path = parent_path
+
     if not os.path.exists(cache_path):
         example_path = cache_path.replace(".json", ".example.json")
         if os.path.exists(example_path):
@@ -18,6 +24,13 @@ def load_cache(pdf_id: str, cache_path: str = "outputs/assignment_cache.json") -
     """Loads the assignment cache (field_mappings) for a specific pdf_id."""
     if not pdf_id:
         return {}
+    
+    # Resolve parent path when running inside worker/ directory
+    if not os.path.exists(cache_path) and not cache_path.startswith("/"):
+        parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", cache_path))
+        if os.path.exists(parent_path):
+            cache_path = parent_path
+
     ensure_cache_file(cache_path)
     if os.path.exists(cache_path):
         try:
@@ -37,6 +50,13 @@ def save_cache(pdf_id: str, field_mapping: dict, cache_path: str = "outputs/assi
     """Saves the assignment cache incrementally, preserving the product_config link."""
     if not pdf_id:
         return
+
+    # Resolve parent path when running inside worker/ directory
+    if not os.path.exists(cache_path) and not cache_path.startswith("/"):
+        parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", cache_path))
+        if os.path.exists(parent_path):
+            cache_path = parent_path
+
     ensure_cache_file(cache_path)
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)
     global_cache = {}
@@ -69,6 +89,13 @@ def get_product_config_name(pdf_id: str, cache_path: str = "outputs/assignment_c
     """Gets the product config filename associated with a pdf_id, or None if not found."""
     if not pdf_id:
         return None
+
+    # Resolve parent path when running inside worker/ directory
+    if not os.path.exists(cache_path) and not cache_path.startswith("/"):
+        parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", cache_path))
+        if os.path.exists(parent_path):
+            cache_path = parent_path
+
     ensure_cache_file(cache_path)
     if os.path.exists(cache_path):
         try:
