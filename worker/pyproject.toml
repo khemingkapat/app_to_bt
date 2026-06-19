@@ -1,0 +1,31 @@
+[project]
+name = "app-to-bt"
+version = "0.1.0"
+description = "A portal for processing AXA health insurance applications, isolating PDF tools and business logic from Streamlit state to map PDF fields to a BlueTable JSON format."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pdfplumber>=0.11.9",
+    "pillow>=12.2.0",
+    "pymupdf>=1.27.2.3",
+    "pypdf>=6.13.0",
+    "python-docx>=1.2.0",
+    "grpcio>=1.81.1",
+    "grpcio-tools>=1.81.1",
+    "pyright>=1.1.410",
+]
+
+[tool.setuptools]
+packages = [
+    "pdf_processor",
+    "blue_table_tools",
+]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-playwright>=0.8.0",
+]
