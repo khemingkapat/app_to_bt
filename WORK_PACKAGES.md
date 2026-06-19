@@ -41,7 +41,7 @@ Implement the backend engine to expose logic pathways over gRPC.
 *   **WP2-1: gRPC Server Scaffolding (`worker/src/server.py`)** [Issue #28](https://github.com/khemingkapat/app_to_bt/issues/28)
     *   Set up python gRPC server initialization.
     *   Register `DocumentServiceServicer` interfaces.
-*   **WP2-2: PDF to Blue Table Handler (`ProcessPdf`)**
+*   **WP2-2: PDF to Blue Table Handler (`ProcessPdf`)** [Issue #32](https://github.com/khemingkapat/app_to_bt/issues/32)
     *   Integrate `pdf_processor.engine` to parse uploaded PDF layouts and return extracted field data and registry JSON.
 *   **WP2-3: E-Form Generator Handlers (`GeneratePdf` / `GenerateDocx`)**
     *   Integrate `blue_table_tools.docx_generator` to process form values and generate outputs.
