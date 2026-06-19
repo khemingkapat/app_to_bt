@@ -1,0 +1,736 @@
+{
+    "product_name": "Mock Care Plus Insurance",
+    "underwriting_rules": {
+        "critical_conditions": [
+            "Mock Condition Alpha",
+            "Mock Condition Beta",
+            "Mock Condition Gamma",
+            "Mock Condition Delta",
+            "Mock Condition Epsilon"
+        ]
+    },
+    "pricing": {
+        "deductibles": [
+            {
+                "key": "0",
+                "label": "No Deductible",
+                "amount": 0
+            },
+            {
+                "key": "20000",
+                "label": "20,000 Mock Currency Deductible",
+                "amount": 20000
+            },
+            {
+                "key": "40000",
+                "label": "40,000 Mock Currency Deductible",
+                "amount": 40000
+            },
+            {
+                "key": "100000",
+                "label": "100,000 Mock Currency Deductible",
+                "amount": 100000
+            },
+            {
+                "key": "200000",
+                "label": "200,000 Mock Currency Deductible",
+                "amount": 200000
+            }
+        ]
+    },
+    "premium_tables": {
+        "ipd": {
+            "0-5": [
+                12031,
+                15659,
+                23524,
+                30847
+            ],
+            "6-10": [
+                19364,
+                23169,
+                28848,
+                35675
+            ],
+            "11-15": [
+                11610,
+                14917,
+                22636,
+                28098
+            ],
+            "16-20": [
+                14850,
+                18123,
+                21886,
+                26643
+            ],
+            "21-25": [
+                9433,
+                14545,
+                17337,
+                22277
+            ],
+            "26-30": [
+                17580,
+                21746,
+                24101,
+                32078
+            ],
+            "31-35": [
+                18919,
+                21941,
+                27041,
+                29686
+            ],
+            "36-40": [
+                18445,
+                25594,
+                32660,
+                37622
+            ],
+            "41-45": [
+                18034,
+                25805,
+                28374,
+                30749
+            ],
+            "46-50": [
+                13103,
+                15756,
+                19663,
+                22490
+            ],
+            "51-55": [
+                15504,
+                21218,
+                28425,
+                33413
+            ],
+            "56-60": [
+                12696,
+                17606,
+                21322,
+                28812
+            ],
+            "61-64": [
+                17123,
+                24722,
+                32030,
+                34614
+            ]
+        },
+        "ipd_opd_3000": {
+            "0-5": [
+                22181,
+                25582,
+                31957,
+                39930
+            ],
+            "6-10": [
+                12348,
+                18134,
+                23242,
+                27453
+            ],
+            "11-15": [
+                17924,
+                25532,
+                30188,
+                32646
+            ],
+            "16-20": [
+                11014,
+                15598,
+                20884,
+                25077
+            ],
+            "21-25": [
+                9812,
+                16458,
+                24339,
+                28916
+            ],
+            "26-30": [
+                15852,
+                21941,
+                27182,
+                34448
+            ],
+            "31-35": [
+                15687,
+                19856,
+                22999,
+                27019
+            ],
+            "36-40": [
+                20612,
+                24764,
+                31552,
+                37061
+            ],
+            "41-45": [
+                19831,
+                24796,
+                28592,
+                31725
+            ],
+            "46-50": [
+                19390,
+                22134,
+                24519,
+                27417
+            ],
+            "51-55": [
+                14644,
+                17954,
+                25528,
+                30986
+            ],
+            "56-60": [
+                17291,
+                22443,
+                27569,
+                34450
+            ],
+            "61-64": [
+                19002,
+                23061,
+                29593,
+                31687
+            ]
+        },
+        "ipd_opd_3000_wellness": {
+            "0-5": [
+                14460,
+                20858,
+                25043,
+                32293
+            ],
+            "6-10": [
+                13486,
+                17890,
+                23451,
+                26746
+            ],
+            "11-15": [
+                14459,
+                22374,
+                30269,
+                34426
+            ],
+            "16-20": [
+                16664,
+                22822,
+                25693,
+                32815
+            ],
+            "21-25": [
+                17123,
+                23281,
+                30269,
+                33898
+            ],
+            "26-30": [
+                12567,
+                15890,
+                22308,
+                28652
+            ],
+            "31-35": [
+                11915,
+                16570,
+                22572,
+                24731
+            ],
+            "36-40": [
+                11805,
+                16324,
+                20285,
+                22759
+            ],
+            "41-45": [
+                15593,
+                18238,
+                20939,
+                28934
+            ],
+            "46-50": [
+                15528,
+                21891,
+                24921,
+                27972
+            ],
+            "51-55": [
+                19290,
+                22642,
+                26813,
+                33135
+            ],
+            "56-60": [
+                20404,
+                24139,
+                30556,
+                38535
+            ],
+            "61-64": [
+                16135,
+                20688,
+                25956,
+                33458
+            ]
+        },
+        "ipd_opd_50000": {
+            "0-5": [
+                16706,
+                22945,
+                28643,
+                31634
+            ],
+            "6-10": [
+                12901,
+                15425,
+                20194,
+                22366
+            ],
+            "11-15": [
+                21175,
+                25060,
+                31880,
+                35684
+            ],
+            "16-20": [
+                7698,
+                15496,
+                22665,
+                25147
+            ],
+            "21-25": [
+                11302,
+                13559,
+                18265,
+                20845
+            ],
+            "26-30": [
+                17372,
+                21653,
+                29133,
+                35109
+            ],
+            "31-35": [
+                14927,
+                18010,
+                25935,
+                32612
+            ],
+            "36-40": [
+                20312,
+                24302,
+                30176,
+                35510
+            ],
+            "41-45": [
+                10891,
+                13685,
+                21083,
+                26614
+            ],
+            "46-50": [
+                16273,
+                21640,
+                27465,
+                35437
+            ],
+            "51-55": [
+                13403,
+                20756,
+                28049,
+                30855
+            ],
+            "56-60": [
+                11291,
+                19256,
+                24035,
+                26930
+            ],
+            "61-64": [
+                12642,
+                16200,
+                22593,
+                28268
+            ]
+        },
+        "ipd_opd_50000_wellness": {
+            "0-5": [
+                12752,
+                16255,
+                20536,
+                26325
+            ],
+            "6-10": [
+                11709,
+                17339,
+                23847,
+                26649
+            ],
+            "11-15": [
+                13170,
+                19598,
+                21718,
+                24482
+            ],
+            "16-20": [
+                12234,
+                17563,
+                23541,
+                29484
+            ],
+            "21-25": [
+                13787,
+                16267,
+                19615,
+                24719
+            ],
+            "26-30": [
+                10233,
+                14405,
+                20132,
+                24468
+            ],
+            "31-35": [
+                19636,
+                27620,
+                34172,
+                41594
+            ],
+            "36-40": [
+                16241,
+                19796,
+                24226,
+                28009
+            ],
+            "41-45": [
+                12702,
+                19143,
+                21642,
+                26211
+            ],
+            "46-50": [
+                8346,
+                15131,
+                21036,
+                27155
+            ],
+            "51-55": [
+                16990,
+                19455,
+                25615,
+                28271
+            ],
+            "56-60": [
+                10605,
+                17479,
+                20035,
+                27566
+            ],
+            "61-64": [
+                14160,
+                17142,
+                23808,
+                27824
+            ]
+        }
+    },
+    "deductible_discounts": {
+        "0-40": {
+            "20000": 0.11,
+            "40000": 0.07,
+            "100000": 0.36,
+            "200000": 0.74
+        },
+        "41-60": {
+            "20000": 0.13,
+            "40000": 0.2,
+            "100000": 0.48,
+            "200000": 0.72
+        },
+        "61+": {
+            "20000": 0.06,
+            "40000": 0.07,
+            "100000": 0.34,
+            "200000": 0.8
+        }
+    },
+    "age_brackets": [
+        {
+            "min": 0,
+            "max": 5,
+            "key": "0-5"
+        },
+        {
+            "min": 6,
+            "max": 10,
+            "key": "6-10"
+        },
+        {
+            "min": 11,
+            "max": 15,
+            "key": "11-15"
+        },
+        {
+            "min": 16,
+            "max": 20,
+            "key": "16-20"
+        },
+        {
+            "min": 21,
+            "max": 25,
+            "key": "21-25"
+        },
+        {
+            "min": 26,
+            "max": 30,
+            "key": "26-30"
+        },
+        {
+            "min": 31,
+            "max": 35,
+            "key": "31-35"
+        },
+        {
+            "min": 36,
+            "max": 40,
+            "key": "36-40"
+        },
+        {
+            "min": 41,
+            "max": 45,
+            "key": "41-45"
+        },
+        {
+            "min": 46,
+            "max": 50,
+            "key": "46-50"
+        },
+        {
+            "min": 51,
+            "max": 55,
+            "key": "51-55"
+        },
+        {
+            "min": 56,
+            "max": 60,
+            "key": "56-60"
+        },
+        {
+            "min": 61,
+            "max": 64,
+            "key": "61-64"
+        }
+    ],
+    "plans": [
+        {
+            "key": "Plan 1",
+            "label": "Mock Plan A",
+            "coverage": "1M Mock Coverage",
+            "room_limit": "2,000"
+        },
+        {
+            "key": "Plan 2",
+            "label": "Mock Plan B",
+            "coverage": "2M Mock Coverage",
+            "room_limit": "4,000"
+        },
+        {
+            "key": "Plan 3",
+            "label": "Mock Plan C",
+            "coverage": "3M Mock Coverage",
+            "room_limit": "6,000"
+        },
+        {
+            "key": "Plan 4",
+            "label": "Mock Plan D",
+            "coverage": "4M Mock Coverage",
+            "room_limit": "8,000"
+        }
+    ],
+    "combinations_map": {
+        "ESSENTIAL1-IPD DD 0": "101",
+        "ESSENTIAL1-IPD DD 20,000": "127",
+        "ESSENTIAL1-IPD DD 40,000": "103",
+        "ESSENTIAL1-IPD DD 100,000": "104",
+        "ESSENTIAL1-IPD DD 200,000": "105",
+        "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 0": "106",
+        "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 20,000": "107",
+        "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 40,000": "108",
+        "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 100,000": "109",
+        "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 200,000": "110",
+        "ESSENTIAL1-IPD+OPD(50k per year) DD 0": "111",
+        "ESSENTIAL1-IPD+OPD(50k per year) DD 20,000": "112",
+        "ESSENTIAL1-IPD+OPD(50k per year) DD 40,000": "113",
+        "ESSENTIAL1-IPD+OPD(50k per year) DD 100,000": "114",
+        "ESSENTIAL1-IPD+OPD(50k per year) DD 200,000": "115",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 0": "116",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 20,000": "117",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 40,000": "118",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 100,000": "119",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 200,000": "120",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(50k per year) DD 0": "121",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(50k per year) DD 20,000": "122",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(50k per year) DD 40,000": "123",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(50k per year) DD 100,000": "124",
+        "ESSENTIAL1-IPD+OPD+WELLNESS(50k per year) DD 200,000": "125",
+        "ESSENTIAL2-IPD DD 0": "126",
+        "ESSENTIAL2-IPD DD 20,000": "127",
+        "ESSENTIAL2-IPD DD 40,000": "128",
+        "ESSENTIAL2-IPD DD 100,000": "129",
+        "ESSENTIAL2-IPD DD 200,000": "130",
+        "ESSENTIAL2-IPD+OPD(3k * 30 times / year) DD 0": "131",
+        "ESSENTIAL2-IPD+OPD(3k * 30 times / year) DD 20,000": "132",
+        "ESSENTIAL2-IPD+OPD(3k * 30 times / year) DD 40,000": "133",
+        "ESSENTIAL2-IPD+OPD(3k * 30 times / year) DD 100,000": "134",
+        "ESSENTIAL2-IPD+OPD(3k * 30 times / year) DD 200,000": "135",
+        "ESSENTIAL2-IPD+OPD(50k per year) DD 0": "136",
+        "ESSENTIAL2-IPD+OPD(50k per year) DD 20,000": "137",
+        "ESSENTIAL2-IPD+OPD(50k per year) DD 40,000": "138",
+        "ESSENTIAL2-IPD+OPD(50k per year) DD 100,000": "139",
+        "ESSENTIAL2-IPD+OPD(50k per year) DD 200,000": "140",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 0": "141",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 20,000": "142",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 40,000": "143",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 100,000": "144",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 200,000": "145",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(50k per year) DD 0": "146",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(50k per year) DD 20,000": "147",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(50k per year) DD 40,000": "148",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(50k per year) DD 100,000": "149",
+        "ESSENTIAL2-IPD+OPD+WELLNESS(50k per year) DD 200,000": "150",
+        "ESSENTIAL3-IPD DD 0": "151",
+        "ESSENTIAL3-IPD DD 20,000": "152",
+        "ESSENTIAL3-IPD DD 40,000": "153",
+        "ESSENTIAL3-IPD DD 100,000": "154",
+        "ESSENTIAL3-IPD DD 200,000": "155",
+        "ESSENTIAL3-IPD+OPD(3k * 30 times / year) DD 0": "156",
+        "ESSENTIAL3-IPD+OPD(3k * 30 times / year) DD 20,000": "157",
+        "ESSENTIAL3-IPD+OPD(3k * 30 times / year) DD 40,000": "158",
+        "ESSENTIAL3-IPD+OPD(3k * 30 times / year) DD 100,000": "159",
+        "ESSENTIAL3-IPD+OPD(3k * 30 times / year) DD 200,000": "160",
+        "ESSENTIAL3-IPD+OPD(50k per year) DD 0": "161",
+        "ESSENTIAL3-IPD+OPD(50k per year) DD 20,000": "162",
+        "ESSENTIAL3-IPD+OPD(50k per year) DD 40,000": "163",
+        "ESSENTIAL3-IPD+OPD(50k per year) DD 100,000": "164",
+        "ESSENTIAL3-IPD+OPD(50k per year) DD 200,000": "165",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 0": "166",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 20,000": "167",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 40,000": "168",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 100,000": "169",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 200,000": "170",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(50k per year) DD 0": "171",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(50k per year) DD 20,000": "172",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(50k per year) DD 40,000": "173",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(50k per year) DD 100,000": "174",
+        "ESSENTIAL3-IPD+OPD+WELLNESS(50k per year) DD 200,000": "175",
+        "ESSENTIAL4-IPD DD 0": "176",
+        "ESSENTIAL4-IPD DD 20,000": "177",
+        "ESSENTIAL4-IPD DD 40,000": "178",
+        "ESSENTIAL4-IPD DD 100,000": "179",
+        "ESSENTIAL4-IPD DD 200,000": "180",
+        "ESSENTIAL4-IPD+OPD(3k * 30 times / year) DD 0": "181",
+        "ESSENTIAL4-IPD+OPD(3k * 30 times / year) DD 20,000": "182",
+        "ESSENTIAL4-IPD+OPD(3k * 30 times / year) DD 40,000": "183",
+        "ESSENTIAL4-IPD+OPD(3k * 30 times / year) DD 100,000": "184",
+        "ESSENTIAL4-IPD+OPD(3k * 30 times / year) DD 200,000": "185",
+        "ESSENTIAL4-IPD+OPD(50k per year) DD 0": "186",
+        "ESSENTIAL4-IPD+OPD(50k per year) DD 20,000": "187",
+        "ESSENTIAL4-IPD+OPD(50k per year) DD 40,000": "188",
+        "ESSENTIAL4-IPD+OPD(50k per year) DD 100,000": "189",
+        "ESSENTIAL4-IPD+OPD(50k per year) DD 200,000": "190",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 0": "191",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 20,000": "192",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 40,000": "193",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 100,000": "194",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 200,000": "195",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 0": "196",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 20,000": "197",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 40,000": "198",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 100,000": "199",
+        "ESSENTIAL4-IPD+OPD+WELLNESS(50k per year) DD 200,000": "200",
+        "VISA1 DD 100,000": "201",
+        "VISA1 DD 200,000": "202",
+        "VISA1 DD 300,000": "203",
+        "VISA2 DD 100,000": "204",
+        "VISA2 DD 200,000": "205",
+        "VISA2 DD 300,000": "206"
+    },
+    "product_options": {
+        "product_name": {
+            "label": "Selected Product",
+            "bt_key": "product_name",
+            "choices": [
+                "ESSENTIAL",
+                "EASYCARE"
+            ]
+        },
+        "products": {
+            "SmartCare Essential": {
+                "plan_tier": {
+                    "label": "Plan Tier",
+                    "bt_key": "plan",
+                    "choices": [
+                        "ESSENTIAL1",
+                        "ESSENTIAL2",
+                        "ESSENTIAL3",
+                        "ESSENTIAL4"
+                    ]
+                },
+                "optional_benefit": {
+                    "label": "Optional Benefit",
+                    "bt_key": "plan",
+                    "choices": [
+                        "IPD",
+                        "IPD+OPD",
+                        "IPD+OPD+WELLNESS"
+                    ]
+                },
+                "opd_choice": {
+                    "label": "OPD Choice Limit",
+                    "bt_key": "plan",
+                    "choices": [
+                        "3k * 30 times / year",
+                        "50k per year"
+                    ]
+                },
+                "deductible": {
+                    "label": "Deductible",
+                    "bt_key": "deductible",
+                    "choices": [
+                        "0",
+                        "20k",
+                        "40k",
+                        "100k",
+                        "200k"
+                    ]
+                }
+            },
+            "EasyCare Visa": {
+                "plan_tier": {
+                    "label": "Plan Tier",
+                    "bt_key": "plan",
+                    "choices": [
+                        "VISA1",
+                        "VISA2"
+                    ]
+                },
+                "deductible": {
+                    "label": "Deductible",
+                    "bt_key": "deductible",
+                    "choices": [
+                        "100k",
+                        "200k",
+                        "300k"
+                    ]
+                }
+            }
+        }
+    },
+    "pdf_id": "87ba7613a963df438482bbcd8c1612a0"
+}

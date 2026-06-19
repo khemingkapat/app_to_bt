@@ -1,0 +1,36 @@
+{
+    "product_name": "Mock Care Plus Insurance",
+    "underwriting_rules": {
+        "critical_conditions": [
+            "Mock Condition Alpha",
+            "Mock Condition Beta",
+            "Mock Condition Gamma",
+            "Mock Condition Delta",
+            "Mock Condition Epsilon"
+        ]
+    },
+    "pricing": {
+        "deductibles": [
+            {
+                "key": "0",
+                "label": "No Deductible",
+                "amount": 0
+            },
+            {
+                "key": "1519",
+                "label": "1,519 Mock Currency Deductible",
+                "amount": 1519
+            },
+            {
+                "key": "2015",
+                "label": "2,015 Mock Currency Deductible",
+                "amount": 2015
+            },
+            {
+                "key": "4316",
+                "label": "4,316 Mock Currency Deductible",
+                "amount": 4316
+            }
+        ]
+    }
+}

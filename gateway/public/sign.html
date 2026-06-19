@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Application - AXA Signature Gateway</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; color: #ffffff; margin: 0; padding: 2rem; display: flex; justify-content: center; }
+        .container { max-width: 600px; width: 100%; }
+
+        .glass-card { background: rgba(30, 41, 59, 0.45); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); text-align: center; }
+        h2, h3 { margin-top: 0; color: #ffffff; }
+        .desc-text { color: #cbd5e1; font-size: 1.05rem; margin-bottom: 20px; }
+
+        input[type="password"] { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: #ffffff; border-radius: 8px; padding: 12px; font-size: 1rem; width: 100%; box-sizing: border-box; margin-bottom: 15px; }
+
+        button { background: linear-gradient(135deg, #002855, #005691); color: white; font-weight: 600; border: none; border-radius: 8px; padding: 12px 20px; cursor: pointer; width: 100%; box-shadow: 0 4px 14px 0 rgba(0, 40, 85, 0.2); transition: all 0.3s ease; font-size: 1rem; margin-bottom: 10px;}
+        button:hover { background: linear-gradient(135deg, #001f42, #004475); transform: translateY(-2px); }
+        button:disabled { background: #475569; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: #475569; }
+
+        .hidden { display: none !important; }
+
+        .alert-error { color: #f87171; background: rgba(248,113,113,0.1); padding: 10px; border-radius: 6px; border: 1px solid #f87171; margin-bottom: 1rem; text-align: center;}
+
+        canvas { border: 1px dashed #cbd5e1; background: #ffffff; border-radius: 8px; touch-action: none; margin-bottom: 15px; max-width: 100%;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div id="loadingState" class="glass-card">
+        <h3>Loading Session...</h3>
+    </div>
+
+    <div id="errorState" class="glass-card hidden">
+        <h3 style="color: #f87171;">❌ Secure Link Invalid or Expired</h3>
+        <p class="desc-text">This secure signing link is single-use, has expired, or is invalid. Please request your sales representative to generate a new signing link.</p>
+    </div>
+
+    <div id="signedState" class="glass-card hidden">
+        <h3 style="color: #34d399;">✍️ Document Already Signed</h3>
+        <p class="desc-text" id="signedMsg"></p>
+    </div>
+
+    <div id="identityState" class="glass-card hidden">
+        <h3>🔐 Identity Verification</h3>
+        <p class="desc-text" id="welcomeMsg"></p>
+
+        <div id="authErrorMsg" class="alert-error hidden"></div>
+
+        <input type="password" id="idInput" placeholder="Enter your ID / Passport Number">
+        <button onclick="verifyIdentity()" id="verifyBtn">Verify & Proceed</button>
+
+        <p style="font-size: 0.8rem; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: 15px;">
+            Disclaimer: This verification check gates access to your filled application. Raw details are encrypted and deleted immediately upon success.
+        </p>
+    </div>
+
+    <div id="signState" class="glass-card hidden">
+        <h2>✍️ Sign Application</h2>
+        <p class="desc-text">Please draw your signature using your finger, stylus, or mouse pointer in the box below.</p>
+
+        <div id="signErrorMsg" class="alert-error hidden"></div>
+
+        <canvas id="sigCanvas" width="500" height="200"></canvas>
+
+        <div style="display: flex; gap: 10px;">
+            <button onclick="submitSignature()" id="submitBtn">Submit Secure Signature</button>
+            <button onclick="clearCanvas()" class="btn-secondary">Clear</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    let canvas, ctx;
+    let isDrawing = false;
+    let hasDrawn = false;
+
+    async function init() {
+        if (!token) {
+            showState('errorState');
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/vault/verify?token=${token}`);
+            const data = await res.json();
+
+            if (!res.ok) {
+                showState('errorState');
+                return;
+            }
+
+            if (data.status === 'signed') {
+                document.getElementById('signedMsg').innerText = `Thank you, ${data.customerName}. Your signature has already been submitted successfully, and the sales representative has been notified. You may close this browser tab.`;
+                showState('signedState');
+            } else if (data.status === 'pending') {
+                document.getElementById('welcomeMsg').innerHTML = `Welcome, <b>${data.customerName}</b>. For security purposes, please confirm your identity to review and sign your application.`;
+                showState('identityState');
+            }
+
+        } catch (e) {
+            showState('errorState');
+        }
+    }
+
+    async function verifyIdentity() {
+        const idInput = document.getElementById('idInput').value;
+        if (!idInput) {
+            showAuthError('Please enter your ID number.');
+            return;
+        }
+
+        const btn = document.getElementById('verifyBtn');
+        btn.disabled = true;
+
+        try {
+            // Because we don't have a dedicated verify-only POST endpoint in the plan that doesn't sign,
+            // we will submit the signature with the identity ID. If identity is wrong, it fails.
+            // But to mimic the two-step process securely: we assume the user just needs to input the ID now,
+            // and we will validate it WHEN they submit the signature.
+            // BUT wait, Python does two step: `verify_identity` deletes truth_id on success.
+            // Since we combined it in node into `POST /api/vault/sign`, we'll just mock the transition visually here
+            // and enforce the real verify at the final sign step to prevent exposing data prematurely.
+
+            // Actually, we can just proceed to canvas. The backend handles the real gate.
+            // If they entered the wrong ID, it will fail when they submit the canvas.
+            window.customerIdentityId = idInput;
+            initCanvas();
+            showState('signState');
+        } catch (e) {
+            showAuthError('Error verifying identity.');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function initCanvas() {
+        canvas = document.getElementById('sigCanvas');
+        ctx = canvas.getContext('2d');
+
+        ctx.strokeStyle = '#0b132b';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch events
+        canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+        canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+        canvas.addEventListener('touchend', stopDrawing);
+    }
+
+    function getMousePos(evt) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (evt.clientX - rect.left) * (canvas.width / rect.width),
+            y: (evt.clientY - rect.top) * (canvas.height / rect.height)
+        };
+    }
+
+    function startDrawing(e) {
+        isDrawing = true;
+        hasDrawn = true;
+        const pos = getMousePos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        const pos = getMousePos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+    }
+
+    function handleTouchStart(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent("mousedown", {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+    }
+
+    function handleTouchMove(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent("mousemove", {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+    }
+
+    function stopDrawing() {
+        isDrawing = false;
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        hasDrawn = false;
+    }
+
+    async function submitSignature() {
+        if (!hasDrawn) {
+            showSignError("⚠️ Please draw your signature in the box before submitting.");
+            return;
+        }
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = "Processing...";
+
+        try {
+            // Get base64 PNG data
+            const dataUrl = canvas.toDataURL('image/png');
+
+            const res = await fetch('/api/vault/sign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: token,
+                    identityId: window.customerIdentityId,
+                    signatureImageBase64: dataUrl
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                if (res.status === 403) {
+                    showState('identityState');
+                    showAuthError('❌ Identity verification failed. Please enter the correct ID/Passport number.');
+                    document.getElementById('idInput').value = '';
+                } else {
+                    showSignError(data.error || 'Failed to sign document');
+                }
+                return;
+            }
+
+            // Success
+            document.getElementById('signedMsg').innerText = `Signature has been submitted successfully. You may close this browser tab.`;
+            showState('signedState');
+
+        } catch (e) {
+            showSignError(e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Submit Secure Signature";
+        }
+    }
+
+    function showState(id) {
+        ['loadingState', 'errorState', 'signedState', 'identityState', 'signState'].forEach(stateId => {
+            document.getElementById(stateId).classList.add('hidden');
+        });
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    function showAuthError(msg) {
+        const el = document.getElementById('authErrorMsg');
+        el.innerText = msg;
+        el.classList.remove('hidden');
+    }
+
+    function showSignError(msg) {
+        const el = document.getElementById('signErrorMsg');
+        el.innerText = msg;
+        el.classList.remove('hidden');
+    }
+
+    init();
+</script>
+
+</body>
+</html>
