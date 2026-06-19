@@ -55,7 +55,7 @@ Implement the backend engine to expose logic pathways over gRPC.
 ### WP3: Go Echo Gateway (Routing & Client) 🔲
 Implement the client-facing REST API Gateway.
 
-*   **WP3-1: Scaffolding & Echo Server Setup**
+*   **WP3-1: Scaffolding & Echo Server Setup** [Issue #39](https://github.com/khemingkapat/app_to_bt/issues/39)
     *   Initialize Go module in `/gateway`.
     *   Set up Echo server listening on HTTP port (e.g., `:8080`).
 *   **WP3-2: gRPC Client Integration**
