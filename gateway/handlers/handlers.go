@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"io"
 	"net/http"
 	"os"
@@ -50,6 +53,9 @@ func (h *HandlerContext) ProcessPdfHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to read file"})
 	}
 
+	hash := sha256.Sum256(pdfBytes)
+	c.Set("payload_hash", hex.EncodeToString(hash[:]))
+
 	resp, err := h.DocClient.Client.ProcessPdf(context.Background(), &document.ProcessPdfRequest{
 		PdfBytes: pdfBytes,
 	})
@@ -69,6 +75,17 @@ func (h *HandlerContext) GeneratePdfHandler(c echo.Context) error {
 	var req struct {
 		FormData map[string]string `json:"form_data"`
 	}
+
+	bodyBytes, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "failed to read request body"})
+	}
+	// Restore body for Bind
+	c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	hash := sha256.Sum256(bodyBytes)
+	c.Set("payload_hash", hex.EncodeToString(hash[:]))
+
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
 	}
@@ -94,6 +111,17 @@ func (h *HandlerContext) GenerateDocxHandler(c echo.Context) error {
 		PdfId    string            `json:"pdf_id"`
 		FormData map[string]string `json:"form_data"`
 	}
+
+	bodyBytes, err := io.ReadAll(c.Request().Body)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "failed to read request body"})
+	}
+	// Restore body for Bind
+	c.Request().Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	hash := sha256.Sum256(bodyBytes)
+	c.Set("payload_hash", hex.EncodeToString(hash[:]))
+
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
 	}
@@ -184,6 +212,12 @@ func (h *HandlerContext) StampSignatureHandler(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to read signature file"})
 	}
+
+	h256 := sha256.New()
+	h256.Write(pdfBytes)
+	h256.Write(sigBytes)
+	hash := h256.Sum(nil)
+	c.Set("payload_hash", hex.EncodeToString(hash))
 
 	resp, err := h.DocClient.Client.StampSignature(context.Background(), &document.StampSignatureRequest{
 		PdfBytes:            pdfBytes,
