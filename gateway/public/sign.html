@@ -5,60 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Application - AXA Signature Gateway</title>
     <style>
-        body { font-family: sans-serif; margin: 20px; display: flex; justify-content: center; }
-        .container { max-width: 600px; width: 100%; }
-        .glass-card { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; text-align: center; }
+        body {
+            margin: 20px;
+            text-align: center;
+        }
         .hidden { display: none !important; }
-        .alert-error { border: 1px solid red; background: #fee; padding: 10px; margin-bottom: 10px; }
+        .alert-error { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
         canvas { border: 1px dashed #000; touch-action: none; margin-bottom: 15px; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div id="loadingState">
+    <h3>⏳ Loading Session...</h3>
+</div>
 
-    <div id="loadingState" class="glass-card">
-        <h3>Loading Session...</h3>
+<div id="errorState" class="hidden">
+    <h3>❌ Secure Link Invalid or Expired</h3>
+    <p>This secure signing link is single-use, has expired, or is invalid. Please request your sales representative to generate a new signing link.</p>
+</div>
+
+<div id="signedState" class="hidden">
+    <h3>✍️ Document Already Signed</h3>
+    <p id="signedMsg"></p>
+</div>
+
+<div id="identityState" class="hidden">
+    <h3>🔐 Identity Verification</h3>
+    <p id="welcomeMsg"></p>
+
+    <div id="authErrorMsg" class="alert-error hidden"></div>
+
+    <input type="password" id="idInput" placeholder="Enter your ID / Passport Number">
+    <button onclick="verifyIdentity()" id="verifyBtn">Verify &amp; Proceed</button>
+
+    <p>
+        Disclaimer: This verification check gates access to your filled application. Raw details are encrypted and deleted immediately upon success.
+    </p>
+</div>
+
+<div id="signState" class="hidden">
+    <h2>✍️ Sign Application</h2>
+    <p>Please draw your signature using your finger, stylus, or mouse pointer in the box below.</p>
+
+    <div id="signErrorMsg" class="alert-error hidden"></div>
+
+    <canvas id="sigCanvas" width="500" height="200"></canvas>
+
+    <div>
+        <button onclick="submitSignature()" id="submitBtn">Submit Secure Signature</button>
+        <button onclick="clearCanvas()">Clear</button>
     </div>
-
-    <div id="errorState" class="glass-card hidden">
-        <h3>❌ Secure Link Invalid or Expired</h3>
-        <p class="desc-text">This secure signing link is single-use, has expired, or is invalid. Please request your sales representative to generate a new signing link.</p>
-    </div>
-
-    <div id="signedState" class="glass-card hidden">
-        <h3>✍️ Document Already Signed</h3>
-        <p class="desc-text" id="signedMsg"></p>
-    </div>
-
-    <div id="identityState" class="glass-card hidden">
-        <h3>🔐 Identity Verification</h3>
-        <p class="desc-text" id="welcomeMsg"></p>
-
-        <div id="authErrorMsg" class="alert-error hidden"></div>
-
-        <input type="password" id="idInput" placeholder="Enter your ID / Passport Number">
-        <button onclick="verifyIdentity()" id="verifyBtn">Verify & Proceed</button>
-
-        <p>
-            Disclaimer: This verification check gates access to your filled application. Raw details are encrypted and deleted immediately upon success.
-        </p>
-    </div>
-
-    <div id="signState" class="glass-card hidden">
-        <h2>✍️ Sign Application</h2>
-        <p class="desc-text">Please draw your signature using your finger, stylus, or mouse pointer in the box below.</p>
-
-        <div id="signErrorMsg" class="alert-error hidden"></div>
-
-        <canvas id="sigCanvas" width="500" height="200"></canvas>
-
-        <div>
-            <button onclick="submitSignature()" id="submitBtn">Submit Secure Signature</button>
-            <button onclick="clearCanvas()" class="btn-secondary">Clear</button>
-        </div>
-    </div>
-
 </div>
 
 <script>

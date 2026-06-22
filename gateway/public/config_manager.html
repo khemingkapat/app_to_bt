@@ -5,69 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Config Manager</title>
     <style>
-        body {
-            font-family: sans-serif;
-            margin: 20px;
-        }
-        .header {
-            margin-bottom: 20px;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 10px;
-        }
-        .nav-links {
-            margin-top: 10px;
-        }
-        .nav-links a {
-            margin-right: 15px;
-        }
-        .tabs {
-            margin: 15px 0;
-            border-bottom: 1px solid #ccc;
-        }
-        .tab {
-            display: inline-block;
-            padding: 8px 16px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            border-bottom: none;
-        }
-        .tab.active {
-            font-weight: bold;
-            background: #eee;
-        }
-        .tab-content {
-            display: none;
-            padding: 15px;
-            border: 1px solid #ccc;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .alert {
-            padding: 10px;
-            border: 1px solid #ccc;
-            margin-bottom: 15px;
-            display: none;
-        }
-        .alert.error { display: block; background: #fee; border-color: red; }
-        .alert.success { display: block; background: #efe; border-color: green; }
-        .alert.info { display: block; background: #eef; border-color: blue; }
+        body { text-align: center; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="header">
+    <div>
         <h1>🏥 AXA Application Ingestion Portal</h1>
-        <div class="desc">Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
-        <div class="nav-links">
-            <a href="index.html">🏠 Home</a>
-            <a href="config_manager.html">⚙️ Config Manager</a>
-            <a href="internal_eform.html">⌨️ Internal Fast-Entry E-Form</a>
+        <div>Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
+        <div>
+            <a href="index.html">🏠 Home</a> |
+            <a href="config_manager.html">⚙️ Config Manager</a> |
+            <a href="internal_eform.html">⌨️ Internal Fast-Entry E-Form</a> |
             <a href="signature_gateway.html">✍️ Signature Gateway</a>
         </div>
+        <hr>
     </div>
 
     <h2>⚙️ Product Config Manager</h2>
@@ -75,37 +28,42 @@
         Administrator portal to associate product configuration parameters (pricing, underwriting, etc.) with PDF structural templates.
     </p>
 
-    <div id="statusMessage" class="alert"></div>
+    <div id="statusMessage" class="hidden"></div>
 
-    <div id="mainContent" style="display: none;">
+    <div id="mainContent" class="hidden">
         <h2>1. Select PDF Template</h2>
-        <div class="form-group">
+        <div>
             <label for="pdfSelect">Choose registered PDF:</label>
             <select id="pdfSelect" onchange="updatePdfInfo()"></select>
         </div>
-        <div id="pdfInfo" class="alert info"></div>
+        <div id="pdfInfo"></div>
+        <hr>
 
         <h2>2. Provide Product JSON Config</h2>
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('upload')">📤 Upload JSON File</div>
-            <div class="tab" onclick="switchTab('paste')">✍️ Paste JSON Text</div>
+        <div>
+            <span onclick="switchTab('upload')">📤 Upload JSON File</span> |
+            <span onclick="switchTab('paste')">✍️ Paste JSON Text</span>
         </div>
 
-        <div id="uploadTab" class="tab-content active">
+        <div id="uploadTab">
+            <br>
             <input type="file" id="jsonFile" accept=".json" onchange="handleFileUpload(event)">
         </div>
 
-        <div id="pasteTab" class="tab-content">
-            <textarea id="jsonText" rows="10" placeholder='{\n    "product_name": "Health and Accident Insurance",\n    "pricing": { ... }\n}' oninput="handleTextPasted(event)"></textarea>
+        <div id="pasteTab" class="hidden">
+            <br>
+            <textarea id="jsonText" rows="10" cols="50" placeholder='{\n    "product_name": "Health and Accident Insurance",\n    "pricing": { ... }\n}' oninput="handleTextPasted(event)"></textarea>
         </div>
+        <hr>
 
         <h2>3. Save Configuration</h2>
-        <div class="form-group">
+        <div>
             <label for="targetFilename">Target Config Filename:</label>
             <input type="text" id="targetFilename" value="health_and_accident_insurance.json">
         </div>
+        <br>
 
-        <button id="saveBtn" onclick="saveConfig()">🔗 Link & Save Configuration</button>
+        <button id="saveBtn" onclick="saveConfig()">🔗 Link &amp; Save Configuration</button>
     </div>
 
 <script>
@@ -118,7 +76,7 @@
             registryData = await res.json();
 
             if (Object.keys(registryData).length === 0) {
-                showStatus('⚠️ No PDFs are registered yet. Process a PDF via the Portal first.', 'error');
+                showStatus('⚠️ No PDFs are registered yet. Process a PDF via the Portal first.');
                 return;
             }
 
@@ -134,10 +92,10 @@
                 select.appendChild(option);
             }
 
-            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('mainContent').classList.remove('hidden');
             updatePdfInfo();
         } catch (err) {
-            showStatus('Error fetching registry: ' + err.message, 'error');
+            showStatus('Error fetching registry: ' + err.message);
         }
     }
 
@@ -152,15 +110,12 @@
     }
 
     function switchTab(tab) {
-        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-
         if (tab === 'upload') {
-            document.querySelectorAll('.tab')[0].classList.add('active');
-            document.getElementById('uploadTab').classList.add('active');
+            document.getElementById('uploadTab').classList.remove('hidden');
+            document.getElementById('pasteTab').classList.add('hidden');
         } else {
-            document.querySelectorAll('.tab')[1].classList.add('active');
-            document.getElementById('pasteTab').classList.add('active');
+            document.getElementById('uploadTab').classList.add('hidden');
+            document.getElementById('pasteTab').classList.remove('hidden');
         }
     }
 
@@ -173,10 +128,10 @@
             try {
                 parsedJsonConfig = JSON.parse(e.target.result);
                 updateFilenameSuggestion();
-                showStatus('File uploaded and parsed successfully!', 'success');
+                showStatus('File uploaded and parsed successfully!');
             } catch (err) {
                 parsedJsonConfig = null;
-                showStatus('Invalid JSON file: ' + err.message, 'error');
+                showStatus('Invalid JSON file: ' + err.message);
             }
         };
         reader.readAsText(file);
@@ -191,10 +146,10 @@
         try {
             parsedJsonConfig = JSON.parse(text);
             updateFilenameSuggestion();
-            showStatus('JSON text parsed successfully!', 'success');
+            showStatus('JSON text parsed successfully!');
         } catch (err) {
             parsedJsonConfig = null;
-            showStatus('Invalid JSON text: ' + err.message, 'error');
+            showStatus('Invalid JSON text: ' + err.message);
         }
     }
 
@@ -207,7 +162,7 @@
 
     async function saveConfig() {
         if (!parsedJsonConfig) {
-            showStatus('Please upload or paste a valid JSON config first.', 'error');
+            showStatus('Please upload or paste a valid JSON config first.');
             return;
         }
 
@@ -215,7 +170,7 @@
         const filename = document.getElementById('targetFilename').value.trim();
 
         if (!filename) {
-            showStatus('Please specify a target filename.', 'error');
+            showStatus('Please specify a target filename.');
             return;
         }
 
@@ -237,18 +192,18 @@
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to save configuration');
 
-            showStatus(`🎉 Configuration successfully saved to config/${filename} and linked to PDF ID ${pdfId}!`, 'success');
+            showStatus(`🎉 Configuration successfully saved to config/${filename} and linked to PDF ID ${pdfId}!`);
         } catch (err) {
-            showStatus('Error saving configuration: ' + err.message, 'error');
+            showStatus('Error saving configuration: ' + err.message);
         } finally {
             btn.disabled = false;
             btn.innerText = '🔗 Link & Save Configuration';
         }
     }
 
-    function showStatus(msg, type) {
+    function showStatus(msg) {
         const el = document.getElementById('statusMessage');
-        el.className = `alert ${type}`;
+        el.classList.remove('hidden');
         el.innerText = msg;
     }
 
