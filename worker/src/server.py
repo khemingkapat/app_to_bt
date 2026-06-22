@@ -109,14 +109,20 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
             pdf_bytes=stamped_pdf
         )
 
-def serve():
+def configure_resource_limits():
     """
-    Starts the gRPC server and listens on port 50051.
+    Configures process-level resource limits.
     """
     # Configure a soft address space memory limit of 512MB and a hard limit of 1GB
     soft_limit = 512 * 1024 * 1024
     hard_limit = 1024 * 1024 * 1024
     resource.setrlimit(resource.RLIMIT_AS, (soft_limit, hard_limit))
+
+def serve():
+    """
+    Starts the gRPC server and listens on port 50051.
+    """
+    configure_resource_limits()
 
     # Increase gRPC message size limits to 10MB to allow 5MB application-level validation
     options = [

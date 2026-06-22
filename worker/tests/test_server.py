@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 import grpc
 import resource
+from unittest.mock import patch
 from concurrent import futures
 import time
 
@@ -13,7 +14,7 @@ sys.path.insert(0, str(worker_dir / "src"))
 
 from proto import document_pb2
 from proto import document_pb2_grpc
-from src.server import DocumentServiceServicer
+from src.server import DocumentServiceServicer, configure_resource_limits
 
 @pytest.fixture(scope="module")
 def grpc_server():
@@ -175,31 +176,11 @@ def test_payload_size_limit(grpc_stub):
     assert "Payload exceeds 5MB limit" in excinfo.value.details()
 
 def test_resource_limits_initialization():
-    # Since we can't easily check if the limits were set in the background server process,
-    # we'll verify that resource.setrlimit works as expected if possible.
-    # On some systems, setting a hard limit may prevent restoring the original limit
-    # or may fail if the original limit was already lower.
-
+    # Mock resource.setrlimit to verify it is called with the expected limits
+    # without actually affecting the test process.
     soft_limit = 512 * 1024 * 1024
     hard_limit = 1024 * 1024 * 1024
 
-    original_soft, original_hard = resource.getrlimit(resource.RLIMIT_AS)
-
-    # If original limits are unlimited (-1), we can definitely set them.
-    # If not, we might be restricted.
-    # For the purpose of this test in CI/Sandbox, we check if we can set them.
-    try:
-        resource.setrlimit(resource.RLIMIT_AS, (soft_limit, hard_limit))
-        new_soft, new_hard = resource.getrlimit(resource.RLIMIT_AS)
-        assert new_soft == soft_limit
-        assert new_hard == hard_limit
-    except (ValueError, OSError) as e:
-        # If we are not allowed to set limits (e.g. current hard limit is lower),
-        # we skip the assertion but record that we tried.
-        pytest.skip(f"Could not set resource limits: {e}")
-    finally:
-        # Restore original limits if they were changed
-        try:
-            resource.setrlimit(resource.RLIMIT_AS, (original_soft, original_hard))
-        except (ValueError, OSError):
-            pass
+    with patch("resource.setrlimit") as mock_setrlimit:
+        configure_resource_limits()
+        mock_setrlimit.assert_called_once_with(resource.RLIMIT_AS, (soft_limit, hard_limit))
