@@ -5,81 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Signature Gateway Admin</title>
     <style>
-        body { font-family: sans-serif; margin: 20px; }
-        .header {
-            margin-bottom: 20px;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 10px;
-        }
-        .nav-links {
-            margin-top: 10px;
-        }
-        .nav-links a {
-            margin-right: 15px;
-        }
-        .grid-2 { display: flex; gap: 20px; }
-        .grid-2 > div { flex: 1; }
-        .glass-card { margin-bottom: 20px; }
-        .status-pill { font-weight: bold; }
-        .copyable-link { font-family: monospace; border: 1px dashed #ccc; padding: 10px; margin: 10px 0; word-break: break-all; }
+        body { text-align: center; }
         .hidden { display: none !important; }
-        .alert-error { border: 1px solid red; padding: 10px; margin-bottom: 10px; }
-        .alert-success { border: 1px solid green; padding: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
+    <div>
         <h1>🏥 AXA Application Ingestion Portal</h1>
-        <div class="desc">Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
-        <div class="nav-links">
-            <a href="index.html">🏠 Home</a>
-            <a href="config_manager.html">⚙️ Config Manager</a>
-            <a href="internal_eform.html">⌨️ Internal Fast-Entry E-Form</a>
+        <div>Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
+        <div>
+            <a href="index.html">🏠 Home</a> |
+            <a href="config_manager.html">⚙️ Config Manager</a> |
+            <a href="internal_eform.html">⌨️ Internal Fast-Entry E-Form</a> |
             <a href="signature_gateway.html">✍️ Signature Gateway</a>
         </div>
+        <hr>
     </div>
 
     <h2>✍️ AXA Signature Gateway</h2>
     <p>Secure, Database-Free Customer Document Signing</p>
 
-    <div class="grid-2">
-        <div class="glass-card">
+    <div>
+        <div>
             <h3>📤 Generate Secure Link</h3>
             <p>Upload the pre-filled AcroForm PDF application from app-to-bt to create a single-use customer portal link.</p>
 
-            <div id="errorMsg" class="alert-error hidden"></div>
-            <div id="successMsg" class="alert-success hidden"></div>
+            <div id="errorMsg" class="hidden"></div>
+            <div id="successMsg" class="hidden"></div>
 
             <input type="file" id="pdfUpload" accept="application/pdf">
             <button id="uploadBtn" onclick="uploadAndCreateVault()">Generate Secure Customer Link</button>
         </div>
 
-        <div class="glass-card" id="statusCard">
+        <hr>
+
+        <div id="statusCard">
             <h3>📊 Active Session Status</h3>
             <div id="noSessionState">
                 <p>No active signing link session. Generate a link to start monitoring.</p>
             </div>
             <div id="activeSessionState" class="hidden">
                 <p><strong>Customer:</strong> <span id="customerName"></span></p>
-                <div class="copyable-link" id="shareLink"></div>
+                <div id="shareLink"></div>
                 <button onclick="copyLink()">📋 Copy Link to Clipboard</button>
                 <hr>
 
                 <div id="pollingStatus">
-                    <span id="statusPill" class="status-pill status-pending">Pending Signature</span>
+                    <span id="statusPill">Pending Signature</span>
                     <p id="statusDesc">Waiting for customer to verify and sign...</p>
                     <p id="ttlText"></p>
                 </div>
 
                 <div id="downloadsSection" class="hidden">
                     <h4>📥 Download Completed Documents</h4>
-                    <div class="grid-2">
+                    <div>
                         <button onclick="downloadDoc('pdf')">📄 Download PDF</button>
                         <button onclick="downloadDoc('docx')">📝 Download DOCX</button>
                     </div>
                     <hr>
-                    <button onclick="clearTransaction()">🧹 Clear Transaction & PII</button>
+                    <button onclick="clearTransaction()">🧹 Clear Transaction &amp; PII</button>
                 </div>
             </div>
         </div>
@@ -156,11 +141,9 @@
             const desc = document.getElementById('statusDesc');
 
             if (data.status === 'pending') {
-                pill.className = 'status-pill status-pending';
                 pill.innerText = 'Pending Signature';
                 desc.innerText = 'Waiting for customer to verify and sign...';
             } else if (data.status === 'signed') {
-                pill.className = 'status-pill status-signed';
                 pill.innerText = 'Signed Successfully';
                 desc.innerText = '';
                 document.getElementById('downloadsSection').classList.remove('hidden');

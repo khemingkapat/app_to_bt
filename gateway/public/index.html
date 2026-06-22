@@ -4,15 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AXA Application Ingestion Portal</title>
-    <!-- Include premium font -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <!-- Include PDF.js library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
-        /* Minimal Functional Styles Only */
         body {
             margin: 20px;
-            font-family: sans-serif;
+            text-align: center;
         }
         .header {
             margin-bottom: 20px;
@@ -28,6 +25,7 @@
         .split-layout {
             display: flex;
             gap: 20px;
+            text-align: left;
         }
         .pdf-viewer-card, .mapper-card {
             flex: 1;
@@ -83,6 +81,16 @@
             text-align: center;
             cursor: pointer;
         }
+        .radio-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 5px;
+        }
+        .radio-row-label {
+            width: 120px;
+        }
     </style>
 </head>
 <body>
@@ -101,27 +109,26 @@
     <div class="main-container">
 
         <!-- STEP 1: UPLOAD -->
-        <div id="stepUpload" class="card upload-section" onclick="document.getElementById('pdfFileInput').click()">
-            <div class="upload-icon">📄</div>
-            <h2>Drag & Drop Insured's Application PDF here</h2>
+        <div id="stepUpload" class="upload-section" onclick="document.getElementById('pdfFileInput').click()">
+            <div>📄</div>
+            <h2>Drag &amp; Drop Insured's Application PDF here</h2>
             <p>Or click to browse files (accepts standard PDFs up to 5MB)</p>
             <input type="file" id="pdfFileInput" accept="application/pdf" onchange="handleFileUpload(event)">
         </div>
 
         <!-- LOADING STATE -->
-        <div id="stepLoading" class="card loading-container hidden">
-            <div class="spinner"></div>
-            <h3 id="loadingText">Processing PDF & extracting layout structure...</h3>
+        <div id="stepLoading" class="hidden">
+            <h3 id="loadingText">⏳ Processing PDF &amp; extracting layout structure...</h3>
         </div>
 
         <!-- STEP 2: FIELD MAPPING (SPLIT LAYOUT) -->
         <div id="stepMapping" class="split-layout hidden">
             <!-- LEFT PANE: PDF VIEW -->
-            <div class="card pdf-viewer-card">
-                <div class="pdf-controls">
-                    <button class="btn" onclick="prevPage()">◀ Previous Page</button>
+            <div class="pdf-viewer-card">
+                <div>
+                    <button onclick="prevPage()">◀ Previous Page</button>
                     <span id="pageInfo">Page 1 of 1</span>
-                    <button class="btn" onclick="nextPage()">Next Page ▶</button>
+                    <button onclick="nextPage()">Next Page ▶</button>
                 </div>
                 <div class="pdf-viewport" id="viewport">
                     <div class="pdf-canvas-wrapper">
@@ -132,30 +139,30 @@
             </div>
 
             <!-- RIGHT PANE: MAPPER CONTROL -->
-            <div class="card mapper-card">
-                <div class="active-field-info">
+            <div class="mapper-card">
+                <div>
                     <h3>Active Field: <span id="activeFieldName">-</span></h3>
                     <div>Kind: <code id="activeFieldKind">-</code> (Page <span id="activeFieldPage">-</span>)</div>
                     <div>Detected Value:</div>
-                    <div id="activeFieldValue" class="active-field-val">-</div>
+                    <div id="activeFieldValue">-</div>
                 </div>
 
-                <div class="mapper-controls">
-                    <button class="btn" id="btnPrevField" onclick="changeField(-1)">⬆ Previous Field</button>
-                    <button class="btn btn-accent" id="btnNextField" onclick="changeField(1)">⬇ Skip</button>
-                    <button class="btn btn-success" onclick="finishMapping()">Finish Mapping ✅</button>
+                <div>
+                    <button id="btnPrevField" onclick="changeField(-1)">⬆ Previous Field</button>
+                    <button id="btnNextField" onclick="changeField(1)">⬇ Skip</button>
+                    <button onclick="finishMapping()">Finish Mapping ✅</button>
                 </div>
 
                 <!-- TABS CONTAINER -->
                 <div class="tabs-header">
                     <button id="tabBtnPlan" class="tab-btn active" onclick="switchTab('plan')">📋 Plan Options</button>
-                    <button id="tabBtnFields" class="tab-btn" onclick="switchTab('fields')">✍️ Fields & Signature</button>
+                    <button id="tabBtnFields" class="tab-btn" onclick="switchTab('fields')">✍️ Fields &amp; Signature</button>
                 </div>
 
                 <!-- PLAN OPTIONS TAB CONTENT -->
                 <div id="tabContentPlan" class="tab-content">
                     <!-- Radio Choice mapping container -->
-                    <div id="radioChoiceContainer" class="card hidden">
+                    <div id="radioChoiceContainer" class="hidden">
                         <h4>📻 Plan Option Choice Wizard</h4>
                         <div>
                             <span>Product Line:</span>
@@ -172,21 +179,21 @@
 
                 <!-- FIELDS & SIGNATURE TAB CONTENT -->
                 <div id="tabContentFields" class="tab-content hidden">
-                    <!-- Signature Field Map Card -->
-                    <div class="active-field-info">
+                    <!-- Signature Field Map -->
+                    <div>
                         <div>
                             <strong>✍️ Mapped Signature Field:</strong>
                             <span id="mappedSignatureField">Not Mapped</span>
                         </div>
                         <div>
-                            <button class="btn btn-accent btn-success" onclick="assignSignatureField()">Assign Sig</button>
-                            <button class="btn btn-danger" onclick="clearSignatureField()">Clear</button>
+                            <button onclick="assignSignatureField()">Assign Sig</button>
+                            <button onclick="clearSignatureField()">Clear</button>
                         </div>
                     </div>
 
                     <!-- BT Target Fields Form -->
                     <div>
-                        <h3 class="form-section-title">BlueTable Intake Target Form</h3>
+                        <h3>BlueTable Intake Target Form</h3>
                         <div class="bt-field-container" id="btFieldsContainer">
                             <!-- Fields list will be dynamically populated -->
                         </div>
@@ -196,24 +203,16 @@
         </div>
 
         <!-- STEP 3: DONE STATE -->
-        <div id="stepDone" class="card download-center hidden">
-            <div class="download-card">
-                <h2>🎉 Field Mapping Complete!</h2>
-                <p>The layout mapping cache has been successfully updated. You can now download the outputs below.</p>
+        <div id="stepDone" class="hidden">
+            <h2>🎉 Field Mapping Complete!</h2>
+            <p>The layout mapping cache has been successfully updated. You can now download the outputs below.</p>
+
+            <div>
+                <button onclick="downloadDocx()">📝 Download Filled BlueTable DOCX</button>
+                <button onclick="downloadPdf()">📄 Download Pre-Filled AcroForm PDF</button>
             </div>
 
-            <div class="download-buttons">
-                <button class="btn btn-accent btn-success" onclick="downloadDocx()">
-                    📝 Download Filled BlueTable DOCX
-                </button>
-                <button class="btn btn-accent" onclick="downloadPdf()">
-                    📄 Download Pre-Filled AcroForm PDF
-                </button>
-            </div>
-
-            <button class="btn" onclick="resetPortal()">
-                🔄 Ingest Another Document
-            </button>
+            <button onclick="resetPortal()">🔄 Ingest Another Document</button>
         </div>
 
     </div>
@@ -311,11 +310,11 @@
                 row.className = 'bt-row';
                 
                 row.innerHTML = `
-                    <div class="bt-label">${label}</div>
+                    <div>${label}</div>
                     <div class="bt-input-wrapper">
                         <input type="text" id="bt-input-${key}" oninput="handleManualEdit('${key}', this.value)" placeholder="—">
-                        <button class="btn btn-accent" onclick="assignActiveField('${key}', '${label}')">Assign</button>
-                        <button class="btn btn-danger" onclick="clearFieldVal('${key}')">Clear</button>
+                        <button onclick="assignActiveField('${key}', '${label}')">Assign</button>
+                        <button onclick="clearFieldVal('${key}')">Clear</button>
                     </div>
                 `;
                 container.appendChild(row);
@@ -674,23 +673,15 @@
         function renderChoiceRow(label, btKey, choices) {
             const list = document.getElementById('radioOptionsList');
             const row = document.createElement('div');
-            row.style.display = 'flex';
-            row.style.alignItems = 'center';
-            row.style.gap = '0.5rem';
-            row.style.flexWrap = 'wrap';
+            row.className = 'radio-row';
 
             const labelEl = document.createElement('span');
-            labelEl.style.fontSize = '0.85rem';
-            labelEl.style.fontWeight = 'bold';
-            labelEl.style.width = '120px';
+            labelEl.className = 'radio-row-label';
             labelEl.innerText = label;
             row.appendChild(labelEl);
 
             choices.forEach(val => {
                 const btn = document.createElement('button');
-                btn.className = 'btn btn-accent';
-                btn.style.padding = '0.3rem 0.6rem';
-                btn.style.fontSize = '0.8rem';
                 btn.innerText = val;
                 btn.onclick = () => assignRadioChoice(val, btKey);
                 row.appendChild(btn);

@@ -5,136 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Internal Fast-Entry E-Form</title>
     <style>
-        body { font-family: sans-serif; margin: 20px; }
-        .header {
-            margin-bottom: 20px;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 10px;
-        }
-        .nav-links {
-            margin-top: 10px;
-        }
-        .nav-links a {
-            margin-right: 15px;
-        }
-        .section-header { font-weight: bold; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin: 20px 0 10px 0; }
-        .grid-2 { display: flex; flex-wrap: wrap; gap: 20px; }
-        .grid-2 > div { flex: 1; min-width: 250px; }
-        .grid-3 { display: flex; flex-wrap: wrap; gap: 20px; }
-        .grid-3 > div { flex: 1; min-width: 200px; }
-        .form-group { margin-bottom: 15px; display: flex; flex-direction: column; }
-        label { margin-bottom: 5px; font-weight: bold; }
-        .error-msg { color: red; display: none; }
-        .success-msg { color: green; display: none; }
-        .actions { display: flex; gap: 10px; margin-top: 20px; border-top: 1px solid #ccc; padding-top: 20px; }
+        body { text-align: center; }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div class="header">
+    <div>
         <h1>🏥 AXA Application Ingestion Portal</h1>
-        <div class="desc">Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
-        <div class="nav-links">
-            <a href="index.html">🏠 Home</a>
-            <a href="config_manager.html">⚙️ Config Manager</a>
-            <a href="internal_eform.html">⌨️ Internal Fast-Entry E-Form</a>
+        <div>Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
+        <div>
+            <a href="index.html">🏠 Home</a> |
+            <a href="config_manager.html">⚙️ Config Manager</a> |
+            <a href="internal_eform.html">⌨️ Internal Fast-Entry E-Form</a> |
             <a href="signature_gateway.html">✍️ Signature Gateway</a>
         </div>
+        <hr>
     </div>
 
     <h2>⌨️ Internal Fast-Entry E-Form Portal</h2>
     <p>Optimized keyboard-only data capture workflow for insurance operations</p>
 
     <form id="fastForm">
-        <div class="section-header">📋 Policy Meta Details</div>
-        <div class="grid-2">
-            <div class="form-group"><label>Agent CODE/Name *</label><input type="text" name="agent" required placeholder="E.g., AGENT007"></div>
-            <div class="form-group"><label>Effective Date *</label><input type="text" name="effective_date" required placeholder="DD/MM/YYYY"></div>
-            <div class="form-group"><label>Selected Product *</label>
-                <select name="product_name">
-                    <option value="ESSENTIAL">ESSENTIAL</option>
-                    <option value="EASYCARE">EASYCARE</option>
-                </select>
-            </div>
-            <div class="form-group"><label>Policy Version *</label>
-                <select name="policy_version">
-                    <option value="Thai">Thai</option>
-                    <option value="English">English</option>
-                </select>
-            </div>
+        <h3>📋 Policy Meta Details</h3>
+        <div><label>Agent CODE/Name * </label><input type="text" name="agent" required placeholder="E.g., AGENT007"></div>
+        <div><label>Effective Date * </label><input type="text" name="effective_date" required placeholder="DD/MM/YYYY"></div>
+        <div><label>Selected Product * </label>
+            <select name="product_name">
+                <option value="ESSENTIAL">ESSENTIAL</option>
+                <option value="EASYCARE">EASYCARE</option>
+            </select>
         </div>
-        <div class="grid-3">
-            <div class="form-group"><label>Plan Tier *</label><input type="text" name="plan" required placeholder="E.g., ESSENTIAL1"></div>
-            <div class="form-group"><label>Deductible *</label><input type="text" name="deductible" required placeholder="E.g., 0"></div>
-            <div class="form-group"><label>Premium *</label><input type="text" name="premium" required placeholder="E.g., 35,000"></div>
+        <div><label>Policy Version * </label>
+            <select name="policy_version">
+                <option value="Thai">Thai</option>
+                <option value="English">English</option>
+            </select>
         </div>
+        <div><label>Plan Tier * </label><input type="text" name="plan" required placeholder="E.g., ESSENTIAL1"></div>
+        <div><label>Deductible * </label><input type="text" name="deductible" required placeholder="E.g., 0"></div>
+        <div><label>Premium * </label><input type="text" name="premium" required placeholder="E.g., 35,000"></div>
+        <hr>
 
-        <div class="section-header">👤 Main Insured Details</div>
-        <div class="grid-2">
-            <div class="form-group"><label>Full Name *</label><input type="text" name="name" required placeholder="First and Last Name"></div>
-            <div class="form-group"><label>ID Card / Passport No. *</label><input type="text" name="id_card_no" required></div>
-        </div>
-        <div class="grid-3">
-            <div class="form-group"><label>Date of Birth *</label><input type="text" name="dob" required placeholder="DD/MM/YYYY"></div>
-            <div class="form-group"><label>Age</label><input type="number" name="age" placeholder="Auto-calculated"></div>
-            <div class="form-group"><label>Nationality *</label><input type="text" name="nationality" required value="Thai"></div>
-        </div>
-        <div class="form-group"><label>Personal / Present Address *</label><input type="text" name="present_address" required></div>
-        <div class="grid-3">
-            <div class="form-group"><label>Telephone No. *</label><input type="text" name="tel" required></div>
-            <div class="form-group"><label>Email Address *</label><input type="email" name="email" required></div>
-            <div class="form-group"><label>Tax ID No. (Optional)</label><input type="text" name="tax_id"></div>
-            <div class="form-group"><label>Beneficiary Name *</label><input type="text" name="beneficiary" required></div>
-            <div class="form-group"><label>Relation to Beneficiary *</label><input type="text" name="bene_relation" required></div>
-            <div class="form-group"><label>Occupation *</label><input type="text" name="occupation" required></div>
-        </div>
-        <div class="form-group"><label>Pre-existing Conditions or Exclusions</label><input type="text" name="exclusions" placeholder="E.g., Asthma (If none, leave blank)"></div>
+        <h3>👤 Main Insured Details</h3>
+        <div><label>Full Name * </label><input type="text" name="name" required placeholder="First and Last Name"></div>
+        <div><label>ID Card / Passport No. * </label><input type="text" name="id_card_no" required></div>
+        <div><label>Date of Birth * </label><input type="text" name="dob" required placeholder="DD/MM/YYYY"></div>
+        <div><label>Age </label><input type="number" name="age" placeholder="Auto-calculated"></div>
+        <div><label>Nationality * </label><input type="text" name="nationality" required value="Thai"></div>
+        <div><label>Personal / Present Address * </label><input type="text" name="present_address" required></div>
+        <div><label>Telephone No. * </label><input type="text" name="tel" required></div>
+        <div><label>Email Address * </label><input type="email" name="email" required></div>
+        <div><label>Tax ID No. (Optional) </label><input type="text" name="tax_id"></div>
+        <div><label>Beneficiary Name * </label><input type="text" name="beneficiary" required></div>
+        <div><label>Relation to Beneficiary * </label><input type="text" name="bene_relation" required></div>
+        <div><label>Occupation * </label><input type="text" name="occupation" required></div>
+        <div><label>Pre-existing Conditions or Exclusions </label><input type="text" name="exclusions" placeholder="E.g., Asthma"></div>
+        <hr>
 
-        <div class="section-header">👨‍👩‍👧 Family Coverage Configuration</div>
-        <div class="grid-2">
-            <div class="form-group">
-                <label>Cover Spouse? (y/n) *</label>
-                <select name="cover_spouse" id="coverSpouse" onchange="toggleSpouse()">
-                    <option value="no">no</option>
-                    <option value="yes">yes</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Number of Children (0-3) *</label>
-                <select name="child_count" id="childCount" onchange="toggleChildren()">
-                    <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                </select>
-            </div>
+        <h3>👨‍👩‍👧 Family Coverage Configuration</h3>
+        <div>
+            <label>Cover Spouse? (y/n) * </label>
+            <select name="cover_spouse" id="coverSpouse" onchange="toggleSpouse()">
+                <option value="no">no</option>
+                <option value="yes">yes</option>
+            </select>
+        </div>
+        <div>
+            <label>Number of Children (0-3) * </label>
+            <select name="child_count" id="childCount" onchange="toggleChildren()">
+                <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            </select>
         </div>
 
         <div id="spouseSection" class="hidden">
-            <div class="section-header">💍 Spouse Details</div>
-            <div class="grid-2">
-                <div class="form-group"><label>Spouse Full Name</label><input type="text" name="sp_name"></div>
-                <div class="form-group"><label>Spouse ID Card / Passport No.</label><input type="text" name="sp_id_card_no"></div>
-            </div>
-            <div class="grid-3">
-                <div class="form-group"><label>Spouse Date of Birth</label><input type="text" name="sp_dob" placeholder="DD/MM/YYYY"></div>
-                <div class="form-group"><label>Spouse Age</label><input type="number" name="spouse_age"></div>
-                <div class="form-group"><label>Spouse Nationality</label><input type="text" name="sp_nationality" value="Thai"></div>
-                <div class="form-group"><label>Spouse Beneficiary Name</label><input type="text" name="sp_beneficiary"></div>
-                <div class="form-group"><label>Spouse Relation</label><input type="text" name="sp_bene_relation"></div>
-                <div class="form-group"><label>Spouse Occupation</label><input type="text" name="sp_occupation"></div>
-            </div>
+            <hr>
+            <h3>💍 Spouse Details</h3>
+            <div><label>Spouse Full Name </label><input type="text" name="sp_name"></div>
+            <div><label>Spouse ID Card / Passport No. </label><input type="text" name="sp_id_card_no"></div>
+            <div><label>Spouse Date of Birth </label><input type="text" name="sp_dob" placeholder="DD/MM/YYYY"></div>
+            <div><label>Spouse Age </label><input type="number" name="spouse_age"></div>
+            <div><label>Spouse Nationality </label><input type="text" name="sp_nationality" value="Thai"></div>
+            <div><label>Spouse Beneficiary Name </label><input type="text" name="sp_beneficiary"></div>
+            <div><label>Spouse Relation </label><input type="text" name="sp_bene_relation"></div>
+            <div><label>Spouse Occupation </label><input type="text" name="sp_occupation"></div>
         </div>
 
         <div id="childrenContainer"></div>
 
-        <div class="actions">
-            <button type="button" class="btn-reset" onclick="resetForm()">Reset Form (Alt + C) 🔄</button>
+        <hr>
+        <div>
+            <button type="button" onclick="resetForm()">Reset Form (Alt + C) 🔄</button>
             <button type="submit" class="btn-submit">Generate Deliverables (Alt + S) 🚀</button>
         </div>
     </form>
 
     <div id="resultsSection" class="hidden">
+        <hr>
         <h2>📥 Downstream Deliverables Ready</h2>
-        <div class="grid-2">
+        <div>
             <button onclick="downloadDocx()">⬇️ Download Filled BlueTable DOCX</button>
             <button onclick="downloadPdf()">⬇️ Download Pre-filled Official PDF</button>
         </div>
@@ -158,19 +127,16 @@
         container.innerHTML = '';
         for (let i = 1; i <= count; i++) {
             container.innerHTML += `
-            <div class="section-header">👶 Child ${i} Details</div>
-            <div class="grid-2">
-                <div class="form-group"><label>Child ${i} Full Name</label><input type="text" name="c${i}_name"></div>
-                <div class="form-group"><label>Child ${i} ID Card / Passport No.</label><input type="text" name="c${i}_id_card_no"></div>
-            </div>
-            <div class="grid-3">
-                <div class="form-group"><label>Child ${i} Date of Birth</label><input type="text" name="c${i}_dob" placeholder="DD/MM/YYYY"></div>
-                <div class="form-group"><label>Child ${i} Age</label><input type="number" name="child_${i}_age"></div>
-                <div class="form-group"><label>Child ${i} Nationality</label><input type="text" name="c${i}_nationality" value="Thai"></div>
-                <div class="form-group"><label>Child ${i} Beneficiary Name</label><input type="text" name="c${i}_beneficiary"></div>
-                <div class="form-group"><label>Child ${i} Relation</label><input type="text" name="c${i}_bene_relation"></div>
-                <div class="form-group"><label>Child ${i} Occupation</label><input type="text" name="c${i}_occupation"></div>
-            </div>
+            <hr>
+            <h3>👶 Child ${i} Details</h3>
+            <div><label>Child ${i} Full Name </label><input type="text" name="c${i}_name"></div>
+            <div><label>Child ${i} ID Card / Passport No. </label><input type="text" name="c${i}_id_card_no"></div>
+            <div><label>Child ${i} Date of Birth </label><input type="text" name="c${i}_dob" placeholder="DD/MM/YYYY"></div>
+            <div><label>Child ${i} Age </label><input type="number" name="child_${i}_age"></div>
+            <div><label>Child ${i} Nationality </label><input type="text" name="c${i}_nationality" value="Thai"></div>
+            <div><label>Child ${i} Beneficiary Name </label><input type="text" name="c${i}_beneficiary"></div>
+            <div><label>Child ${i} Relation </label><input type="text" name="c${i}_bene_relation"></div>
+            <div><label>Child ${i} Occupation </label><input type="text" name="c${i}_occupation"></div>
             `;
         }
         setupKeyboardNavigation(); // Re-bind dynamic elements
