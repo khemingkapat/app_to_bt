@@ -6,6 +6,7 @@ from pathlib import Path
 from concurrent import futures
 import grpc
 import signal
+import resource
 
 # Add worker directory to sys.path to allow importing the generated proto package
 # and add worker/src to sys.path to follow the project structure
@@ -24,12 +25,17 @@ from pdf_processor.inverter import load_config_by_pdf_id
 from blue_table_tools.cache import load_cache
 from pypdf import PdfReader
 
+MAX_PAYLOAD_SIZE = 5 * 1024 * 1024
+
 class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
     """
     Implementation of DocumentService for processing and generating documents.
     """
     def ProcessPdf(self, request, context):
         print("Received ProcessPdf request")
+        if len(request.pdf_bytes) > MAX_PAYLOAD_SIZE:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Payload exceeds 5MB limit")
+
         pdf_file = BytesIO(request.pdf_bytes)
         pdf_id, registry_dict, values_dict = process_pdf(pdf_file)
 
@@ -41,6 +47,9 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
 
     def GeneratePdf(self, request, context):
         print("Received GeneratePdf request")
+        if len(request.pdf_bytes) > MAX_PAYLOAD_SIZE:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Payload exceeds 5MB limit")
+
         pdf_file = BytesIO(request.pdf_bytes)
 
         pdf_id = get_pdf_file_id(PdfReader(pdf_file))
@@ -62,6 +71,9 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
 
     def GenerateDocx(self, request, context):
         print("Received GenerateDocx request")
+        if len(request.docx_bytes) > MAX_PAYLOAD_SIZE:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Payload exceeds 5MB limit")
+
         docx_file = BytesIO(request.docx_bytes)
         # Convert gRPC map to a plain dict just in case the generator expects it
         data = dict(request.form_data)
@@ -76,6 +88,8 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
 
     def StampSignature(self, request, context):
         print("Received StampSignature request")
+        if len(request.pdf_bytes) > MAX_PAYLOAD_SIZE or len(request.signature_image_bytes) > MAX_PAYLOAD_SIZE:
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Payload exceeds 5MB limit")
 
         registry_json = request.registry_json.strip() if request.registry_json else None
         registry_dict = json.loads(registry_json) if registry_json else None
@@ -99,7 +113,17 @@ def serve():
     """
     Starts the gRPC server and listens on port 50051.
     """
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    # Configure a soft address space memory limit of 512MB and a hard limit of 1GB
+    soft_limit = 512 * 1024 * 1024
+    hard_limit = 1024 * 1024 * 1024
+    resource.setrlimit(resource.RLIMIT_AS, (soft_limit, hard_limit))
+
+    # Increase gRPC message size limits to 10MB to allow 5MB application-level validation
+    options = [
+        ('grpc.max_send_message_length', 10 * 1024 * 1024),
+        ('grpc.max_receive_message_length', 10 * 1024 * 1024)
+    ]
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10), options=options)
     document_pb2_grpc.add_DocumentServiceServicer_to_server(
         DocumentServiceServicer(), server
     )
