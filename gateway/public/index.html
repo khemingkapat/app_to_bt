@@ -456,20 +456,11 @@
             </div>
         </div>
 
-        <!-- STEP 3: DONE & DOWNLOAD CENTER -->
+        <!-- STEP 3: DONE STATE -->
         <div id="stepDone" class="card download-center hidden">
             <div class="download-card">
                 <h2 style="color: var(--success); margin-top: 0;">🎉 Field Mapping Complete!</h2>
-                <p>Verify the finalized data schema below and download your outputs.</p>
-            </div>
-
-            <div class="download-buttons">
-                <button class="btn btn-accent btn-success" style="font-size: 1.1rem; padding: 1rem 2rem;" onclick="downloadDocx()">
-                    📝 Download Filled BlueTable DOCX
-                </button>
-                <button class="btn btn-accent" style="font-size: 1.1rem; padding: 1rem 2rem;" onclick="downloadPdf()">
-                    📄 Download Pre-Filled AcroForm PDF
-                </button>
+                <p>The layout mapping cache has been successfully updated.</p>
             </div>
 
             <button class="btn" style="margin-top: 2rem;" onclick="resetPortal()">
@@ -624,12 +615,30 @@
                 // Gather fields to walk
                 allFields = pdfRegistry.fields || [];
 
-                // Sort fields by page number then top coordinate
+                // Helper to get coordinates
+                const getCoords = (f) => {
+                    if (f.field_kind === 'radio') {
+                        return f.widgets && f.widgets[0] ? f.widgets[0].coords : null;
+                    }
+                    return f.coords || null;
+                };
+
+                // Sort fields by page number, then rounded canvas_top (nearest 10), then x0
                 allFields.sort((a, b) => {
-                    if (a.page !== b.page) return a.page - b.page;
-                    const topA = a.coords ? a.coords.canvas_top : 0;
-                    const topB = b.coords ? b.coords.canvas_top : 0;
-                    return topA - topB;
+                    const pA = a.page || 99;
+                    const pB = b.page || 99;
+                    if (pA !== pB) return pA - pB;
+
+                    const cA = getCoords(a);
+                    const cB = getCoords(b);
+
+                    const tA = cA ? Math.round((cA.canvas_top || 9999) / 10) * 10 : 9999;
+                    const tB = cB ? Math.round((cB.canvas_top || 9999) / 10) * 10 : 9999;
+                    if (tA !== tB) return tA - tB;
+
+                    const xA = cA ? (cA.x0 || 9999) : 9999;
+                    const xB = cB ? (cB.x0 || 9999) : 9999;
+                    return xA - xB;
                 });
 
                 buildBlueTableForm();
