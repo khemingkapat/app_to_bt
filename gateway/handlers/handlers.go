@@ -4,11 +4,14 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"gateway/client"
 	"gateway/proto/document"
@@ -64,8 +67,9 @@ func (h *HandlerContext) ProcessPdfHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	// Load assignment cache
+	// Load assignment cache and configuration
 	var cacheMappings interface{}
+	var productOptions interface{}
 	cachePath := "../outputs/assignment_cache.json"
 	if cacheFile, err := os.Open(cachePath); err == nil {
 		defer cacheFile.Close()
@@ -79,6 +83,22 @@ func (h *HandlerContext) ProcessPdfHandler(c echo.Context) error {
 						// Backward-compatibility: flat map
 						cacheMappings = entry
 					}
+
+					// Load product config options
+					configName := "health_and_accident_insurance.json"
+					if pc, ok := entryMap["product_config"].(string); ok && pc != "" {
+						configName = pc
+					}
+					configPath := "../config/" + configName
+					if configFile, err := os.Open(configPath); err == nil {
+						defer configFile.Close()
+						var fullConfig map[string]interface{}
+						if err := json.NewDecoder(configFile).Decode(&fullConfig); err == nil {
+							if po, ok := fullConfig["product_options"]; ok {
+								productOptions = po
+							}
+						}
+					}
 				}
 			}
 		}
@@ -90,6 +110,7 @@ func (h *HandlerContext) ProcessPdfHandler(c echo.Context) error {
 		"registry_json":    resp.RegistryJson,
 		"fieldsExtracted":  len(resp.Values),
 		"assignment_cache": cacheMappings,
+		"product_options":  productOptions,
 	})
 }
 
@@ -253,4 +274,395 @@ func (h *HandlerContext) StampSignatureHandler(c echo.Context) error {
 	}
 
 	return c.Blob(http.StatusOK, "application/pdf", resp.PdfBytes)
+}
+
+func (h *HandlerContext) VaultCreateHandler(c echo.Context) error {
+	file, err := c.FormFile("pdf")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "pdf file is required"})
+	}
+
+	if err := ValidateFileSize(file.Size); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	src, err := file.Open()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to open file"})
+	}
+	defer src.Close()
+
+	if err := ValidatePDFMagicBytes(src); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
+	if seeker, ok := src.(io.Seeker); ok {
+		if _, err := seeker.Seek(0, io.SeekStart); err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to seek file"})
+		}
+	}
+
+	pdfBytes, err := io.ReadAll(src)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to read file"})
+	}
+
+	resp, err := h.DocClient.Client.ProcessPdf(context.Background(), &document.ProcessPdfRequest{
+		PdfBytes: pdfBytes,
+	})
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+
+	var fieldMappings map[string]interface{}
+	cachePath := "../outputs/assignment_cache.json"
+	if cacheFile, err := os.Open(cachePath); err == nil {
+		defer cacheFile.Close()
+		var globalCache map[string]interface{}
+		if err := json.NewDecoder(cacheFile).Decode(&globalCache); err == nil {
+			if entry, ok := globalCache[resp.PdfId]; ok {
+				if entryMap, ok := entry.(map[string]interface{}); ok {
+					if fm, ok := entryMap["field_mappings"].(map[string]interface{}); ok {
+						fieldMappings = fm
+					} else {
+						fieldMappings = make(map[string]interface{})
+						for k, v := range entryMap {
+							if k != "product_config" && k != "field_mappings" {
+								fieldMappings[k] = v
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if fieldMappings == nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "PDF template mapping config not found in assignment cache. Please map the template fields first."})
+	}
+
+	var customerName, identityID string
+	for pdfField, mapping := range fieldMappings {
+		var btKey string
+		if mStr, ok := mapping.(string); ok {
+			btKey = mStr
+		} else if mObj, ok := mapping.(map[string]interface{}); ok {
+			if bk, ok := mObj["bt_key"].(string); ok {
+				btKey = bk
+			}
+		}
+		if btKey == "name" {
+			customerName = resp.Values[pdfField]
+		} else if btKey == "id_card_no" {
+			identityID = resp.Values[pdfField]
+		}
+	}
+
+	if customerName == "" || identityID == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Customer name or ID number mapping could not be extracted from the PDF template. Ensure 'name' and 'id_card_no' are mapped."})
+	}
+
+	token := GenerateSecureToken()
+	cacheMappingJSON, _ := json.Marshal(fieldMappings)
+
+	GlobalVault.AddEntry(&VaultEntry{
+		Token:            token,
+		PdfId:            resp.PdfId,
+		CustomerName:     customerName,
+		IdentityID:       identityID,
+		Status:           "pending",
+		CreatedAt:        time.Now(),
+		TTLSeconds:       900,
+		RegistryJSON:     resp.RegistryJson,
+		CacheMappingJSON: string(cacheMappingJSON),
+		FormData:         resp.Values,
+		PdfBytes:         pdfBytes,
+	})
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"token":        token,
+		"customerName": customerName,
+	})
+}
+
+func (h *HandlerContext) VaultVerifyHandler(c echo.Context) error {
+	token := c.QueryParam("token")
+	if token == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "token is required"})
+	}
+
+	entry := GlobalVault.GetEntry(token)
+	if entry == nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "Vault session expired or invalid"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":       entry.Status,
+		"customerName": entry.CustomerName,
+	})
+}
+
+func (h *HandlerContext) VaultStatusHandler(c echo.Context) error {
+	token := c.QueryParam("token")
+	if token == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "token is required"})
+	}
+
+	entry := GlobalVault.GetEntry(token)
+	if entry == nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "Vault session expired or invalid"})
+	}
+
+	elapsed := time.Since(entry.CreatedAt)
+	remaining := int(float64(entry.TTLSeconds) - elapsed.Seconds())
+	if remaining < 0 {
+		remaining = 0
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":            entry.Status,
+		"customerName":      entry.CustomerName,
+		"remaining_seconds": remaining,
+	})
+}
+
+func (h *HandlerContext) VaultSignHandler(c echo.Context) error {
+	var req struct {
+		Token                string `json:"token"`
+		IdentityID           string `json:"identityId"`
+		SignatureImageBase64 string `json:"signatureImageBase64"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	}
+
+	entry := GlobalVault.GetEntry(req.Token)
+	if entry == nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "Vault session expired or invalid"})
+	}
+
+	if entry.Status != "pending" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Document has already been signed or session state is invalid"})
+	}
+
+	if NormalizeID(req.IdentityID) != NormalizeID(entry.IdentityID) {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "Identity verification failed"})
+	}
+
+	parts := strings.Split(req.SignatureImageBase64, ",")
+	imageBase64 := parts[len(parts)-1]
+	sigBytes, err := base64.StdEncoding.DecodeString(imageBase64)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid signature image data"})
+	}
+
+	docxBytes, err := os.ReadFile(h.TemplateDocxPath)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to read template DOCX"})
+	}
+
+	var fieldMappings map[string]interface{}
+	_ = json.Unmarshal([]byte(entry.CacheMappingJSON), &fieldMappings)
+
+	btData := make(map[string]string)
+	for pdfField, mapping := range fieldMappings {
+		var btKey string
+		var choicesMap map[string]interface{}
+		if mStr, ok := mapping.(string); ok {
+			btKey = mStr
+		} else if mObj, ok := mapping.(map[string]interface{}); ok {
+			if bk, ok := mObj["bt_key"].(string); ok {
+				btKey = bk
+			}
+			if cm, ok := mObj["choices_map"].(map[string]interface{}); ok {
+				choicesMap = cm
+			}
+		}
+
+		if btKey != "" && btKey != "SKIPPED" {
+			val := entry.FormData[pdfField]
+			if val != "" {
+				finalVal := val
+				if choicesMap != nil && strings.HasPrefix(val, "/") {
+					if resolvedVal, ok := choicesMap[val].(string); ok {
+						finalVal = resolvedVal
+					}
+				}
+
+				if btKey == "plan" && strings.Contains(finalVal, " DD ") {
+					finalVal = strings.TrimSpace(strings.Split(finalVal, " DD ")[0])
+				}
+
+				currentVal := btData[btKey]
+				newVal := finalVal
+				if currentVal != "" {
+					newVal = currentVal + "-" + finalVal
+				}
+				btData[btKey] = newVal
+			}
+		}
+	}
+
+	prefilledPdfResp, err := h.DocClient.Client.GeneratePdf(context.Background(), &document.GeneratePdfRequest{
+		PdfBytes: entry.PdfBytes,
+		FormData: entry.FormData,
+	})
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to prefill PDF: " + err.Error()})
+	}
+
+	stampedResp, err := h.DocClient.Client.StampSignature(context.Background(), &document.StampSignatureRequest{
+		PdfBytes:            prefilledPdfResp.PdfBytes,
+		SignatureImageBytes: sigBytes,
+		PdfId:               entry.PdfId,
+		RegistryJson:        entry.RegistryJSON,
+		CacheMappingJson:    entry.CacheMappingJSON,
+	})
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to stamp signature: " + err.Error()})
+	}
+
+	docxResp, err := h.DocClient.Client.GenerateDocx(context.Background(), &document.GenerateDocxRequest{
+		DocxBytes: docxBytes,
+		FormData:  btData,
+	})
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to generate DOCX: " + err.Error()})
+	}
+
+	entry.SignedPdfBytes = stampedResp.PdfBytes
+	entry.SignedDocxBytes = docxResp.DocxBytes
+	entry.Status = "signed"
+	entry.IdentityID = "" // Discard raw national ID for compliance
+
+	return c.JSON(http.StatusOK, map[string]bool{"success": true})
+}
+
+func (h *HandlerContext) VaultDownloadHandler(c echo.Context) error {
+	token := c.Param("token")
+	docType := c.Param("type")
+
+	if token == "" || docType == "" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "token and type are required"})
+	}
+
+	entry := GlobalVault.GetEntry(token)
+	if entry == nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "Vault session expired or invalid"})
+	}
+
+	if entry.Status != "signed" {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Document is not signed yet"})
+	}
+
+	if docType == "pdf" {
+		if len(entry.SignedPdfBytes) == 0 {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Signed PDF not found"})
+		}
+		c.Response().Header().Set("Content-Disposition", "attachment; filename=application_signed.pdf")
+		return c.Blob(http.StatusOK, "application/pdf", entry.SignedPdfBytes)
+	} else if docType == "docx" {
+		if len(entry.SignedDocxBytes) == 0 {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Signed DOCX not found"})
+		}
+		c.Response().Header().Set("Content-Disposition", "attachment; filename=bluetable_signed.docx")
+		return c.Blob(http.StatusOK, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", entry.SignedDocxBytes)
+	}
+
+	return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid doc type"})
+}
+
+func (h *HandlerContext) VaultClearHandler(c echo.Context) error {
+	var req struct {
+		Token string `json:"token"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	}
+
+	GlobalVault.RemoveEntry(req.Token)
+	return c.JSON(http.StatusOK, map[string]bool{"success": true})
+}
+
+func (h *HandlerContext) RegistryHandler(c echo.Context) error {
+	registryPath := "../outputs/pdf_registry.json"
+	data, err := os.ReadFile(registryPath)
+	if err != nil {
+		return c.JSON(http.StatusOK, map[string]interface{}{})
+	}
+	
+	var registry interface{}
+	if err := json.Unmarshal(data, &registry); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to parse registry file: " + err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, registry)
+}
+
+func (h *HandlerContext) SaveConfigHandler(c echo.Context) error {
+	var req struct {
+		PdfId      string      `json:"pdf_id"`
+		Filename   string      `json:"filename"`
+		ConfigBody interface{} `json:"config_body"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	}
+
+	if req.PdfId == "" || req.Filename == "" || req.ConfigBody == nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "pdf_id, filename, and config_body are required"})
+	}
+
+	req.Filename = strings.ReplaceAll(req.Filename, "..", "")
+	req.Filename = strings.ReplaceAll(req.Filename, "/", "")
+	req.Filename = strings.ReplaceAll(req.Filename, "\\", "")
+
+	configDir := "../config"
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create config directory"})
+	}
+
+	configPath := configDir + "/" + req.Filename
+	configData, err := json.MarshalIndent(req.ConfigBody, "", "    ")
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to serialize config"})
+	}
+
+	if err := os.WriteFile(configPath, configData, 0644); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to write config file"})
+	}
+
+	cachePath := "../outputs/assignment_cache.json"
+	globalCache := make(map[string]interface{})
+	if cacheData, err := os.ReadFile(cachePath); err == nil {
+		_ = json.Unmarshal(cacheData, &globalCache)
+	}
+
+	var entryMap map[string]interface{}
+	if entry, ok := globalCache[req.PdfId]; ok {
+		if em, ok := entry.(map[string]interface{}); ok {
+			entryMap = em
+		}
+	}
+
+	if entryMap == nil {
+		entryMap = make(map[string]interface{})
+		entryMap["field_mappings"] = make(map[string]interface{})
+	}
+
+	entryMap["product_config"] = req.Filename
+	globalCache[req.PdfId] = entryMap
+
+	newCacheData, err := json.MarshalIndent(globalCache, "", "    ")
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to serialize assignment cache"})
+	}
+
+	if err := os.WriteFile(cachePath, newCacheData, 0644); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to update assignment cache"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "success"})
 }
