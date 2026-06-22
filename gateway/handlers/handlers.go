@@ -71,6 +71,8 @@ func (h *HandlerContext) ProcessPdfHandler(c echo.Context) error {
 	var cacheMappings interface{}
 	var productOptions interface{}
 	cachePath := "../outputs/assignment_cache.json"
+	configName := "health_and_accident_insurance.json"
+
 	if cacheFile, err := os.Open(cachePath); err == nil {
 		defer cacheFile.Close()
 		var globalCache map[string]interface{}
@@ -84,22 +86,22 @@ func (h *HandlerContext) ProcessPdfHandler(c echo.Context) error {
 						cacheMappings = entry
 					}
 
-					// Load product config options
-					configName := "health_and_accident_insurance.json"
 					if pc, ok := entryMap["product_config"].(string); ok && pc != "" {
 						configName = pc
 					}
-					configPath := "../config/" + configName
-					if configFile, err := os.Open(configPath); err == nil {
-						defer configFile.Close()
-						var fullConfig map[string]interface{}
-						if err := json.NewDecoder(configFile).Decode(&fullConfig); err == nil {
-							if po, ok := fullConfig["product_options"]; ok {
-								productOptions = po
-							}
-						}
-					}
 				}
+			}
+		}
+	}
+
+	// Always load product config options (falls back to default if not in cache)
+	configPath := "../config/" + configName
+	if configFile, err := os.Open(configPath); err == nil {
+		defer configFile.Close()
+		var fullConfig map[string]interface{}
+		if err := json.NewDecoder(configFile).Decode(&fullConfig); err == nil {
+			if po, ok := fullConfig["product_options"]; ok {
+				productOptions = po
 			}
 		}
 	}
