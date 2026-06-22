@@ -460,7 +460,16 @@
         <div id="stepDone" class="card download-center hidden">
             <div class="download-card">
                 <h2 style="color: var(--success); margin-top: 0;">🎉 Field Mapping Complete!</h2>
-                <p>The layout mapping cache has been successfully updated.</p>
+                <p>The layout mapping cache has been successfully updated. You can now download the outputs below.</p>
+            </div>
+
+            <div class="download-buttons">
+                <button class="btn btn-accent btn-success" style="font-size: 1.1rem; padding: 1rem 2rem;" onclick="downloadDocx()">
+                    📝 Download Filled BlueTable DOCX
+                </button>
+                <button class="btn btn-accent" style="font-size: 1.1rem; padding: 1rem 2rem;" onclick="downloadPdf()">
+                    📄 Download Pre-Filled AcroForm PDF
+                </button>
             </div>
 
             <button class="btn" style="margin-top: 2rem;" onclick="resetPortal()">
@@ -642,6 +651,45 @@
                 });
 
                 buildBlueTableForm();
+                
+                // Perform Auto Mapping using assignment_cache
+                if (data.assignment_cache) {
+                    const cache = data.assignment_cache;
+                    for (const [pdfField, mapping] of Object.entries(cache)) {
+                        let btKey = "";
+                        let choicesMap = null;
+                        if (typeof mapping === "string") {
+                            btKey = mapping;
+                        } else if (mapping && typeof mapping === "object") {
+                            btKey = mapping.bt_key;
+                            choicesMap = mapping.choices_map;
+                        }
+
+                        if (btKey && btKey !== "SKIPPED") {
+                            const val = extractedValues[pdfField];
+                            if (val !== undefined && val !== null) {
+                                // For radio groups with choices map: if the value matches a choice mapping, resolve it
+                                let finalVal = val;
+                                if (choicesMap && val.startsWith("/")) {
+                                    if (choicesMap[val]) {
+                                        finalVal = choicesMap[val];
+                                    }
+                                }
+
+                                // Plan field cleaning logic
+                                if (btKey === "plan" && finalVal.includes(" DD ")) {
+                                    finalVal = finalVal.split(" DD ")[0].trim();
+                                }
+
+                                // Append or assign
+                                const currentVal = btData[btKey];
+                                const newVal = currentVal ? `${currentVal}-${finalVal}` : finalVal;
+                                btData[btKey] = newVal;
+                                document.getElementById(`bt-input-${btKey}`).value = newVal;
+                            }
+                        }
+                    }
+                }
                 
                 // Display first field
                 document.getElementById('stepLoading').classList.add('hidden');

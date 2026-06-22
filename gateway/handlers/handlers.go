@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"io"
 	"net/http"
 	"os"
@@ -63,11 +64,32 @@ func (h *HandlerContext) ProcessPdfHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
+	// Load assignment cache
+	var cacheMappings interface{}
+	cachePath := "../outputs/assignment_cache.json"
+	if cacheFile, err := os.Open(cachePath); err == nil {
+		defer cacheFile.Close()
+		var globalCache map[string]interface{}
+		if err := json.NewDecoder(cacheFile).Decode(&globalCache); err == nil {
+			if entry, ok := globalCache[resp.PdfId]; ok {
+				if entryMap, ok := entry.(map[string]interface{}); ok {
+					if fm, ok := entryMap["field_mappings"]; ok {
+						cacheMappings = fm
+					} else {
+						// Backward-compatibility: flat map
+						cacheMappings = entry
+					}
+				}
+			}
+		}
+	}
+
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"pdf_id":          resp.PdfId,
-		"values":          resp.Values,
-		"registry_json":   resp.RegistryJson,
-		"fieldsExtracted": len(resp.Values),
+		"pdf_id":           resp.PdfId,
+		"values":           resp.Values,
+		"registry_json":    resp.RegistryJson,
+		"fieldsExtracted":  len(resp.Values),
+		"assignment_cache": cacheMappings,
 	})
 }
 
