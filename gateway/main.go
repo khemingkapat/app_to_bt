@@ -11,9 +11,10 @@ import (
 
 	"gateway/client"
 	"gateway/handlers"
+	"gateway/middleware"
 
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
@@ -21,8 +22,8 @@ func main() {
 	e := echo.New()
 
 	// Middleware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
+	e.Use(middleware.StructuredLogger())
+	e.Use(echoMiddleware.Recover())
 
 	// Initialize gRPC client
 	docClient, err := client.NewDocumentClient()
