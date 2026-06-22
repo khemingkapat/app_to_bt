@@ -27,9 +27,9 @@ func NewDocumentClient() (*DocumentClient, error) {
 
 	// Keepalive parameters to maintain a healthy connection
 	kp := keepalive.ClientParameters{
-		Time:                10 * time.Second, // send pings every 10 seconds if there is no activity
-		Timeout:             time.Second,      // wait 1 second for ping ack before considering the connection dead
-		PermitWithoutStream: true,              // send pings even without active streams
+		Time:                30 * time.Second, // send pings every 30 seconds if there is no activity
+		Timeout:             2 * time.Second,  // wait 2 seconds for ping ack before considering the connection dead
+		PermitWithoutStream: false,             // do not send pings without active streams to prevent "too_many_pings"
 	}
 
 	// Service config for automatic retries
