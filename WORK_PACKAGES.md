@@ -9,8 +9,8 @@
 
 | WP | Name | Phase | Status | GitHub Issue / Link |
 |---|---|---|---|---|
-| 1 | Python gRPC Worker Service (Logic Engine) | Phase 1: Core Logic Engine | 🔴 Not started | [Issue #42](https://github.com/khemingkapat/app_to_bt/issues/42) |
-| 2 | Go Echo Gateway (Routing & Validation) | Phase 2: Gateway & API | 🔴 Not started | [Issue #43](https://github.com/khemingkapat/app_to_bt/issues/43), [Issue #44](https://github.com/khemingkapat/app_to_bt/issues/44), [Issue #45](https://github.com/khemingkapat/app_to_bt/issues/45) |
+| 1 | Python gRPC Worker Service (Logic Engine) | Phase 1: Core Logic Engine | 🟢 Completed | [Issue #42](https://github.com/khemingkapat/app_to_bt/issues/42) |
+| 2 | Go Echo Gateway (Routing & Validation) | Phase 2: Gateway & API | 🟡 In progress | [Issue #43](https://github.com/khemingkapat/app_to_bt/issues/43), [Issue #44](https://github.com/khemingkapat/app_to_bt/issues/44), [Issue #45](https://github.com/khemingkapat/app_to_bt/issues/45) |
 | 3 | Production Infrastructure & Operations | Phase 3: Infrastructure | 🔴 Not started | [Issue #46](https://github.com/khemingkapat/app_to_bt/issues/46), [Issue #47](https://github.com/khemingkapat/app_to_bt/issues/47) |
 | 4 | E2E Testing & Verification | Phase 4: Quality Assurance | 🔴 Not started | [Issue #49](https://github.com/khemingkapat/app_to_bt/issues/49) |
 
