@@ -9,379 +9,79 @@
     <!-- Include PDF.js library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
-        :root {
-            --primary: #002855;
-            --primary-dark: #001a36;
-            --accent: #ffb81c;
-            --bg-main: #0b0f19;
-            --bg-card: #161f30;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --border: #2d3748;
-            --success: #10b981;
-            --danger: #ef4444;
-        }
-
-        * {
-            box-sizing: border-box;
-            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
-
+        /* Minimal Functional Styles Only */
         body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            margin: 0;
-            padding: 2rem;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            margin: 20px;
+            font-family: sans-serif;
         }
-
         .header {
-            width: 100%;
-            max-width: 1400px;
-            text-align: center;
-            margin-bottom: 2rem;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
         }
-
-        .header h1 {
-            margin: 0 0 0.5rem 0;
-            font-weight: 800;
-            font-size: 2.5rem;
-            background: linear-gradient(to right, #ffffff, var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .header .desc {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-            margin-bottom: 1.5rem;
-        }
-
         .nav-links {
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-            flex-wrap: wrap;
+            margin-top: 10px;
         }
-
         .nav-links a {
-            color: var(--text-main);
-            text-decoration: none;
-            font-weight: 600;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.05);
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
+            margin-right: 15px;
         }
-
-        .nav-links a:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        .main-container {
-            width: 100%;
-            max-width: 1400px;
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
-        }
-
-        /* CARD STYLE */
-        .card {
-            background-color: var(--bg-card);
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--border);
-        }
-
-        /* UPLOAD STATE */
-        .upload-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border: 2px dashed var(--border);
-            padding: 4rem 2rem;
-            background-color: rgba(255, 255, 255, 0.02);
-            cursor: pointer;
-            transition: border-color 0.3s ease;
-        }
-
-        .upload-section:hover {
-            border-color: var(--accent);
-        }
-
-        .upload-section input[type="file"] {
-            display: none;
-        }
-
-        .upload-icon {
-            font-size: 4rem;
-            margin-bottom: 1.5rem;
-        }
-
-        /* SPLIT SCREEN LAYOUT */
         .split-layout {
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
-            gap: 2rem;
-            align-items: start;
-        }
-
-        @media (max-width: 1024px) {
-            .split-layout {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* LEFT PANE - PDF VIEWER */
-        .pdf-viewer-card {
             display: flex;
-            flex-direction: column;
-            gap: 1rem;
+            gap: 20px;
         }
-
+        .pdf-viewer-card, .mapper-card {
+            flex: 1;
+        }
         .pdf-viewport {
             position: relative;
-            background-color: #3f3f3f;
-            border-radius: 8px;
             overflow: auto;
-            border: 1px solid var(--border);
-            min-height: 600px;
             max-height: 800px;
-            display: flex;
-            justify-content: center;
+            border: 1px solid #ccc;
         }
-
         .pdf-canvas-wrapper {
             position: relative;
         }
-
         .highlight-overlay {
             position: absolute;
-            border: 3px solid var(--danger);
-            background-color: rgba(239, 68, 68, 0.2);
+            border: 3px solid red;
+            background-color: rgba(255, 0, 0, 0.25);
             pointer-events: none;
-            box-shadow: 0 0 10px var(--danger);
-            transition: all 0.2s ease-in-out;
             z-index: 10;
         }
-
-        .pdf-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem;
-            background-color: rgba(0, 0, 0, 0.2);
-            border-radius: 6px;
+        .tabs-header {
+            margin: 15px 0;
+            border-bottom: 1px solid #ccc;
         }
-
-        /* RIGHT PANE - FIELD MAPPER */
-        .mapper-card {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .active-field-info {
-            background: linear-gradient(135deg, rgba(255, 184, 28, 0.1), rgba(0, 0, 0, 0.2));
-            border-left: 4px solid var(--accent);
-            padding: 1rem;
-            border-radius: 0 8px 8px 0;
-        }
-
-        .active-field-info h3 {
-            margin: 0 0 0.5rem 0;
-            color: var(--accent);
-            font-size: 1.2rem;
-        }
-
-        .active-field-val {
-            font-family: monospace;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 0.5rem;
-            border-radius: 4px;
-            word-break: break-all;
-            margin-top: 0.5rem;
-            display: inline-block;
-        }
-
-        .mapper-controls {
-            display: flex;
-            gap: 1rem;
-        }
-
-        /* BT FORM TABLES */
-        .form-section-title {
-            color: var(--accent);
-            border-bottom: 2px solid var(--border);
-            padding-bottom: 0.5rem;
-            margin: 1.5rem 0 1rem 0;
-            font-weight: 600;
-        }
-
-        .bt-field-container {
-            max-height: 500px;
-            overflow-y: auto;
-            padding-right: 0.5rem;
-        }
-
-        .bt-row {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .bt-label {
-            flex: 1.5;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-
-        .bt-input-wrapper {
-            flex: 3;
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .bt-input-wrapper input {
-            flex: 1;
-            background-color: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 0.5rem;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-
-        .bt-input-wrapper input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        /* BUTTONS */
-        .btn {
-            background-color: var(--primary);
-            color: white;
-            border: 1px solid var(--border);
-            padding: 0.6rem 1.2rem;
-            border-radius: 6px;
-            font-weight: 600;
+        .tab-btn {
+            background: none;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            padding: 8px 16px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.9rem;
+        }
+        .tab-btn.active {
+            font-weight: bold;
+            background: #eee;
+        }
+        .tab-content.hidden, .hidden {
+            display: none !important;
+        }
+        .bt-field-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .bt-row {
+            margin: 10px 0;
+        }
+        .bt-input-wrapper {
             display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
+            gap: 5px;
         }
-
-        .btn:hover {
-            background-color: var(--primary-dark);
-            border-color: var(--accent);
-        }
-
-        .btn-accent {
-            background-color: var(--accent);
-            color: var(--primary-dark);
-            border: none;
-        }
-
-        .btn-accent:hover {
-            background-color: #e0a115;
-            box-shadow: 0 0 8px rgba(255, 184, 28, 0.4);
-        }
-
-        .btn-success {
-            background-color: var(--success);
-            border: none;
-        }
-
-        .btn-success:hover {
-            background-color: #059669;
-        }
-
-        .btn-danger {
-            background-color: var(--danger);
-            border: none;
-        }
-
-        .btn-danger:hover {
-            background-color: #dc2626;
-        }
-
-        .btn:disabled {
-            background-color: #374151;
-            border-color: var(--border);
-            color: #6b7280;
-            cursor: not-allowed;
-        }
-
-        /* LOADING SPINNER */
-        .loading-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            padding: 3rem;
-        }
-
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border-left-color: var(--accent);
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* DONE STATE & DOWNLOAD CENTER */
-        .download-center {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2rem;
+        .upload-section {
+            border: 2px dashed #ccc;
+            padding: 40px;
             text-align: center;
-        }
-
-        .download-buttons {
-            display: flex;
-            gap: 1.5rem;
-            margin-top: 1rem;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .download-card {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(0, 0, 0, 0.2));
-            border: 1px solid var(--success);
-            padding: 2rem;
-            border-radius: 12px;
-            max-width: 600px;
-            width: 100%;
-        }
-
-        .hidden {
-            display: none;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -391,7 +91,7 @@
         <h1>🏥 AXA Application Ingestion Portal</h1>
         <div class="desc">Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
         <div class="nav-links">
-            <a href="/">🏠 Home</a>
+            <a href="index.html">🏠 Home</a>
             <a href="config_manager.html">⚙️ Config Manager</a>
             <a href="internal_eform.html">⌨️ Internal Fast-Entry E-Form</a>
             <a href="signature_gateway.html">✍️ Signature Gateway</a>
@@ -436,7 +136,7 @@
                 <div class="active-field-info">
                     <h3>Active Field: <span id="activeFieldName">-</span></h3>
                     <div>Kind: <code id="activeFieldKind">-</code> (Page <span id="activeFieldPage">-</span>)</div>
-                    <div style="margin-top: 0.5rem;">Detected Value:</div>
+                    <div>Detected Value:</div>
                     <div id="activeFieldValue" class="active-field-val">-</div>
                 </div>
 
@@ -446,11 +146,50 @@
                     <button class="btn btn-success" onclick="finishMapping()">Finish Mapping ✅</button>
                 </div>
 
-                <!-- BT Target Fields Form -->
-                <div>
-                    <h3 class="form-section-title">BlueTable Intake Target Form</h3>
-                    <div class="bt-field-container" id="btFieldsContainer">
-                        <!-- Fields list will be dynamically populated -->
+                <!-- TABS CONTAINER -->
+                <div class="tabs-header">
+                    <button id="tabBtnPlan" class="tab-btn active" onclick="switchTab('plan')">📋 Plan Options</button>
+                    <button id="tabBtnFields" class="tab-btn" onclick="switchTab('fields')">✍️ Fields & Signature</button>
+                </div>
+
+                <!-- PLAN OPTIONS TAB CONTENT -->
+                <div id="tabContentPlan" class="tab-content">
+                    <!-- Radio Choice mapping container -->
+                    <div id="radioChoiceContainer" class="card hidden">
+                        <h4>📻 Plan Option Choice Wizard</h4>
+                        <div>
+                            <span>Product Line:</span>
+                            <select id="productLineSelect" onchange="renderRadioChoices()">
+                                <option value="SmartCare Essential">SmartCare Essential</option>
+                                <option value="EasyCare Visa">EasyCare Visa</option>
+                            </select>
+                        </div>
+                        <div id="radioOptionsList">
+                            <!-- Options & Choice buttons will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FIELDS & SIGNATURE TAB CONTENT -->
+                <div id="tabContentFields" class="tab-content hidden">
+                    <!-- Signature Field Map Card -->
+                    <div class="active-field-info">
+                        <div>
+                            <strong>✍️ Mapped Signature Field:</strong>
+                            <span id="mappedSignatureField">Not Mapped</span>
+                        </div>
+                        <div>
+                            <button class="btn btn-accent btn-success" onclick="assignSignatureField()">Assign Sig</button>
+                            <button class="btn btn-danger" onclick="clearSignatureField()">Clear</button>
+                        </div>
+                    </div>
+
+                    <!-- BT Target Fields Form -->
+                    <div>
+                        <h3 class="form-section-title">BlueTable Intake Target Form</h3>
+                        <div class="bt-field-container" id="btFieldsContainer">
+                            <!-- Fields list will be dynamically populated -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -459,20 +198,20 @@
         <!-- STEP 3: DONE STATE -->
         <div id="stepDone" class="card download-center hidden">
             <div class="download-card">
-                <h2 style="color: var(--success); margin-top: 0;">🎉 Field Mapping Complete!</h2>
+                <h2>🎉 Field Mapping Complete!</h2>
                 <p>The layout mapping cache has been successfully updated. You can now download the outputs below.</p>
             </div>
 
             <div class="download-buttons">
-                <button class="btn btn-accent btn-success" style="font-size: 1.1rem; padding: 1rem 2rem;" onclick="downloadDocx()">
+                <button class="btn btn-accent btn-success" onclick="downloadDocx()">
                     📝 Download Filled BlueTable DOCX
                 </button>
-                <button class="btn btn-accent" style="font-size: 1.1rem; padding: 1rem 2rem;" onclick="downloadPdf()">
+                <button class="btn btn-accent" onclick="downloadPdf()">
                     📄 Download Pre-Filled AcroForm PDF
                 </button>
             </div>
 
-            <button class="btn" style="margin-top: 2rem;" onclick="resetPortal()">
+            <button class="btn" onclick="resetPortal()">
                 🔄 Ingest Another Document
             </button>
         </div>
@@ -557,6 +296,8 @@
         let activeFieldIndex = 0;
         let currentPageNum = 1;
         let btData = {};
+        let productOptions = null;
+        let signatureField = "Not Mapped";
 
         // Setup BlueTable fields in UI form
         function buildBlueTableForm() {
@@ -652,6 +393,10 @@
 
                 buildBlueTableForm();
                 
+                productOptions = data.product_options;
+                signatureField = "Not Mapped";
+                document.getElementById('mappedSignatureField').innerText = "Not Mapped";
+
                 // Perform Auto Mapping using assignment_cache
                 if (data.assignment_cache) {
                     const cache = data.assignment_cache;
@@ -665,7 +410,10 @@
                             choicesMap = mapping.choices_map;
                         }
 
-                        if (btKey && btKey !== "SKIPPED") {
+                        if (btKey === "signature") {
+                            signatureField = pdfField;
+                            document.getElementById('mappedSignatureField').innerText = pdfField;
+                        } else if (btKey && btKey !== "SKIPPED") {
                             const val = extractedValues[pdfField];
                             if (val !== undefined && val !== null) {
                                 // For radio groups with choices map: if the value matches a choice mapping, resolve it
@@ -699,11 +447,32 @@
                 document.getElementById('stepMapping').classList.remove('hidden');
                 
                 activeFieldIndex = 0;
-                displayField(activeFieldIndex);
+                setTimeout(() => {
+                    displayField(activeFieldIndex);
+                }, 100);
 
             } catch (err) {
                 alert('Error: ' + err.message);
                 resetPortal();
+            }
+        }
+
+        function switchTab(tabName) {
+            const btnPlan = document.getElementById('tabBtnPlan');
+            const btnFields = document.getElementById('tabBtnFields');
+            const contentPlan = document.getElementById('tabContentPlan');
+            const contentFields = document.getElementById('tabContentFields');
+
+            if (tabName === 'plan') {
+                btnPlan.classList.add('active');
+                btnFields.classList.remove('active');
+                contentPlan.classList.remove('hidden');
+                contentFields.classList.add('hidden');
+            } else {
+                btnPlan.classList.remove('active');
+                btnFields.classList.add('active');
+                contentPlan.classList.add('hidden');
+                contentFields.classList.remove('hidden');
             }
         }
 
@@ -717,6 +486,17 @@
 
             const rawVal = extractedValues[field.name] || '—';
             document.getElementById('activeFieldValue').innerText = rawVal;
+
+            // Show/hide radio choices wizard
+            const radioChoiceContainer = document.getElementById('radioChoiceContainer');
+            if (field.field_kind === 'radio' && productOptions) {
+                radioChoiceContainer.classList.remove('hidden');
+                renderRadioChoices();
+                switchTab('plan');
+            } else {
+                radioChoiceContainer.classList.add('hidden');
+                switchTab('fields');
+            }
 
             // Update Page and Render PDF Page
             currentPageNum = field.page || 1;
@@ -732,7 +512,10 @@
             const page = await uploadedPdfDoc.getPage(pageNum);
             
             const viewportContainer = document.getElementById('viewport');
-            const targetWidth = viewportContainer.clientWidth - 40;
+            let targetWidth = viewportContainer.clientWidth - 40;
+            if (targetWidth <= 0) {
+                targetWidth = 600;
+            }
             const originalViewport = page.getViewport({ scale: 1.0 });
             const scale = targetWidth / originalViewport.width;
             
@@ -753,17 +536,18 @@
 
             // Handle coordinate highlight overlay
             const highlightBox = document.getElementById('highlightBox');
-            if (field && field.coords) {
+            const coords = field ? (field.coords || (field.widgets && field.widgets[0] ? field.widgets[0].coords : null)) : null;
+            if (field && coords) {
                 const page_w = pdfRegistry.pages && pdfRegistry.pages[pageNum - 1] ? pdfRegistry.pages[pageNum - 1].page_w : originalViewport.width;
                 const page_h = pdfRegistry.pages && pdfRegistry.pages[pageNum - 1] ? pdfRegistry.pages[pageNum - 1].page_h : originalViewport.height;
 
                 const scaleX = canvas.width / page_w;
                 const scaleY = canvas.height / page_h;
 
-                const left = field.coords.x0 * scaleX;
-                const top = field.coords.canvas_top * scaleY;
-                const width = (field.coords.x1 - field.coords.x0) * scaleX;
-                const height = (field.coords.canvas_bottom - field.coords.canvas_top) * scaleY;
+                const left = coords.x0 * scaleX;
+                const top = coords.canvas_top * scaleY;
+                const width = (coords.x1 - coords.x0) * scaleX;
+                const height = (coords.canvas_bottom - coords.canvas_top) * scaleY;
 
                 highlightBox.style.left = `${left}px`;
                 highlightBox.style.top = `${top}px`;
@@ -850,8 +634,97 @@
             document.getElementById('stepDone').classList.remove('hidden');
         }
 
+        function renderRadioChoices() {
+            const list = document.getElementById('radioOptionsList');
+            list.innerHTML = '';
+            if (!productOptions) return;
+
+            const selectedProduct = document.getElementById('productLineSelect').value;
+
+            // 1. Selected Product name option
+            const productNameOpt = productOptions.product_name;
+            if (productNameOpt) {
+                const label = productNameOpt.label || "Selected Product";
+                const btKey = productNameOpt.bt_key || "product_name";
+                const choices = productNameOpt.choices || [];
+                renderChoiceRow(label, btKey, choices);
+            }
+
+            // 2. Policy Version option
+            const policyVersionOpt = productOptions.policy_version;
+            if (policyVersionOpt) {
+                const label = policyVersionOpt.label || "Policy Version";
+                const btKey = policyVersionOpt.bt_key || "policy_version";
+                const choices = policyVersionOpt.choices || [];
+                renderChoiceRow(label, btKey, choices);
+            }
+
+            // 3. Product line-specific options
+            const opts = productOptions.products ? productOptions.products[selectedProduct] : null;
+            if (opts) {
+                for (const [optKey, optData] of Object.entries(opts)) {
+                    const label = optData.label || optKey;
+                    const btKey = optData.bt_key || "plan";
+                    const choices = optData.choices || [];
+                    renderChoiceRow(label, btKey, choices);
+                }
+            }
+        }
+
+        function renderChoiceRow(label, btKey, choices) {
+            const list = document.getElementById('radioOptionsList');
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.alignItems = 'center';
+            row.style.gap = '0.5rem';
+            row.style.flexWrap = 'wrap';
+
+            const labelEl = document.createElement('span');
+            labelEl.style.fontSize = '0.85rem';
+            labelEl.style.fontWeight = 'bold';
+            labelEl.style.width = '120px';
+            labelEl.innerText = label;
+            row.appendChild(labelEl);
+
+            choices.forEach(val => {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-accent';
+                btn.style.padding = '0.3rem 0.6rem';
+                btn.style.fontSize = '0.8rem';
+                btn.innerText = val;
+                btn.onclick = () => assignRadioChoice(val, btKey);
+                row.appendChild(btn);
+            });
+
+            list.appendChild(row);
+        }
+
+        function assignRadioChoice(choiceValue, btKey) {
+            btData[btKey] = choiceValue;
+            const inputEl = document.getElementById(`bt-input-${btKey}`);
+            if (inputEl) {
+                inputEl.value = choiceValue;
+            }
+            changeField(1);
+        }
+
+        function assignSignatureField() {
+            const currentField = allFields[activeFieldIndex];
+            if (!currentField) return;
+
+            signatureField = currentField.name;
+            document.getElementById('mappedSignatureField').innerText = signatureField;
+            changeField(1);
+        }
+
+        function clearSignatureField() {
+            signatureField = "Not Mapped";
+            document.getElementById('mappedSignatureField').innerText = "Not Mapped";
+        }
+
         async function downloadDocx() {
             try {
+                btData["signature"] = signatureField;
                 const response = await fetch('/api/generate-docx', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -878,6 +751,7 @@
 
         async function downloadPdf() {
             try {
+                btData["signature"] = signatureField;
                 const response = await fetch('/api/generate-pdf', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -911,6 +785,8 @@
             activeFieldIndex = 0;
             currentPageNum = 1;
             btData = {};
+            productOptions = null;
+            signatureField = "Not Mapped";
 
             document.getElementById('pdfFileInput').value = '';
             document.getElementById('stepUpload').classList.remove('hidden');

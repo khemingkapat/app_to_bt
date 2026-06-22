@@ -6,63 +6,74 @@
     <title>Product Config Manager</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f0f2f6;
-            color: #31333F;
-            margin: 0;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: sans-serif;
+            margin: 20px;
         }
-        .container {
-            max-width: 800px;
-            width: 100%;
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        .header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
         }
-        h1 { color: #002855; font-weight: 800; margin-bottom: 0.5rem; }
-        h2 { font-size: 1.25rem; margin-top: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
-        .desc { color: #555; margin-bottom: 1.5rem; line-height: 1.6; }
-
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
-        select, input[type="text"], textarea {
-            width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-family: inherit;
+        .nav-links {
+            margin-top: 10px;
         }
-        textarea { resize: vertical; }
-
-        .tabs { display: flex; margin-bottom: 1rem; border-bottom: 1px solid #ccc; }
-        .tab { padding: 0.5rem 1rem; cursor: pointer; background: #eee; border: 1px solid #ccc; border-bottom: none; border-radius: 4px 4px 0 0; margin-right: 0.25rem; }
-        .tab.active { background: white; font-weight: bold; border-bottom: 1px solid white; margin-bottom: -1px; }
-        .tab-content { display: none; padding: 1rem; border: 1px solid #ccc; border-radius: 0 4px 4px 4px; background: #fafafa; }
-        .tab-content.active { display: block; }
-
-        button {
-            background-color: #002855; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 4px; font-size: 1rem; cursor: pointer; width: 100%; font-weight: bold;
+        .nav-links a {
+            margin-right: 15px;
         }
-        button:hover { background-color: #001a36; }
-        button:disabled { background-color: #cccccc; cursor: not-allowed; }
-
-        .alert { padding: 1rem; border-radius: 4px; margin-bottom: 1rem; display: none; }
-        .alert.error { background-color: #fee2e2; color: #991b1b; border: 1px solid #f87171; display: block; }
-        .alert.success { background-color: #dcfce7; color: #166534; border: 1px solid #4ade80; display: block; }
-        .alert.info { background-color: #e0f2fe; color: #075985; border: 1px solid #7dd3fc; display: block; }
-
-        .nav-link { display: inline-block; margin-bottom: 1rem; color: #002855; text-decoration: none; font-weight: bold; }
-        .nav-link:hover { text-decoration: underline; }
+        .tabs {
+            margin: 15px 0;
+            border-bottom: 1px solid #ccc;
+        }
+        .tab {
+            display: inline-block;
+            padding: 8px 16px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-bottom: none;
+        }
+        .tab.active {
+            font-weight: bold;
+            background: #eee;
+        }
+        .tab-content {
+            display: none;
+            padding: 15px;
+            border: 1px solid #ccc;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .alert {
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin-bottom: 15px;
+            display: none;
+        }
+        .alert.error { display: block; background: #fee; border-color: red; }
+        .alert.success { display: block; background: #efe; border-color: green; }
+        .alert.info { display: block; background: #eef; border-color: blue; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <a href="index.html" class="nav-link">⬅️ Back to Portal</a>
-    <h1>⚙️ Product Config Manager</h1>
-    <div class="desc">
-        Administrator portal to associate product configuration parameters (pricing, underwriting, etc.) with PDF structural templates.
+    <div class="header">
+        <h1>🏥 AXA Application Ingestion Portal</h1>
+        <div class="desc">Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
+        <div class="nav-links">
+            <a href="index.html">🏠 Home</a>
+            <a href="config_manager.html">⚙️ Config Manager</a>
+            <a href="internal_eform.html">⌨️ Internal Fast-Entry E-Form</a>
+            <a href="signature_gateway.html">✍️ Signature Gateway</a>
+        </div>
     </div>
+
+    <h2>⚙️ Product Config Manager</h2>
+    <p>
+        Administrator portal to associate product configuration parameters (pricing, underwriting, etc.) with PDF structural templates.
+    </p>
 
     <div id="statusMessage" class="alert"></div>
 
@@ -96,7 +107,6 @@
 
         <button id="saveBtn" onclick="saveConfig()">🔗 Link & Save Configuration</button>
     </div>
-</div>
 
 <script>
     let registryData = {};
