@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"gateway/client"
+	"gateway/handlers"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -30,6 +31,25 @@ func main() {
 	}
 	defer docClient.Close()
 
+	// Initialize handler context
+	templatePdfPath := os.Getenv("TEMPLATE_PDF_PATH")
+	if templatePdfPath == "" {
+		templatePdfPath = "../resources/OriginalApplication.pdf"
+	}
+	templateDocxPath := os.Getenv("TEMPLATE_DOCX_PATH")
+	if templateDocxPath == "" {
+		templateDocxPath = "../resources/BlueTable.docx"
+	}
+
+	hCtx := &handlers.HandlerContext{
+		DocClient:        docClient,
+		TemplatePDFPath:  templatePdfPath,
+		TemplateDocxPath: templateDocxPath,
+	}
+
+	// Static files
+	e.Static("/", "public")
+
 	// Health check endpoint
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]interface{}{
@@ -38,6 +58,13 @@ func main() {
 			"worker_healthy":      docClient.IsHealthy(),
 		})
 	})
+
+	// API routes
+	api := e.Group("/api")
+	api.POST("/process-pdf", hCtx.ProcessPdfHandler)
+	api.POST("/generate-pdf", hCtx.GeneratePdfHandler)
+	api.POST("/generate-docx", hCtx.GenerateDocxHandler)
+	api.POST("/stamp-signature", hCtx.StampSignatureHandler)
 
 	// Get port from environment variable or default to 8080
 	port := os.Getenv("PORT")
