@@ -1,5 +1,6 @@
 import os
 import json
+import threading
 from io import BytesIO
 from typing import Union
 import hashlib
@@ -12,26 +13,29 @@ from .core.walker import walk_fields
 REGISTRY_FILE = "./outputs/pdf_registry.json"
 VALUES_FILE = "./outputs/extracted_values.json"
 
+IO_LOCK = threading.RLock()
+
 
 def load_registry(registry_path: str = REGISTRY_FILE) -> dict:
     """Helper to load the registry."""
-    if not os.path.exists(registry_path):
-        example_path = registry_path.replace(".json", ".example.json")
-        if os.path.exists(example_path):
-            import shutil
+    with IO_LOCK:
+        if not os.path.exists(registry_path):
+            example_path = registry_path.replace(".json", ".example.json")
+            if os.path.exists(example_path):
+                import shutil
+                try:
+                    os.makedirs(os.path.dirname(registry_path), exist_ok=True)
+                    shutil.copy(example_path, registry_path)
+                except Exception:
+                    pass
+        if os.path.exists(registry_path):
             try:
-                os.makedirs(os.path.dirname(registry_path), exist_ok=True)
-                shutil.copy(example_path, registry_path)
+                with open(registry_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
             except Exception:
+                print("⚠️ Registry file corrupt or empty. Creating a new one.")
                 pass
-    if os.path.exists(registry_path):
-        try:
-            with open(registry_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            print("⚠️ Registry file corrupt or empty. Creating a new one.")
-            pass
-    return {}
+        return {}
 
 def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -> tuple[str, dict, dict]:
     """
@@ -167,12 +171,15 @@ def update_pdf_registry(
     print(f"🔑 ID: {pdf_id}")
 
     # Update global map entry
-    registry.update(registry_dict)
+    with IO_LOCK:
+        # Re-load registry to ensure we don't overwrite other concurrent updates
+        registry = load_registry(registry_path)
+        registry.update(registry_dict)
 
-    # Save registry file (pure structural data, no personal info)
-    os.makedirs(os.path.dirname(registry_path), exist_ok=True)
-    with open(registry_path, "w", encoding="utf-8") as f:
-        json.dump(registry, f, indent=4, ensure_ascii=False)
+        # Save registry file (pure structural data, no personal info)
+        os.makedirs(os.path.dirname(registry_path), exist_ok=True)
+        with open(registry_path, "w", encoding="utf-8") as f:
+            json.dump(registry, f, indent=4, ensure_ascii=False)
 
     print(f"✅ Pure structural fields saved to: {registry_path}")
     print(f"✅ Simple text values dictionary kept in-memory for stateless processing\n" + "=" * 60)
