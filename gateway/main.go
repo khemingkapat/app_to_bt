@@ -66,6 +66,14 @@ func main() {
 	api.POST("/generate-pdf", hCtx.GeneratePdfHandler)
 	api.POST("/generate-docx", hCtx.GenerateDocxHandler)
 	api.POST("/stamp-signature", hCtx.StampSignatureHandler)
+	api.POST("/vault/create", hCtx.VaultCreateHandler)
+	api.GET("/vault/verify", hCtx.VaultVerifyHandler)
+	api.GET("/vault/status", hCtx.VaultStatusHandler)
+	api.POST("/vault/sign", hCtx.VaultSignHandler)
+	api.GET("/vault/download/:token/:type", hCtx.VaultDownloadHandler)
+	api.POST("/vault/clear", hCtx.VaultClearHandler)
+	api.GET("/registry", hCtx.RegistryHandler)
+	api.POST("/config", hCtx.SaveConfigHandler)
 
 	// Get port from environment variable or default to 8080
 	port := os.Getenv("PORT")
