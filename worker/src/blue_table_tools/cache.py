@@ -1,7 +1,7 @@
 import json
 import os
 import shutil
-from pdf_processor.engine import IO_LOCK
+from src.pdf_processor.engine import IO_LOCK
 
 def ensure_cache_file(cache_path: str):
     """Ensures that the cache_path file exists, copying from .example.json if missing."""
