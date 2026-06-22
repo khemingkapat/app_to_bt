@@ -24,12 +24,12 @@ services:
       - "8080:8080"
     environment:
       - WORKER_GRPC_ADDR=worker:50051
-      - TEMPLATE_PDF_PATH=/app/resources/OriginalApplication.pdf
-      - TEMPLATE_DOCX_PATH=/app/resources/BlueTable.docx
+      - TEMPLATE_PDF_PATH=/resources/OriginalApplication.pdf
+      - TEMPLATE_DOCX_PATH=/resources/BlueTable.docx
     volumes:
-      - ./config:/app/config
-      - ./outputs:/app/outputs
-      - ./resources:/app/resources
+      - ./config:/config
+      - ./outputs:/outputs
+      - ./resources:/resources
     depends_on:
       - worker
     deploy:
