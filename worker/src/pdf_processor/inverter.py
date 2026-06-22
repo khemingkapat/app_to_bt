@@ -205,7 +205,8 @@ def map_customer_data_to_pdf(customer_data: dict, config: dict, field_mappings: 
 
 
 def fill_acroform_pdf(
-    input_pdf: Union[str, BytesIO], customer_data: dict, config_path: str = CONFIG_FILE
+    input_pdf: Union[str, BytesIO], customer_data: dict, config_path: str = CONFIG_FILE,
+    config: dict = None, field_mappings: dict = None
 ) -> BytesIO:
     """
     Reads an interactive AcroForm PDF, populates its fields with customer data
@@ -221,12 +222,14 @@ def fill_acroform_pdf(
     from src.pdf_processor.utils.pdf_info import get_pdf_file_id
     pdf_id = get_pdf_file_id(reader)
 
-    # Load config dynamically by matching the pdf_id
-    config = load_config_by_pdf_id(pdf_id)
+    # Load config dynamically by matching the pdf_id if not provided
+    if config is None:
+        config = load_config_by_pdf_id(pdf_id)
     
-    # Load assignment mappings from assignment_cache.json
-    from src.blue_table_tools.cache import load_cache
-    field_mappings = load_cache(pdf_id)
+    # Load assignment mappings from assignment_cache.json if not provided
+    if field_mappings is None:
+        from src.blue_table_tools.cache import load_cache
+        field_mappings = load_cache(pdf_id)
 
     pdf_values = map_customer_data_to_pdf(customer_data, config, field_mappings)
 
