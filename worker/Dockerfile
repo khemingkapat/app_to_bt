@@ -1,5 +1,5 @@
-# Stage 1: Builder
-FROM ghcr.io/astral-sh/uv:python3.11-alpine AS builder
+FROM python:3.11-slim AS builder
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-install-project --no-dev
 
 # Stage 2: Runner
-FROM python:3.11-alpine
+FROM python:3.11-slim
 
 WORKDIR /app
 
