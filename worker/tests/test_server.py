@@ -178,8 +178,8 @@ def test_payload_size_limit(grpc_stub):
 def test_resource_limits_initialization():
     # Mock resource.setrlimit to verify it is called with the expected limits
     # without actually affecting the test process.
-    soft_limit = 512 * 1024 * 1024
-    hard_limit = 1024 * 1024 * 1024
+    soft_limit = 1536 * 1024 * 1024
+    hard_limit = 2048 * 1024 * 1024
 
     with patch("resource.setrlimit") as mock_setrlimit:
         configure_resource_limits()

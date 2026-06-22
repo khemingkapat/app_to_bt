@@ -136,9 +136,10 @@ def configure_resource_limits():
     """
     Configures process-level resource limits.
     """
-    # Configure a soft address space memory limit of 512MB and a hard limit of 1GB
-    soft_limit = 512 * 1024 * 1024
-    hard_limit = 1024 * 1024 * 1024
+    # Configure a soft address space memory limit of 1.5GB and a hard limit of 2GB
+    # 512MB is too restrictive for Python's virtual address space on 64-bit platforms.
+    soft_limit = 1536 * 1024 * 1024
+    hard_limit = 2048 * 1024 * 1024
     resource.setrlimit(resource.RLIMIT_AS, (soft_limit, hard_limit))
 
 def serve():
