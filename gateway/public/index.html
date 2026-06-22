@@ -3,202 +3,855 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AXA Application Tools Portal</title>
+    <title>AXA Application Ingestion Portal</title>
+    <!-- Include premium font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- Include PDF.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
+        :root {
+            --primary: #002855;
+            --primary-dark: #001a36;
+            --accent: #ffb81c;
+            --bg-main: #0b0f19;
+            --bg-card: #161f30;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border: #2d3748;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f0f2f6;
-            color: #31333F;
+            background-color: var(--bg-main);
+            color: var(--text-main);
             margin: 0;
             padding: 2rem;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        .container {
-            max-width: 800px;
+
+        .header {
             width: 100%;
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            color: #002855;
+            max-width: 1400px;
             text-align: center;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+        }
+
+        .header h1 {
+            margin: 0 0 0.5rem 0;
             font-weight: 800;
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #ffffff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-        .desc {
-            text-align: center;
-            color: #555;
-            margin-bottom: 2rem;
-            line-height: 1.6;
+
+        .header .desc {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
         }
-        .upload-section {
-            border: 2px dashed #ccc;
-            padding: 2rem;
-            text-align: center;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-            background-color: #fafafa;
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
         }
-        button {
-            background-color: #002855;
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 4px;
-            font-size: 1rem;
-            cursor: pointer;
-            margin-top: 1rem;
+
+        .nav-links a {
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
         }
-        button:hover {
-            background-color: #001a36;
+
+        .nav-links a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
         }
-        button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        table {
+
+        .main-container {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
+            max-width: 1400px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
         }
-        th, td {
-            text-align: left;
-            padding: 8px;
-            border-bottom: 1px solid #ddd;
+
+        /* CARD STYLE */
+        .card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
         }
-        th {
-            background-color: #f2f2f2;
+
+        /* UPLOAD STATE */
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed var(--border);
+            padding: 4rem 2rem;
+            background-color: rgba(255, 255, 255, 0.02);
+            cursor: pointer;
+            transition: border-color 0.3s ease;
         }
-        .hidden {
+
+        .upload-section:hover {
+            border-color: var(--accent);
+        }
+
+        .upload-section input[type="file"] {
             display: none;
         }
-        #errorMsg {
-            color: red;
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+        }
+
+        /* SPLIT SCREEN LAYOUT */
+        .split-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 1024px) {
+            .split-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* LEFT PANE - PDF VIEWER */
+        .pdf-viewer-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .pdf-viewport {
+            position: relative;
+            background-color: #3f3f3f;
+            border-radius: 8px;
+            overflow: auto;
+            border: 1px solid var(--border);
+            min-height: 600px;
+            max-height: 800px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .pdf-canvas-wrapper {
+            position: relative;
+        }
+
+        .highlight-overlay {
+            position: absolute;
+            border: 3px solid var(--danger);
+            background-color: rgba(239, 68, 68, 0.2);
+            pointer-events: none;
+            box-shadow: 0 0 10px var(--danger);
+            transition: all 0.2s ease-in-out;
+            z-index: 10;
+        }
+
+        .pdf-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+        }
+
+        /* RIGHT PANE - FIELD MAPPER */
+        .mapper-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .active-field-info {
+            background: linear-gradient(135deg, rgba(255, 184, 28, 0.1), rgba(0, 0, 0, 0.2));
+            border-left: 4px solid var(--accent);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .active-field-info h3 {
+            margin: 0 0 0.5rem 0;
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+
+        .active-field-val {
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 0.5rem;
+            border-radius: 4px;
+            word-break: break-all;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+
+        .mapper-controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* BT FORM TABLES */
+        .form-section-title {
+            color: var(--accent);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+            margin: 1.5rem 0 1rem 0;
+            font-weight: 600;
+        }
+
+        .bt-field-container {
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .bt-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .bt-label {
+            flex: 1.5;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .bt-input-wrapper {
+            flex: 3;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .bt-input-wrapper input {
+            flex: 1;
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .bt-input-wrapper input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* BUTTONS */
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: 1px solid var(--border);
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-dark);
+            border-color: var(--accent);
+        }
+
+        .btn-accent {
+            background-color: var(--accent);
+            color: var(--primary-dark);
+            border: none;
+        }
+
+        .btn-accent:hover {
+            background-color: #e0a115;
+            box-shadow: 0 0 8px rgba(255, 184, 28, 0.4);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            border: none;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            border: none;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .btn:disabled {
+            background-color: #374151;
+            border-color: var(--border);
+            color: #6b7280;
+            cursor: not-allowed;
+        }
+
+        /* LOADING SPINNER */
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 3rem;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border-left-color: var(--accent);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* DONE STATE & DOWNLOAD CENTER */
+        .download-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
             text-align: center;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 1.5rem;
             margin-top: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .download-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(0, 0, 0, 0.2));
+            border: 1px solid var(--success);
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .hidden {
+            display: none;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>🏥 AXA Application Tools Portal</h1>
-    <div class="desc">
-        Pathway A: Stateless PDF Structural Layout Mapping<br>
-        Upload an Original Application PDF to extract its structure and fields statelessly.
+    <div class="header">
+        <h1>🏥 AXA Application Ingestion Portal</h1>
+        <div class="desc">Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
+        <div class="nav-links">
+            <a href="/">🏠 Home</a>
+            <a href="config_manager.html">⚙️ Config Manager</a>
+            <a href="internal_eform.html">⌨️ Internal Fast-Entry E-Form</a>
+            <a href="signature_gateway.html">✍️ Signature Gateway</a>
+        </div>
     </div>
 
-    <div style="text-align: center; margin-bottom: 2rem;">
-        <a href="config_manager.html" style="color: #002855; text-decoration: none; font-weight: bold;">⚙️ Launch Config Manager ➡️</a><br><br>
-        <a href="internal_eform.html" style="color: #002855; text-decoration: none; font-weight: bold;">⌨️ Launch Internal Fast-Entry E-Form ➡️</a><br><br>
-        <a href="signature_gateway.html" style="color: #002855; text-decoration: none; font-weight: bold;">✍️ Launch Signature Gateway ➡️</a>
+    <div class="main-container">
+
+        <!-- STEP 1: UPLOAD -->
+        <div id="stepUpload" class="card upload-section" onclick="document.getElementById('pdfFileInput').click()">
+            <div class="upload-icon">📄</div>
+            <h2>Drag & Drop Insured's Application PDF here</h2>
+            <p>Or click to browse files (accepts standard PDFs up to 5MB)</p>
+            <input type="file" id="pdfFileInput" accept="application/pdf" onchange="handleFileUpload(event)">
+        </div>
+
+        <!-- LOADING STATE -->
+        <div id="stepLoading" class="card loading-container hidden">
+            <div class="spinner"></div>
+            <h3 id="loadingText">Processing PDF & extracting layout structure...</h3>
+        </div>
+
+        <!-- STEP 2: FIELD MAPPING (SPLIT LAYOUT) -->
+        <div id="stepMapping" class="split-layout hidden">
+            <!-- LEFT PANE: PDF VIEW -->
+            <div class="card pdf-viewer-card">
+                <div class="pdf-controls">
+                    <button class="btn" onclick="prevPage()">◀ Previous Page</button>
+                    <span id="pageInfo">Page 1 of 1</span>
+                    <button class="btn" onclick="nextPage()">Next Page ▶</button>
+                </div>
+                <div class="pdf-viewport" id="viewport">
+                    <div class="pdf-canvas-wrapper">
+                        <canvas id="pdfCanvas"></canvas>
+                        <div id="highlightBox" class="highlight-overlay hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANE: MAPPER CONTROL -->
+            <div class="card mapper-card">
+                <div class="active-field-info">
+                    <h3>Active Field: <span id="activeFieldName">-</span></h3>
+                    <div>Kind: <code id="activeFieldKind">-</code> (Page <span id="activeFieldPage">-</span>)</div>
+                    <div style="margin-top: 0.5rem;">Detected Value:</div>
+                    <div id="activeFieldValue" class="active-field-val">-</div>
+                </div>
+
+                <div class="mapper-controls">
+                    <button class="btn" id="btnPrevField" onclick="changeField(-1)">⬆ Previous Field</button>
+                    <button class="btn btn-accent" id="btnNextField" onclick="changeField(1)">⬇ Skip</button>
+                    <button class="btn btn-success" onclick="finishMapping()">Finish Mapping ✅</button>
+                </div>
+
+                <!-- BT Target Fields Form -->
+                <div>
+                    <h3 class="form-section-title">BlueTable Intake Target Form</h3>
+                    <div class="bt-field-container" id="btFieldsContainer">
+                        <!-- Fields list will be dynamically populated -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: DONE & DOWNLOAD CENTER -->
+        <div id="stepDone" class="card download-center hidden">
+            <div class="download-card">
+                <h2 style="color: var(--success); margin-top: 0;">🎉 Field Mapping Complete!</h2>
+                <p>Verify the finalized data schema below and download your outputs.</p>
+            </div>
+
+            <div class="download-buttons">
+                <button class="btn btn-accent btn-success" style="font-size: 1.1rem; padding: 1rem 2rem;" onclick="downloadDocx()">
+                    📝 Download Filled BlueTable DOCX
+                </button>
+                <button class="btn btn-accent" style="font-size: 1.1rem; padding: 1rem 2rem;" onclick="downloadPdf()">
+                    📄 Download Pre-Filled AcroForm PDF
+                </button>
+            </div>
+
+            <button class="btn" style="margin-top: 2rem;" onclick="resetPortal()">
+                🔄 Ingest Another Document
+            </button>
+        </div>
+
     </div>
 
-    <div class="upload-section" id="uploadSection">
-        <input type="file" id="pdfFile" accept="application/pdf">
-        <br>
-        <button id="uploadBtn" onclick="uploadPDF()">Process PDF</button>
-    </div>
+    <script>
+        // Setup PDF.js
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-    <div id="loading" class="hidden" style="text-align: center;">
-        <p>Processing PDF... Please wait.</p>
-    </div>
+        // BlueTable Fields Schema
+        const BLUETABLE_FIELDS = [
+            ["Main Insured", "name"],
+            ["Date of Birth", "dob"],
+            ["Age", "age"],
+            ["ID No./Passport No.", "id_card_no"],
+            ["Nationality", "nationality"],
+            ["Beneficiary Name", "beneficiary"],
+            ["Relation", "bene_relation"],
+            ["Occupation", "occupation"],
+            ["Agent CODE/Name", "agent"],
+            ["Product Name", "product_name"],
+            ["Policy Version", "policy_version"],
+            ["Plan", "plan"],
+            ["Deductible", "deductible"],
+            ["Premium", "premium"],
+            ["Effective Date", "effective_date"],
+            ["Personal Address", "present_address"],
+            ["Tel", "tel"],
+            ["Email", "email"],
+            ["Payor Name", "payor_name"],
+            ["Payor Address", "payor_address"],
+            ["TAX ID", "tax_id"],
+            ["Acceptance Conditions", "acceptance_conditions"],
+            ["Exclusions", "exclusions"],
+            ["Spouse Name", "sp_name"],
+            ["Spouse DOB", "sp_dob"],
+            ["Spouse ID", "sp_id_card_no"],
+            ["Spouse Nationality", "sp_nationality"],
+            ["Spouse Beneficiary", "sp_beneficiary"],
+            ["Spouse Relation", "sp_bene_relation"],
+            ["Spouse Occupation", "sp_occupation"],
+            ["Spouse Acceptance Conditions", "sp_acceptance_conditions"],
+            ["Spouse Exclusions", "sp_exclusions"],
+            ["Child 1 Name", "c1_name"],
+            ["Child 1 DOB", "c1_dob"],
+            ["Child 1 ID", "c1_id_card_no"],
+            ["Child 1 Nationality", "c1_nationality"],
+            ["Child 1 Beneficiary", "c1_beneficiary"],
+            ["Child 1 Relation", "c1_bene_relation"],
+            ["Child 1 Occupation", "c1_occupation"],
+            ["Child 1 Acceptance Conditions", "c1_acceptance_conditions"],
+            ["Child 1 Exclusions", "c1_exclusions"],
+            ["Child 2 Name", "c2_name"],
+            ["Child 2 DOB", "c2_dob"],
+            ["Child 2 ID", "c2_id_card_no"],
+            ["Child 2 Nationality", "c2_nationality"],
+            ["Child 2 Beneficiary", "c2_beneficiary"],
+            ["Child 2 Relation", "c2_bene_relation"],
+            ["Child 2 Occupation", "c2_occupation"],
+            ["Child 2 Acceptance Conditions", "c2_acceptance_conditions"],
+            ["Child 2 Exclusions", "c2_exclusions"],
+            ["Child 3 Name", "c3_name"],
+            ["Child 3 DOB", "c3_dob"],
+            ["Child 3 ID", "c3_id_card_no"],
+            ["Child 3 Nationality", "c3_nationality"],
+            ["Child 3 Beneficiary", "c3_beneficiary"],
+            ["Child 3 Relation", "c3_bene_relation"],
+            ["Child 3 Occupation", "c3_occupation"],
+            ["Child 3 Acceptance Conditions", "c3_acceptance_conditions"],
+            ["Child 3 Exclusions", "c3_exclusions"]
+        ];
 
-    <div id="errorMsg" class="hidden"></div>
+        // Global State
+        let uploadedPdfDoc = null;
+        let pdfBytes = null;
+        let pdfId = null;
+        let extractedValues = {};
+        let pdfRegistry = {};
+        let allFields = [];
+        let activeFieldIndex = 0;
+        let currentPageNum = 1;
+        let btData = {};
 
-    <div id="resultsSection" class="hidden">
-        <h2>Extraction Results</h2>
-        <p><strong>PDF ID:</strong> <span id="resPdfId"></span></p>
-        <p><strong>Fields Extracted:</strong> <span id="resFieldCount"></span></p>
-
-        <h3>Extracted Values</h3>
-        <table id="valuesTable">
-            <thead>
-                <tr>
-                    <th>Field Name</th>
-                    <th>Extracted Value</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Rows will be injected here -->
-            </tbody>
-        </table>
-
-        <button onclick="resetApp()">Upload Another Document</button>
-    </div>
-</div>
-
-<script>
-    async function uploadPDF() {
-        const fileInput = document.getElementById('pdfFile');
-        if (fileInput.files.length === 0) {
-            alert('Please select a PDF file to upload.');
-            return;
-        }
-
-        const file = fileInput.files[0];
-        const formData = new FormData();
-        formData.append('pdf', file);
-
-        document.getElementById('uploadBtn').disabled = true;
-        document.getElementById('loading').classList.remove('hidden');
-        document.getElementById('errorMsg').classList.add('hidden');
-        document.getElementById('resultsSection').classList.add('hidden');
-
-        try {
-            const response = await fetch('/api/process-pdf', {
-                method: 'POST',
-                body: formData
+        // Setup BlueTable fields in UI form
+        function buildBlueTableForm() {
+            const container = document.getElementById('btFieldsContainer');
+            container.innerHTML = '';
+            
+            BLUETABLE_FIELDS.forEach(([label, key]) => {
+                btData[key] = ""; // Initialize
+                
+                const row = document.createElement('div');
+                row.className = 'bt-row';
+                
+                row.innerHTML = `
+                    <div class="bt-label">${label}</div>
+                    <div class="bt-input-wrapper">
+                        <input type="text" id="bt-input-${key}" oninput="handleManualEdit('${key}', this.value)" placeholder="—">
+                        <button class="btn btn-accent" onclick="assignActiveField('${key}', '${label}')">Assign</button>
+                        <button class="btn btn-danger" onclick="clearFieldVal('${key}')">Clear</button>
+                    </div>
+                `;
+                container.appendChild(row);
             });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Failed to process PDF');
-            }
-
-            // Display Results
-            document.getElementById('resPdfId').innerText = data.pdf_id;
-            document.getElementById('resFieldCount').innerText = data.fieldsExtracted;
-
-            const tbody = document.querySelector('#valuesTable tbody');
-            tbody.innerHTML = ''; // Clear previous
-
-            for (const [key, value] of Object.entries(data.values)) {
-                const tr = document.createElement('tr');
-                const tdKey = document.createElement('td');
-                tdKey.innerText = key;
-                const tdVal = document.createElement('td');
-                tdVal.innerText = value || '-';
-                tr.appendChild(tdKey);
-                tr.appendChild(tdVal);
-                tbody.appendChild(tr);
-            }
-
-            document.getElementById('uploadSection').classList.add('hidden');
-            document.getElementById('resultsSection').classList.remove('hidden');
-
-        } catch (error) {
-            console.error('Error:', error);
-            const errEl = document.getElementById('errorMsg');
-            errEl.innerText = error.message;
-            errEl.classList.remove('hidden');
-        } finally {
-            document.getElementById('uploadBtn').disabled = false;
-            document.getElementById('loading').classList.add('hidden');
         }
-    }
 
-    function resetApp() {
-        document.getElementById('pdfFile').value = '';
-        document.getElementById('uploadSection').classList.remove('hidden');
-        document.getElementById('resultsSection').classList.add('hidden');
-        document.getElementById('errorMsg').classList.add('hidden');
-    }
-</script>
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
+            document.getElementById('stepUpload').classList.add('hidden');
+            const stepLoading = document.getElementById('stepLoading');
+            stepLoading.classList.remove('hidden');
+
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                pdfBytes = new Uint8Array(this.result);
+                // Load PDF doc for local rendering
+                uploadedPdfDoc = await pdfjsLib.getDocument({data: pdfBytes}).promise;
+                
+                // Upload and process PDF
+                uploadAndProcessPDF(file);
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        async function uploadAndProcessPDF(file) {
+            const formData = new FormData();
+            formData.append('pdf', file);
+
+            try {
+                const response = await fetch('/api/process-pdf', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error || 'Processing failed');
+
+                pdfId = data.pdf_id;
+                extractedValues = data.values;
+                
+                // Parse registry_json
+                const registryObj = JSON.parse(data.registry_json);
+                pdfRegistry = registryObj[pdfId] || registryObj;
+                
+                // Gather fields to walk
+                allFields = pdfRegistry.fields || [];
+
+                // Sort fields by page number then top coordinate
+                allFields.sort((a, b) => {
+                    if (a.page !== b.page) return a.page - b.page;
+                    const topA = a.coords ? a.coords.canvas_top : 0;
+                    const topB = b.coords ? b.coords.canvas_top : 0;
+                    return topA - topB;
+                });
+
+                buildBlueTableForm();
+                
+                // Display first field
+                document.getElementById('stepLoading').classList.add('hidden');
+                document.getElementById('stepMapping').classList.remove('hidden');
+                
+                activeFieldIndex = 0;
+                displayField(activeFieldIndex);
+
+            } catch (err) {
+                alert('Error: ' + err.message);
+                resetPortal();
+            }
+        }
+
+        async function displayField(idx) {
+            if (allFields.length === 0 || idx < 0 || idx >= allFields.length) return;
+
+            const field = allFields[idx];
+            document.getElementById('activeFieldName').innerText = field.name || 'Unnamed';
+            document.getElementById('activeFieldKind').innerText = field.field_kind || 'unknown';
+            document.getElementById('activeFieldPage').innerText = field.page || 1;
+
+            const rawVal = extractedValues[field.name] || '—';
+            document.getElementById('activeFieldValue').innerText = rawVal;
+
+            // Update Page and Render PDF Page
+            currentPageNum = field.page || 1;
+            await renderPDFPage(currentPageNum, field);
+
+            // Update Navigation Buttons state
+            document.getElementById('btnPrevField').disabled = (idx === 0);
+            document.getElementById('btnNextField').innerText = (idx === allFields.length - 1) ? 'Skip' : '⬇ Skip';
+        }
+
+        async function renderPDFPage(pageNum, field) {
+            if (!uploadedPdfDoc) return;
+            const page = await uploadedPdfDoc.getPage(pageNum);
+            
+            const viewportContainer = document.getElementById('viewport');
+            const targetWidth = viewportContainer.clientWidth - 40;
+            const originalViewport = page.getViewport({ scale: 1.0 });
+            const scale = targetWidth / originalViewport.width;
+            
+            const viewport = page.getViewport({ scale: scale });
+            const canvas = document.getElementById('pdfCanvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: viewport
+            };
+
+            await page.render(renderContext).promise;
+            document.getElementById('pageInfo').innerText = `Page ${pageNum} of ${uploadedPdfDoc.numPages}`;
+
+            // Handle coordinate highlight overlay
+            const highlightBox = document.getElementById('highlightBox');
+            if (field && field.coords) {
+                const page_w = pdfRegistry.pages && pdfRegistry.pages[pageNum - 1] ? pdfRegistry.pages[pageNum - 1].page_w : originalViewport.width;
+                const page_h = pdfRegistry.pages && pdfRegistry.pages[pageNum - 1] ? pdfRegistry.pages[pageNum - 1].page_h : originalViewport.height;
+
+                const scaleX = canvas.width / page_w;
+                const scaleY = canvas.height / page_h;
+
+                const left = field.coords.x0 * scaleX;
+                const top = field.coords.canvas_top * scaleY;
+                const width = (field.coords.x1 - field.coords.x0) * scaleX;
+                const height = (field.coords.canvas_bottom - field.coords.canvas_top) * scaleY;
+
+                highlightBox.style.left = `${left}px`;
+                highlightBox.style.top = `${top}px`;
+                highlightBox.style.width = `${width}px`;
+                highlightBox.style.height = `${height}px`;
+                highlightBox.classList.remove('hidden');
+
+                // Smooth scroll viewport to the highlighted element
+                setTimeout(() => {
+                    viewportContainer.scrollTo({
+                        top: top - 100,
+                        behavior: 'smooth'
+                    });
+                }, 100);
+            } else {
+                highlightBox.classList.add('hidden');
+            }
+        }
+
+        async function prevPage() {
+            if (currentPageNum > 1) {
+                currentPageNum--;
+                await renderPDFPage(currentPageNum, null);
+            }
+        }
+
+        async function nextPage() {
+            if (uploadedPdfDoc && currentPageNum < uploadedPdfDoc.numPages) {
+                currentPageNum++;
+                await renderPDFPage(currentPageNum, null);
+            }
+        }
+
+        function changeField(delta) {
+            const nextIdx = activeFieldIndex + delta;
+            if (nextIdx >= 0 && nextIdx < allFields.length) {
+                activeFieldIndex = nextIdx;
+                displayField(activeFieldIndex);
+            } else if (nextIdx >= allFields.length) {
+                finishMapping();
+            }
+        }
+
+        function assignActiveField(btKey, label) {
+            const currentField = allFields[activeFieldIndex];
+            if (!currentField) return;
+
+            const val = extractedValues[currentField.name] || "";
+            let currentVal = btData[btKey] || "";
+            
+            // Clean up plan details if present
+            let assignVal = val;
+            if (btKey === "plan" && val.includes(" DD ")) {
+                assignVal = val.split(" DD ")[0].trim();
+            }
+
+            // Append or assign
+            const newVal = currentVal ? `${currentVal}-${assignVal}` : assignVal;
+            
+            btData[btKey] = newVal;
+            document.getElementById(`bt-input-${btKey}`).value = newVal;
+
+            // Auto advance
+            changeField(1);
+        }
+
+        function clearFieldVal(btKey) {
+            btData[btKey] = "";
+            document.getElementById(`bt-input-${btKey}`).value = "";
+        }
+
+        function handleManualEdit(btKey, value) {
+            btData[btKey] = value;
+        }
+
+        function finishMapping() {
+            document.getElementById('stepMapping').classList.add('hidden');
+            document.getElementById('stepDone').classList.remove('hidden');
+        }
+
+        async function downloadDocx() {
+            try {
+                const response = await fetch('/api/generate-docx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pdf_id: pdfId,
+                        form_data: btData
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to generate DOCX');
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'bluetable_filled.docx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function downloadPdf() {
+            try {
+                const response = await fetch('/api/generate-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        form_data: btData
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to generate PDF');
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'PreFilled_Application.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function resetPortal() {
+            uploadedPdfDoc = null;
+            pdfBytes = null;
+            pdfId = null;
+            extractedValues = {};
+            pdfRegistry = {};
+            allFields = [];
+            activeFieldIndex = 0;
+            currentPageNum = 1;
+            btData = {};
+
+            document.getElementById('pdfFileInput').value = '';
+            document.getElementById('stepUpload').classList.remove('hidden');
+            document.getElementById('stepMapping').classList.add('hidden');
+            document.getElementById('stepDone').classList.add('hidden');
+            document.getElementById('stepLoading').classList.add('hidden');
+        }
+    </script>
 </body>
 </html>
