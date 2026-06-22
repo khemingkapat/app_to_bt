@@ -184,3 +184,20 @@ def test_resource_limits_initialization():
     with patch("resource.setrlimit") as mock_setrlimit:
         configure_resource_limits()
         mock_setrlimit.assert_called_once_with(resource.RLIMIT_AS, (soft_limit, hard_limit))
+
+def test_timeout_error(grpc_stub):
+    # Mock process_pdf to sleep for longer than the timeout
+    # We patch TIMEOUT_SECONDS to 1 second for a faster test
+    with patch("src.server.TIMEOUT_SECONDS", 1):
+        with patch("src.server.process_pdf") as mock_process:
+            def slow_process(*args, **kwargs):
+                time.sleep(2)
+                return "id", {}, {}
+            mock_process.side_effect = slow_process
+
+            request = document_pb2.ProcessPdfRequest(pdf_bytes=b"fake-pdf")
+            with pytest.raises(grpc.RpcError) as excinfo:
+                grpc_stub.ProcessPdf(request)
+
+            assert excinfo.value.code() == grpc.StatusCode.DEADLINE_EXCEEDED
+            assert "Processing timed out" in excinfo.value.details()
