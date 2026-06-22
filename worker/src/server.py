@@ -19,6 +19,10 @@ from pdf_processor.engine import process_pdf
 from pdf_processor.inverter import fill_acroform_pdf
 from blue_table_tools.docx_generator import fill_blue_table_docx
 from signature_gateway.pdf_stamping import stamp_signature_on_pdf
+from pdf_processor.utils.pdf_info import get_pdf_file_id
+from pdf_processor.inverter import load_config_by_pdf_id
+from blue_table_tools.cache import load_cache
+from pypdf import PdfReader
 
 class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
     """
@@ -38,8 +42,20 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
     def GeneratePdf(self, request, context):
         print("Received GeneratePdf request")
         pdf_file = BytesIO(request.pdf_bytes)
+
+        pdf_id = get_pdf_file_id(PdfReader(pdf_file))
+        pdf_file.seek(0)
+
+        config = load_config_by_pdf_id(pdf_id)
+        field_mappings = load_cache(pdf_id)
+
         # request.form_data is a gRPC MapComposite object, which behaves like a dict
-        output_pdf = fill_acroform_pdf(pdf_file, request.form_data)
+        output_pdf = fill_acroform_pdf(
+            pdf_file,
+            request.form_data,
+            config=config,
+            field_mappings=field_mappings
+        )
         return document_pb2.GeneratePdfResponse(
             pdf_bytes=output_pdf.getvalue()
         )
@@ -48,7 +64,12 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
         print("Received GenerateDocx request")
         docx_file = BytesIO(request.docx_bytes)
         # Convert gRPC map to a plain dict just in case the generator expects it
-        output_docx = fill_blue_table_docx(docx_file, dict(request.form_data))
+        data = dict(request.form_data)
+
+        pdf_id = data.get("pdf_id")
+        config = load_config_by_pdf_id(pdf_id)
+
+        output_docx = fill_blue_table_docx(docx_file, data, config=config)
         return document_pb2.GenerateDocxResponse(
             docx_bytes=output_docx.getvalue()
         )

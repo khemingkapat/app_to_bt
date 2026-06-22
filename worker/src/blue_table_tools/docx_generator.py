@@ -69,7 +69,7 @@ def apply_acceptance_rules(data: dict) -> dict:
             
     return updated
 
-def resolve_plan_combination(data: dict) -> dict:
+def resolve_plan_combination(data: dict, config: dict = None) -> dict:
     """
     Resolves the combined plan name and code from raw mapping fields
     and updates the 'plan' and 'deductible' fields in the data dict.
@@ -147,9 +147,10 @@ def resolve_plan_combination(data: dict) -> dict:
             return updated
             
         try:
-            from src.pdf_processor.inverter import load_config_by_pdf_id
-            pdf_id = data.get("pdf_id")
-            config = load_config_by_pdf_id(pdf_id)
+            if config is None:
+                from src.pdf_processor.inverter import load_config_by_pdf_id
+                pdf_id = data.get("pdf_id")
+                config = load_config_by_pdf_id(pdf_id)
             combo_map = config.get("combinations_map", {})
             plan_code = combo_map.get(combo_key)
             if plan_code:
@@ -162,12 +163,12 @@ def resolve_plan_combination(data: dict) -> dict:
 
 
 
-def fill_blue_table_docx(template: Union[str, BytesIO], data: dict) -> BytesIO:
+def fill_blue_table_docx(template: Union[str, BytesIO], data: dict, config: dict = None) -> BytesIO:
     """
     Fills the BlueTable.docx template tables with the provided data dict.
     Returns the filled file as a BytesIO stream.
     """
-    data = resolve_plan_combination(data)
+    data = resolve_plan_combination(data, config=config)
     data = apply_acceptance_rules(data)
     doc = docx.Document(template)
     
@@ -313,9 +314,10 @@ def fill_blue_table_docx(template: Union[str, BytesIO], data: dict) -> BytesIO:
 
                 # Look up general conditions from config
                 try:
-                    from src.pdf_processor.inverter import load_config_by_pdf_id
-                    pdf_id = data.get("pdf_id")
-                    config = load_config_by_pdf_id(pdf_id)
+                    if config is None:
+                        from src.pdf_processor.inverter import load_config_by_pdf_id
+                        pdf_id = data.get("pdf_id")
+                        config = load_config_by_pdf_id(pdf_id)
                     gen_conds = config.get("general_conditions", {})
                     prod_rules = gen_conds.get(resolved_prod_name, {})
                     
