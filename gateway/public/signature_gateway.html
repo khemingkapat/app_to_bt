@@ -5,43 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Signature Gateway Admin</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; color: #ffffff; margin: 0; padding: 2rem; }
-        .container { max-width: 900px; width: 100%; margin: 0 auto; }
-        .portal-title { font-size: 2.5rem; font-weight: 800; color: #ffffff; margin-bottom: 0.5rem; text-align: center; }
-        .portal-subtitle { color: #cbd5e1; text-align: center; margin-bottom: 2rem; font-size: 1.1rem; }
-
-        .glass-card { background: rgba(30, 41, 59, 0.45); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 24px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-
-        .status-pill { display: inline-block; padding: 6px 14px; border-radius: 9999px; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
-        .status-pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-        .status-signed { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-
-        button { background: linear-gradient(135deg, #002855, #005691); color: white; font-weight: 600; border: none; border-radius: 8px; padding: 10px 20px; cursor: pointer; width: 100%; box-shadow: 0 4px 14px 0 rgba(0, 40, 85, 0.2); transition: all 0.3s ease; }
-        button:hover { background: linear-gradient(135deg, #001f42, #004475); transform: translateY(-2px); }
-        button:disabled { background: #475569; cursor: not-allowed; transform: none; }
-
-        .copyable-link { background: rgba(15, 23, 42, 0.8); border: 1px dashed rgba(255, 255, 255, 0.2); border-radius: 8px; padding: 16px; font-family: monospace; color: #cbd5e1; font-size: 0.95rem; margin: 12px 0; word-break: break-all; text-align: center; }
-
-        input[type="file"] { margin-bottom: 1rem; color: #fff; }
+        body { font-family: sans-serif; margin: 20px; }
+        .header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        .nav-links {
+            margin-top: 10px;
+        }
+        .nav-links a {
+            margin-right: 15px;
+        }
+        .grid-2 { display: flex; gap: 20px; }
+        .grid-2 > div { flex: 1; }
+        .glass-card { margin-bottom: 20px; }
+        .status-pill { font-weight: bold; }
+        .copyable-link { font-family: monospace; border: 1px dashed #ccc; padding: 10px; margin: 10px 0; word-break: break-all; }
         .hidden { display: none !important; }
-
-        .alert-error { color: #f87171; background: rgba(248,113,113,0.1); padding: 10px; border-radius: 6px; border: 1px solid #f87171; margin-bottom: 1rem;}
-        .alert-success { color: #4ade80; background: rgba(74,222,128,0.1); padding: 10px; border-radius: 6px; border: 1px solid #4ade80; margin-bottom: 1rem;}
+        .alert-error { border: 1px solid red; padding: 10px; margin-bottom: 10px; }
+        .alert-success { border: 1px solid green; padding: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <a href="index.html" style="color: #60a5fa; text-decoration: none; font-weight: bold; margin-bottom: 1rem; display: inline-block;">⬅️ Back to Portal</a>
+    <div class="header">
+        <h1>🏥 AXA Application Ingestion Portal</h1>
+        <div class="desc">Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
+        <div class="nav-links">
+            <a href="index.html">🏠 Home</a>
+            <a href="config_manager.html">⚙️ Config Manager</a>
+            <a href="internal_eform.html">⌨️ Internal Fast-Entry E-Form</a>
+            <a href="signature_gateway.html">✍️ Signature Gateway</a>
+        </div>
+    </div>
 
-    <div class="portal-title">AXA Signature Gateway</div>
-    <div class="portal-subtitle">Secure, Database-Free Customer Document Signing</div>
+    <h2>✍️ AXA Signature Gateway</h2>
+    <p>Secure, Database-Free Customer Document Signing</p>
 
     <div class="grid-2">
         <div class="glass-card">
-            <h3 style="margin-top: 0;">📤 Generate Secure Link</h3>
-            <p style="color: #94a3b8; font-size: 0.9rem;">Upload the pre-filled AcroForm PDF application from app-to-bt to create a single-use customer portal link.</p>
+            <h3>📤 Generate Secure Link</h3>
+            <p>Upload the pre-filled AcroForm PDF application from app-to-bt to create a single-use customer portal link.</p>
 
             <div id="errorMsg" class="alert-error hidden"></div>
             <div id="successMsg" class="alert-success hidden"></div>
@@ -51,35 +56,34 @@
         </div>
 
         <div class="glass-card" id="statusCard">
-            <h3 style="margin-top: 0;">📊 Active Session Status</h3>
+            <h3>📊 Active Session Status</h3>
             <div id="noSessionState">
-                <p style="color: #60a5fa;">No active signing link session. Generate a link to start monitoring.</p>
+                <p>No active signing link session. Generate a link to start monitoring.</p>
             </div>
             <div id="activeSessionState" class="hidden">
                 <p><strong>Customer:</strong> <span id="customerName"></span></p>
                 <div class="copyable-link" id="shareLink"></div>
                 <button onclick="copyLink()">📋 Copy Link to Clipboard</button>
-                <hr style="border-color: rgba(255,255,255,0.08); margin: 20px 0;">
+                <hr>
 
-                <div id="pollingStatus" style="text-align: center;">
+                <div id="pollingStatus">
                     <span id="statusPill" class="status-pill status-pending">Pending Signature</span>
-                    <p id="statusDesc" style="color: #94a3b8; font-size: 0.9rem;">Waiting for customer to verify and sign...</p>
-                    <p id="ttlText" style="color: #60a5fa; font-size: 0.9rem;"></p>
+                    <p id="statusDesc">Waiting for customer to verify and sign...</p>
+                    <p id="ttlText"></p>
                 </div>
 
-                <div id="downloadsSection" class="hidden" style="margin-top: 20px;">
-                    <h4 style="margin-top: 0;">📥 Download Completed Documents</h4>
+                <div id="downloadsSection" class="hidden">
+                    <h4>📥 Download Completed Documents</h4>
                     <div class="grid-2">
-                        <button onclick="downloadDoc('pdf')" style="background: #2563eb;">📄 Download PDF</button>
-                        <button onclick="downloadDoc('docx')" style="background: #dc2626;">📝 Download DOCX</button>
+                        <button onclick="downloadDoc('pdf')">📄 Download PDF</button>
+                        <button onclick="downloadDoc('docx')">📝 Download DOCX</button>
                     </div>
-                    <hr style="border-color: rgba(255,255,255,0.08); margin: 20px 0;">
-                    <button onclick="clearTransaction()" style="background: #475569;">🧹 Clear Transaction & PII</button>
+                    <hr>
+                    <button onclick="clearTransaction()">🧹 Clear Transaction & PII</button>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
 <script>
     let activeToken = null;
