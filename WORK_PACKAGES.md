@@ -1,81 +1,81 @@
-# Work Packages (Migration Project Blueprint)
+# Work Packages - Application to Blue Table Production Migration
 
-This document maps out the architecture migration plan into granular, trackable work packages. Each task can be linked to a GitHub Issue for direct handoff to developers (e.g., Jules).
-
-## Status Overview
-
-| Work Package | Title | Owner | Status | GitHub Issue / Link |
-| :--- | :--- | :--- | :--- | :--- |
-| **WP0** | Pioneer & Architecture Design | Khem / Antigravity | ✅ Done | |
-| **WP1** | Protobuf Codegen Verification | Jules / Khem | ✅ Done | |
-| **WP2** | Python gRPC Worker Service | Jules | ✅ Done | |
-| **WP3** | Go Echo Gateway (Routing & Client) | Jules | 🔲 Ready | |
-| **WP4** | Docker Compose & Dev Tooling | Jules / Khem | 🔲 Ready | |
+## Project Goal
+> Migrate the Application-to-BlueTable Intake POC into a simple, production-ready, and highly stable service. The system must prioritize processing accuracy, feature reliable operation without active maintenance, provide audit logging for compliance, and use clean resource boundaries, targeting deployment by July 31st.
 
 ---
 
-## Detailed Breakdown
+## Work Package Overview
 
-### WP0: Pioneer & Architecture Design ✅
-*   **WP0-1: Project Layout Restructuring**
-    *   ✅ Cleaned up old Streamlit artifacts and `src/` cache.
-    *   ✅ Created `/proto`, `/gateway` (Go), and `/worker` (Python) directory layout.
-*   **WP0-2: Zellij Dev Environment Update**
-    *   ✅ Removed Streamlit tab from `dev.kdl`.
-
----
-
-### WP1: Protobuf Codegen Verification ✅
-Confirm shared communication contract definitions for all 3 pathways (PDF to Blue Table, E-Form, Signature Gateway).
-
-*   **WP1-1: Protobuf Interface Contract**
-    *   ✅ Interface defined in `proto/document.proto` covering `ProcessPdf`, `GeneratePdf`, `GenerateDocx`, and `StampSignature`.
-*   **WP1-2: Output Target Compilation**
-    *   ✅ Generated stubs verified under `/gateway/proto/document` (Go) and `/worker/proto` (Python).
+| WP | Name | Phase | Status | GitHub Issue / Link |
+|---|---|---|---|---|
+| 1 | Python gRPC Worker Service (Logic Engine) | Phase 1: Core Logic Engine | 🔴 Not started | [Issue #42](https://github.com/khemingkapat/app_to_bt/issues/42) |
+| 2 | Go Echo Gateway (Routing & Validation) | Phase 2: Gateway & API | 🔴 Not started | [Issue #43](https://github.com/khemingkapat/app_to_bt/issues/43), [Issue #44](https://github.com/khemingkapat/app_to_bt/issues/44), [Issue #45](https://github.com/khemingkapat/app_to_bt/issues/45) |
+| 3 | Production Infrastructure & Operations | Phase 3: Infrastructure | 🔴 Not started | [Issue #46](https://github.com/khemingkapat/app_to_bt/issues/46), [Issue #47](https://github.com/khemingkapat/app_to_bt/issues/47) |
+| 4 | E2E Testing & Verification | Phase 4: Quality Assurance | 🔴 Not started | [Issue #49](https://github.com/khemingkapat/app_to_bt/issues/49) |
 
 ---
 
-### WP2: Python gRPC Worker Service ✅
-Implement the backend engine to expose logic pathways over gRPC.
+## Phase 1: Core Logic Engine ⚙️
 
-*   **WP2-1: gRPC Server Scaffolding (`worker/src/server.py`)** [Issue #28](https://github.com/khemingkapat/app_to_bt/issues/28)
-    *   ✅ Set up python gRPC server initialization.
-    *   ✅ Register `DocumentServiceServicer` interfaces.
-*   **WP2-2: PDF to Blue Table Handler (`ProcessPdf`)** [Issue #32](https://github.com/khemingkapat/app_to_bt/issues/32)
-    *   ✅ Integrate `pdf_processor.engine` to parse uploaded PDF layouts and return extracted field data and registry JSON.
-*   **WP2-3: E-Form Generator Handlers (`GeneratePdf` / `GenerateDocx`)** [Issue #35](https://github.com/khemingkapat/app_to_bt/issues/35)
-    *   ✅ Integrate `blue_table_tools.docx_generator` to process form values and generate outputs.
-*   **WP2-4: Signature Stamping Handler (`StampSignature`)** [Issue #37](https://github.com/khemingkapat/app_to_bt/issues/37)
-    *   ✅ Integrate `signature_gateway` to stamp signature images on PDFs using structural coordinates.
-*   **WP2-5: Integration Testing**
-    *   ✅ Add tests to run and verify the gRPC handlers.
+### WP1-1: Resource Management & Cleaning [Issue #42](https://github.com/khemingkapat/app_to_bt/issues/42)
+Implement memory-safe boundaries and automatic temporary file cleanup in the Python worker when processing large PDFs/DOCXs.
+- Temp files deleted immediately after gRPC response
+- CPU/Memory bounds configured for PyMuPDF processing
 
 ---
 
-### WP3: Go Echo Gateway (Routing & Client) 🔲
-Implement the client-facing REST API Gateway.
+## Phase 2: Gateway & API 🌐
 
-*   **WP3-1: Scaffolding & Echo Server Setup** [Issue #39](https://github.com/khemingkapat/app_to_bt/issues/39)
-    *   Initialize Go module in `/gateway`.
-    *   Set up Echo server listening on HTTP port (e.g., `:8080`).
-*   **WP3-2: gRPC Client Integration**
-    *   Write a Go client connection to establish communication with the Python gRPC worker.
-*   **WP3-3: API Route Handlers**
-    *   Create `/process-pdf`, `/generate-pdf`, `/generate-docx`, and `/stamp-signature` REST endpoints.
-    *   Map incoming HTTP requests to gRPC requests, call the worker, and return HTTP JSON/file responses.
-*   **WP3-4: Gateway Integration Tests**
-    *   Verify Echo REST endpoints trigger mock/live gRPC worker calls.
+### WP2-1: Go Echo Scaffolding & Client Connection [Issue #43](https://github.com/khemingkapat/app_to_bt/issues/43)
+Initialize the Go module, Echo server scaffolding, and set up the connection pool/client for the Python gRPC backend.
+- Go module initialized with Echo server
+- gRPC client connection with automatic reconnect/retry logic
+
+### WP2-2: Route Handlers & Input Validation [Issue #44](https://github.com/khemingkapat/app_to_bt/issues/44)
+Implement Echo endpoints mapping to worker RPCs with strict JSON schema validation to ensure input accuracy.
+- `/process-pdf`, `/generate-pdf`, `/generate-docx`, `/stamp-signature` endpoints
+- Strict schema validation rejecting malformed/incomplete input before worker calls
+
+### WP2-3: Structured Audit Logging [Issue #45](https://github.com/khemingkapat/app_to_bt/issues/45)
+Implement structured JSON audit logs in the Gateway recording every transaction state, timing, and success/failure status.
+- JSON logger (e.g., zap or logrus) integrated into Echo middleware
+- Ephemeral logs tracking payload hash and result status (excluding raw PII payload)
 
 ---
 
-### WP4: Docker Compose & Dev Tooling 🔲
-Orchestrate local services and unify development environments.
+## Phase 3: Infrastructure 🐳
 
-*   **WP4-1: Dockerfile for Python Worker**
-    *   Create Dockerfile for building and running the Python gRPC server.
-*   **WP4-2: Dockerfile for Go Gateway**
-    *   Create multi-stage Dockerfile for compiling and running the Go Echo application.
-*   **WP4-3: Docker Compose Setup**
-    *   Add `docker-compose.yml` to run gateway and worker containers in a shared bridge network.
-*   **WP4-4: End-to-End Integration Verification**
-    *   Verify request flow: Client ➔ Echo REST ➔ gRPC ➔ Worker ➔ Response.
+### WP3-1: Multi-stage Docker Builds [Issue #46](https://github.com/khemingkapat/app_to_bt/issues/46)
+Create optimized, minimal Dockerfiles for both Go and Python services to reduce deployment size and vulnerabilities.
+- Multi-stage Dockerfile for Go Gateway compiling static binary
+- Lightweight Python worker Dockerfile with pip/uv dependencies frozen
+
+### WP3-2: Docker Compose & Operational Config [Issue #47](https://github.com/khemingkapat/app_to_bt/issues/47)
+Orchestrate local services with Docker Compose including memory/CPU constraints, health checks, and restart policies.
+- `docker-compose.yml` with defined resource limits
+- Automatic service health monitoring and self-healing restarts
+
+---
+
+## Phase 4: Quality Assurance 🧪
+
+### WP4-1: Integration & End-to-End Tests [Issue #49](https://github.com/khemingkapat/app_to_bt/issues/49)
+Develop a automated integration test suite that tests the flow from Go REST endpoints through the gRPC channel to the Python engine.
+- Automated API regression tests
+- Error case assertions (e.g. gRPC service down handler)
+
+---
+
+## Dependency Graph
+
+```mermaid
+graph TD
+    WP1-1[WP1-1: Worker Resource Cleanup] --> WP2-2[WP2-2: Route Handlers & Validation]
+    WP2-1[WP2-1: Go Echo & gRPC Client] --> WP2-2
+    WP2-2 --> WP2-3[WP2-3: Structured Audit Logging]
+    WP2-2 --> WP3-1[WP3-1: Multi-stage Docker Builds]
+    WP2-3 --> WP3-2[WP3-2: Compose & Ops Config]
+    WP3-1 --> WP3-2
+    WP3-2 --> WP4-1[WP4-1: Integration & E2E Tests]
+```
