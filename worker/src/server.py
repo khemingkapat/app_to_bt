@@ -26,24 +26,32 @@ from blue_table_tools.cache import load_cache
 from pypdf import PdfReader
 
 MAX_PAYLOAD_SIZE = 5 * 1024 * 1024
+TIMEOUT_SECONDS = 30
 
 class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
     """
     Implementation of DocumentService for processing and generating documents.
     """
+    def __init__(self):
+        self.executor = futures.ThreadPoolExecutor(max_workers=10)
+
     def ProcessPdf(self, request, context):
         print("Received ProcessPdf request")
         if len(request.pdf_bytes) > MAX_PAYLOAD_SIZE:
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Payload exceeds 5MB limit")
 
         pdf_file = BytesIO(request.pdf_bytes)
-        pdf_id, registry_dict, values_dict = process_pdf(pdf_file)
 
-        return document_pb2.ProcessPdfResponse(
-            pdf_id=pdf_id,
-            values=values_dict,
-            registry_json=json.dumps(registry_dict)
-        )
+        future = self.executor.submit(process_pdf, pdf_file)
+        try:
+            pdf_id, registry_dict, values_dict = future.result(timeout=TIMEOUT_SECONDS)
+            return document_pb2.ProcessPdfResponse(
+                pdf_id=pdf_id,
+                values=values_dict,
+                registry_json=json.dumps(registry_dict)
+            )
+        except futures.TimeoutError:
+            context.abort(grpc.StatusCode.DEADLINE_EXCEEDED, "Processing timed out")
 
     def GeneratePdf(self, request, context):
         print("Received GeneratePdf request")
@@ -59,15 +67,20 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
         field_mappings = load_cache(pdf_id)
 
         # request.form_data is a gRPC MapComposite object, which behaves like a dict
-        output_pdf = fill_acroform_pdf(
+        future = self.executor.submit(
+            fill_acroform_pdf,
             pdf_file,
             request.form_data,
             config=config,
             field_mappings=field_mappings
         )
-        return document_pb2.GeneratePdfResponse(
-            pdf_bytes=output_pdf.getvalue()
-        )
+        try:
+            output_pdf = future.result(timeout=TIMEOUT_SECONDS)
+            return document_pb2.GeneratePdfResponse(
+                pdf_bytes=output_pdf.getvalue()
+            )
+        except futures.TimeoutError:
+            context.abort(grpc.StatusCode.DEADLINE_EXCEEDED, "Processing timed out")
 
     def GenerateDocx(self, request, context):
         print("Received GenerateDocx request")
@@ -79,12 +92,18 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
         data = dict(request.form_data)
 
         pdf_id = data.get("pdf_id")
+        if not isinstance(pdf_id, str):
+            pdf_id = ""
         config = load_config_by_pdf_id(pdf_id)
 
-        output_docx = fill_blue_table_docx(docx_file, data, config=config)
-        return document_pb2.GenerateDocxResponse(
-            docx_bytes=output_docx.getvalue()
-        )
+        future = self.executor.submit(fill_blue_table_docx, docx_file, data, config=config)
+        try:
+            output_docx = future.result(timeout=TIMEOUT_SECONDS)
+            return document_pb2.GenerateDocxResponse(
+                docx_bytes=output_docx.getvalue()
+            )
+        except futures.TimeoutError:
+            context.abort(grpc.StatusCode.DEADLINE_EXCEEDED, "Processing timed out")
 
     def StampSignature(self, request, context):
         print("Received StampSignature request")
@@ -92,22 +111,26 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Payload exceeds 5MB limit")
 
         registry_json = request.registry_json.strip() if request.registry_json else None
-        registry_dict = json.loads(registry_json) if registry_json else None
+        registry_dict = json.loads(registry_json) if registry_json else {}
 
         cache_mapping_json = request.cache_mapping_json.strip() if request.cache_mapping_json else None
-        cache_mapping_dict = json.loads(cache_mapping_json) if cache_mapping_json else None
+        cache_mapping_dict = json.loads(cache_mapping_json) if cache_mapping_json else {}
 
-        stamped_pdf = stamp_signature_on_pdf(
+        future = self.executor.submit(
+            stamp_signature_on_pdf,
             pdf_bytes=request.pdf_bytes,
             sig_img_bytes=request.signature_image_bytes,
             pdf_id=request.pdf_id,
             registry_dict=registry_dict,
             cache_mapping=cache_mapping_dict
         )
-
-        return document_pb2.StampSignatureResponse(
-            pdf_bytes=stamped_pdf
-        )
+        try:
+            stamped_pdf = future.result(timeout=TIMEOUT_SECONDS)
+            return document_pb2.StampSignatureResponse(
+                pdf_bytes=stamped_pdf
+            )
+        except futures.TimeoutError:
+            context.abort(grpc.StatusCode.DEADLINE_EXCEEDED, "Processing timed out")
 
 def configure_resource_limits():
     """
