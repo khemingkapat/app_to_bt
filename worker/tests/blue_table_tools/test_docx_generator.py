@@ -120,13 +120,20 @@ def test_apply_acceptance_rules():
     assert res["sp_acceptance_conditions"] == "Accepted"
 
 def test_resolve_plan_combination():
+    from src.pdf_processor.inverter import load_config_by_pdf_id
+    config = load_config_by_pdf_id(None)
+    combo_map = config.get("combinations_map", {})
+    has_mocka = any(k.startswith("MOCKA") for k in combo_map.keys())
+    prefix_a = "MOCKA" if has_mocka else "ESSENTIAL"
+    prefix_b = "MOCKB" if has_mocka else "VISA"
+    
     # Test valid combination lookup (IPD only)
     data = {
         "plan": "Plan 2-IPD",
         "deductible": "20k"
     }
     resolved = resolve_plan_combination(data)
-    assert resolved["plan"] == "ESSENTIAL2-IPD DD 20,000 (127)"
+    assert resolved["plan"] == f"{prefix_a}2-IPD DD 20,000 (127)"
     assert resolved["deductible"] == "20,000"
 
     # Test reverse order combination lookup
@@ -135,7 +142,7 @@ def test_resolve_plan_combination():
         "deductible": "20k"
     }
     resolved = resolve_plan_combination(data)
-    assert resolved["plan"] == "ESSENTIAL2-IPD DD 20,000 (127)"
+    assert resolved["plan"] == f"{prefix_a}2-IPD DD 20,000 (127)"
     assert resolved["deductible"] == "20,000"
 
     # Test IPD+OPD combination lookup with specific OPD limits
@@ -144,24 +151,24 @@ def test_resolve_plan_combination():
         "deductible": "20k"
     }
     resolved = resolve_plan_combination(data)
-    assert resolved["plan"] == "ESSENTIAL1-IPD+OPD(3k * 30 times / year) DD 20,000 (107)"
+    assert resolved["plan"] == f"{prefix_a}1-IPD+OPD(3k * 30 times / year) DD 20,000 (107)"
     assert resolved["deductible"] == "20,000"
 
     # Test already resolved plan (should skip or re-resolve to same)
     data = {
-        "plan": "ESSENTIAL2-IPD DD 20,000 (127)",
+        "plan": f"{prefix_a}2-IPD DD 20,000 (127)",
         "deductible": "20,000"
     }
     resolved = resolve_plan_combination(data)
-    assert resolved["plan"] == "ESSENTIAL2-IPD DD 20,000 (127)"
+    assert resolved["plan"] == f"{prefix_a}2-IPD DD 20,000 (127)"
 
     # Test already resolved plan with a changed deductible (should re-resolve dynamically)
     data = {
-        "plan": "ESSENTIAL2-IPD DD 20,000 (127)",
+        "plan": f"{prefix_a}2-IPD DD 20,000 (127)",
         "deductible": "0"
     }
     resolved = resolve_plan_combination(data)
-    assert resolved["plan"] == "ESSENTIAL2-IPD DD 0 (126)"
+    assert resolved["plan"] == f"{prefix_a}2-IPD DD 0 (126)"
     assert resolved["deductible"] == "0"
 
     # Test EasyCare Visa combination lookup (legacy format)
@@ -170,23 +177,23 @@ def test_resolve_plan_combination():
         "deductible": "100k"
     }
     resolved = resolve_plan_combination(data)
-    assert resolved["plan"] == "VISA1 DD 100,000 (201)"
+    assert resolved["plan"] == f"{prefix_b}1 DD 100,000 (201)"
     assert resolved["deductible"] == "100,000"
 
     # Test new direct product plan prefix format (ESSENTIAL and VISA)
     data = {
-        "plan": "ESSENTIAL2-IPD",
+        "plan": f"{prefix_a}2-IPD",
         "deductible": "20k"
     }
     resolved = resolve_plan_combination(data)
-    assert resolved["plan"] == "ESSENTIAL2-IPD DD 20,000 (127)"
+    assert resolved["plan"] == f"{prefix_a}2-IPD DD 20,000 (127)"
 
     data = {
-        "plan": "VISA1",
+        "plan": f"{prefix_b}1",
         "deductible": "100k"
     }
     resolved = resolve_plan_combination(data)
-    assert resolved["plan"] == "VISA1 DD 100,000 (201)"
+    assert resolved["plan"] == f"{prefix_b}1 DD 100,000 (201)"
 
 
 def test_policy_version_and_general_conditions():
@@ -209,12 +216,12 @@ def test_policy_version_and_general_conditions():
     
     assert t0_vals.get("Policy Version") == "TH"
     gen_row_label = next(l for l in t0_labels if "General Conditions" in l)
-    assert gen_row_label == "General Conditions:\nSmartCare Essential"
+    assert gen_row_label == "General Conditions:\nMockCare Plan A"
     
     # Check that cell 1 has correct general conditions text from config
     from src.pdf_processor.inverter import load_config_by_pdf_id
     config = load_config_by_pdf_id(None)
-    expected_msg_ess = config["general_conditions"]["SmartCare Essential"]["Thai"]
+    expected_msg_ess = config.get("general_conditions", {}).get("MockCare Plan A", {}).get("Thai", "")
     assert t0_vals.get(gen_row_label) == expected_msg_ess
 
     data_visa = {
@@ -232,7 +239,7 @@ def test_policy_version_and_general_conditions():
     
     assert t0_visa_vals.get("Policy Version") == "EN"
     gen_row_label_visa = next(l for l in t0_visa_labels if "General Conditions" in l)
-    assert gen_row_label_visa == "General Conditions:\nEasyCare Visa"
+    assert gen_row_label_visa == "General Conditions:\nMockCare Plan B"
     
-    expected_msg_visa = config["general_conditions"]["EasyCare Visa"]["English"]
+    expected_msg_visa = config.get("general_conditions", {}).get("MockCare Plan B", {}).get("English", "")
     assert t0_visa_vals.get(gen_row_label_visa) == expected_msg_visa

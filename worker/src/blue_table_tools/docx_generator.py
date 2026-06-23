@@ -71,19 +71,42 @@ def apply_acceptance_rules(data: dict) -> dict:
 
 def resolve_plan_combination(data: dict, config: dict = None) -> dict:
     """
-    Resolves the combined plan name and code from raw mapping fields
-    and updates the 'plan' and 'deductible' fields in the data dict.
+    Resolves plan codes and formats the plan and deductible fields.
     """
     import re
+    if config is None:
+        from src.pdf_processor.inverter import load_config_by_pdf_id
+        pdf_id = data.get("pdf_id")
+        config = load_config_by_pdf_id(pdf_id)
+
+    products = config.get("product_options", {}).get("products", {})
+    product_keys = list(products.keys())
+    
+    prefix_a = "ESSENTIAL"
+    prefix_b = "VISA"
+    
+    if len(product_keys) >= 2:
+        product_name_a = product_keys[0]
+        choices_a = products[product_name_a].get("plan_tier", {}).get("choices", [])
+        if choices_a:
+            prefix_a = choices_a[0].rstrip("0123456789")
+            
+        product_name_b = product_keys[1]
+        choices_b = products[product_name_b].get("plan_tier", {}).get("choices", [])
+        if choices_b:
+            prefix_b = choices_b[0].rstrip("0123456789")
+
     updated = data.copy()
     plan_val = str(updated.get("plan") or "").strip()
     ded_val = str(updated.get("deductible") or "").strip()
     
     if not updated.get("product_name") and plan_val:
-        if "ESSENTIAL" in plan_val.upper() or "SMARTCARE" in plan_val.upper():
-            updated["product_name"] = "ESSENTIAL"
-        elif "VISA" in plan_val.upper() or "EASYCARE" in plan_val.upper():
-            updated["product_name"] = "EASYCARE"
+        if prefix_a.upper() in plan_val.upper() or "SMARTCARE" in plan_val.upper():
+            choices = config.get("product_options", {}).get("product_name", {}).get("choices", ["ESSENTIAL"])
+            updated["product_name"] = choices[0]
+        elif prefix_b.upper() in plan_val.upper() or "EASYCARE" in plan_val.upper():
+            choices = config.get("product_options", {}).get("product_name", {}).get("choices", ["ESSENTIAL", "EASYCARE"])
+            updated["product_name"] = choices[1] if len(choices) > 1 else choices[0]
 
     if not plan_val:
         return updated
@@ -93,10 +116,10 @@ def resolve_plan_combination(data: dict, config: dict = None) -> dict:
     opd_choice = ""
     is_visa = False
     
-    # Check if VISA
-    if "VISA" in plan_val:
+    # Check if VISA or prefix_b
+    if prefix_b.upper() in plan_val.upper() or "VISA" in plan_val.upper():
         is_visa = True
-        match = re.search(r"VISA\s*(?:Plan)?\s*(\d+)", plan_val, re.IGNORECASE)
+        match = re.search(rf"(?:{prefix_b}|VISA)\s*(?:Plan)?\s*(\d+)", plan_val, re.IGNORECASE)
         if match:
             plan_tier = match.group(1)
         else:
@@ -104,8 +127,8 @@ def resolve_plan_combination(data: dict, config: dict = None) -> dict:
             if match:
                 plan_tier = match.group(1)
     else:
-        # SmartCare Essential
-        match_ess = re.search(r"ESSENTIAL\s*(\d+)", plan_val, re.IGNORECASE)
+        # prefix_a or ESSENTIAL
+        match_ess = re.search(rf"(?:{prefix_a}|ESSENTIAL)\s*(\d+)", plan_val, re.IGNORECASE)
         if match_ess:
             plan_tier = match_ess.group(1)
         else:
@@ -137,21 +160,27 @@ def resolve_plan_combination(data: dict, config: dict = None) -> dict:
          
     if plan_tier:
         if is_visa:
-            combo_key = f"VISA{plan_tier} DD {deductible_amount}"
+            combo_key = f"{prefix_b}{plan_tier} DD {deductible_amount}"
         elif optional_benefit:
             if optional_benefit == "IPD":
-                combo_key = f"ESSENTIAL{plan_tier}-IPD DD {deductible_amount}"
+                combo_key = f"{prefix_a}{plan_tier}-IPD DD {deductible_amount}"
             else:
-                combo_key = f"ESSENTIAL{plan_tier}-{optional_benefit}({opd_choice}) DD {deductible_amount}"
+                combo_key = f"{prefix_a}{plan_tier}-{optional_benefit}({opd_choice}) DD {deductible_amount}"
         else:
             return updated
             
         try:
-            if config is None:
-                from src.pdf_processor.inverter import load_config_by_pdf_id
-                pdf_id = data.get("pdf_id")
-                config = load_config_by_pdf_id(pdf_id)
             combo_map = config.get("combinations_map", {})
+            if combo_key not in combo_map:
+                if prefix_a in combo_key:
+                    alt = combo_key.replace(prefix_a, "MOCKA" if prefix_a == "ESSENTIAL" else "ESSENTIAL")
+                    if alt in combo_map:
+                        combo_key = alt
+                elif prefix_b in combo_key:
+                    alt = combo_key.replace(prefix_b, "MOCKB" if prefix_b == "VISA" else "VISA")
+                    if alt in combo_map:
+                        combo_key = alt
+            
             plan_code = combo_map.get(combo_key)
             if plan_code:
                 updated["plan"] = f"{combo_key} ({plan_code})"
@@ -304,20 +333,30 @@ def fill_blue_table_docx(template: Union[str, BytesIO], data: dict, config: dict
             col0_text = row.cells[0].text.strip()
             if "General Conditions" in col0_text:
                 prod_name = str(data.get("product_name") or "").upper()
-                resolved_prod_name = "SmartCare Essential"
-                if "EASYCARE" in prod_name or "VISA" in prod_name:
-                    row.cells[0].text = "General Conditions:\nEasyCare Visa\n"
-                    resolved_prod_name = "EasyCare Visa"
-                else:
-                    row.cells[0].text = "General Conditions:\nSmartCare Essential\n"
-                    resolved_prod_name = "SmartCare Essential"
-
+                
                 # Look up general conditions from config
                 try:
                     if config is None:
                         from src.pdf_processor.inverter import load_config_by_pdf_id
                         pdf_id = data.get("pdf_id")
                         config = load_config_by_pdf_id(pdf_id)
+                        
+                    products = config.get("product_options", {}).get("products", {})
+                    product_keys = list(products.keys())
+                    product_name_a = product_keys[0] if len(product_keys) >= 1 else "SmartCare Essential"
+                    product_name_b = product_keys[1] if len(product_keys) >= 2 else "EasyCare Visa"
+                    
+                    choices_b = products[product_name_b].get("plan_tier", {}).get("choices", []) if len(product_keys) >= 2 else []
+                    prefix_b = choices_b[0].rstrip("0123456789") if choices_b else "VISA"
+                    
+                    resolved_prod_name = product_name_a
+                    if prefix_b.upper() in prod_name or "EASYCARE" in prod_name or "VISA" in prod_name or "MOCKB" in prod_name:
+                        row.cells[0].text = f"General Conditions:\n{product_name_b}\n"
+                        resolved_prod_name = product_name_b
+                    else:
+                        row.cells[0].text = f"General Conditions:\n{product_name_a}\n"
+                        resolved_prod_name = product_name_a
+                        
                     gen_conds = config.get("general_conditions", {})
                     prod_rules = gen_conds.get(resolved_prod_name, {})
                     

@@ -668,3 +668,26 @@ func (h *HandlerContext) SaveConfigHandler(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, map[string]string{"status": "success"})
 }
+
+func (h *HandlerContext) ConfigOptionsHandler(c echo.Context) error {
+	configName := "health_and_accident_insurance.json"
+	configPath := "../config/" + configName
+
+	// Fallback to example file if the direct config is missing
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		configPath = "../config/health_and_accident_insurance.example.json"
+	}
+
+	configFile, err := os.Open(configPath)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to open config file: " + err.Error()})
+	}
+	defer configFile.Close()
+
+	var fullConfig map[string]interface{}
+	if err := json.NewDecoder(configFile).Decode(&fullConfig); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to decode config file: " + err.Error()})
+	}
+
+	return c.JSON(http.StatusOK, fullConfig)
+}
