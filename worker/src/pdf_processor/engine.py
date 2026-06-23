@@ -37,6 +37,18 @@ def load_registry(registry_path: str = REGISTRY_FILE) -> dict:
                 pass
         return {}
 
+
+def _anchors_match(anchors1: list[str], anchors2: list[str]) -> bool:
+    """Check if two sets of word anchors have at least one partial match."""
+    if not anchors1 or not anchors2:
+        return False
+    for a1 in anchors1:
+        for a2 in anchors2:
+            if a1 in a2 or a2 in a1:
+                return True
+    return False
+
+
 def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -> tuple[str, dict, dict]:
     """
     Parses a PDF file and extracts its structure and values.
@@ -112,23 +124,25 @@ def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -
         matched = False
         structural_hash = None
         if existing_registry:
-            for existing_id, existing_data in existing_registry.items():
+            # 1. First, check if the extracted pdf_id exists and validate its anchors
+            if pdf_id != "UNKNOWN_ID" and pdf_id in existing_registry:
+                existing_data = existing_registry[pdf_id]
                 existing_anchors = existing_data.get("word_anchors", [])
-                # A flattened PDF might have a slightly different block sequence or miss an exact spacing.
-                # So we consider it a match if at least one meaningful word anchor string from the original exists
-                # in the newly extracted word_anchors, or vice-versa.
-                if existing_anchors and word_anchors:
-                    has_match = False
-                    for anchor in word_anchors:
-                        for existing_anchor in existing_anchors:
-                            # A partial match (e.g. one string is inside another) is robust for flattened PDFs
-                            if anchor in existing_anchor or existing_anchor in anchor:
-                                has_match = True
-                                break
-                        if has_match:
-                            break
+                if _anchors_match(word_anchors, existing_anchors):
+                    print(f"📄 PDF ID '{pdf_id}' matched in registry with valid anchors.")
+                    clean_structural_fields = existing_data.get("fields", [])
+                    structural_hash = existing_data.get("structural_hash")
+                    matched = True
 
-                    if has_match:
+            # 2. Fallback to full registry anchor scan if ID check failed or anchors mismatched
+            if not matched:
+                for existing_id, existing_data in existing_registry.items():
+                    # Skip the one we already checked by ID
+                    if existing_id == pdf_id:
+                        continue
+
+                    existing_anchors = existing_data.get("word_anchors", [])
+                    if _anchors_match(word_anchors, existing_anchors):
                         print(f"📄 Word Anchor match found for flattened PDF! Falling back to ID: {existing_id}")
                         pdf_id = existing_id
                         clean_structural_fields = existing_data.get("fields", [])
