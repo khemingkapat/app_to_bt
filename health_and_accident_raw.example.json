@@ -17,20 +17,369 @@
                 "amount": 0
             },
             {
-                "key": "1519",
-                "label": "1,519 Mock Currency Deductible",
-                "amount": 1519
+                "key": "20000",
+                "label": "20,000 Mock Currency Deductible",
+                "amount": 20000
             },
             {
-                "key": "2015",
-                "label": "2,015 Mock Currency Deductible",
-                "amount": 2015
+                "key": "40000",
+                "label": "40,000 Mock Currency Deductible",
+                "amount": 40000
             },
             {
-                "key": "4316",
-                "label": "4,316 Mock Currency Deductible",
-                "amount": 4316
+                "key": "100000",
+                "label": "100,000 Mock Currency Deductible",
+                "amount": 100000
+            },
+            {
+                "key": "200000",
+                "label": "200,000 Mock Currency Deductible",
+                "amount": 200000
             }
         ]
+    },
+    "premium_tables": {
+        "ipd": {
+            "0-18": [
+                10000,
+                12000,
+                14000,
+                16000
+            ],
+            "19-99": [
+                15000,
+                18000,
+                21000,
+                24000
+            ],
+            "100+": [
+                25000,
+                30000,
+                35000,
+                40000
+            ]
+        },
+        "ipd_opd_3000": {
+            "0-18": [
+                12000,
+                14500,
+                17000,
+                19500
+            ],
+            "19-99": [
+                17500,
+                21000,
+                24500,
+                28000
+            ],
+            "100+": [
+                29000,
+                35000,
+                41000,
+                47000
+            ]
+        },
+        "ipd_opd_3000_wellness": {
+            "0-18": [
+                13000,
+                15500,
+                18000,
+                20500
+            ],
+            "19-99": [
+                18500,
+                22000,
+                25500,
+                29000
+            ],
+            "100+": [
+                30000,
+                36000,
+                42000,
+                48000
+            ]
+        },
+        "ipd_opd_50000": {
+            "0-18": [
+                15000,
+                18000,
+                21000,
+                24000
+            ],
+            "19-99": [
+                22000,
+                26000,
+                30000,
+                34000
+            ],
+            "100+": [
+                37000,
+                44000,
+                51000,
+                58000
+            ]
+        },
+        "ipd_opd_50000_wellness": {
+            "0-18": [
+                16000,
+                19000,
+                22000,
+                25000
+            ],
+            "19-99": [
+                23000,
+                27000,
+                31000,
+                35000
+            ],
+            "100+": [
+                38000,
+                45000,
+                52000,
+                59000
+            ]
+        }
+    },
+    "deductible_discounts": {
+        "0-40": {
+            "20000": 0.10,
+            "40000": 0.15,
+            "100000": 0.25,
+            "200000": 0.35
+        },
+        "41-60": {
+            "20000": 0.12,
+            "40000": 0.18,
+            "100000": 0.28,
+            "200000": 0.38
+        },
+        "61+": {
+            "20000": 0.15,
+            "40000": 0.20,
+            "100000": 0.30,
+            "200000": 0.40
+        }
+    },
+    "age_brackets": [
+        {
+            "min": 0,
+            "max": 18,
+            "key": "0-18"
+        },
+        {
+            "min": 19,
+            "max": 99,
+            "key": "19-99"
+        },
+        {
+            "min": 100,
+            "max": 150,
+            "key": "100+"
+        }
+    ],
+    "plans": [
+        {
+            "key": "Plan 1",
+            "label": "Mock Plan A",
+            "coverage": "1M Mock Coverage",
+            "room_limit": "2,000"
+        },
+        {
+            "key": "Plan 2",
+            "label": "Mock Plan B",
+            "coverage": "2M Mock Coverage",
+            "room_limit": "4,000"
+        },
+        {
+            "key": "Plan 3",
+            "label": "Mock Plan C",
+            "coverage": "3M Mock Coverage",
+            "room_limit": "6,000"
+        },
+        {
+            "key": "Plan 4",
+            "label": "Mock Plan D",
+            "coverage": "4M Mock Coverage",
+            "room_limit": "8,000"
+        }
+    ],
+    "combinations_map": {
+        "MOCKA1-IPD DD 0": "101",
+        "MOCKA1-IPD DD 20,000": "127",
+        "MOCKA1-IPD DD 40,000": "103",
+        "MOCKA1-IPD DD 100,000": "104",
+        "MOCKA1-IPD DD 200,000": "105",
+        "MOCKA1-IPD+OPD(3k * 30 times / year) DD 0": "106",
+        "MOCKA1-IPD+OPD(3k * 30 times / year) DD 20,000": "107",
+        "MOCKA1-IPD+OPD(3k * 30 times / year) DD 40,000": "108",
+        "MOCKA1-IPD+OPD(3k * 30 times / year) DD 100,000": "109",
+        "MOCKA1-IPD+OPD(3k * 30 times / year) DD 200,000": "110",
+        "MOCKA1-IPD+OPD(50k per year) DD 0": "111",
+        "MOCKA1-IPD+OPD(50k per year) DD 20,000": "112",
+        "MOCKA1-IPD+OPD(50k per year) DD 40,000": "113",
+        "MOCKA1-IPD+OPD(50k per year) DD 100,000": "114",
+        "MOCKA1-IPD+OPD(50k per year) DD 200,000": "115",
+        "MOCKA1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 0": "116",
+        "MOCKA1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 20,000": "117",
+        "MOCKA1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 40,000": "118",
+        "MOCKA1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 100,000": "119",
+        "MOCKA1-IPD+OPD+WELLNESS(3k * 30 times / year) DD 200,000": "120",
+        "MOCKA1-IPD+OPD+WELLNESS(50k per year) DD 0": "121",
+        "MOCKA1-IPD+OPD+WELLNESS(50k per year) DD 20,000": "122",
+        "MOCKA1-IPD+OPD+WELLNESS(50k per year) DD 40,000": "123",
+        "MOCKA1-IPD+OPD+WELLNESS(50k per year) DD 100,000": "124",
+        "MOCKA1-IPD+OPD+WELLNESS(50k per year) DD 200,000": "125",
+        "MOCKA2-IPD DD 0": "126",
+        "MOCKA2-IPD DD 20,000": "127",
+        "MOCKA2-IPD DD 40,000": "128",
+        "MOCKA2-IPD DD 100,000": "129",
+        "MOCKA2-IPD DD 200,000": "130",
+        "MOCKA2-IPD+OPD(3k * 30 times / year) DD 0": "131",
+        "MOCKA2-IPD+OPD(3k * 30 times / year) DD 20,000": "132",
+        "MOCKA2-IPD+OPD(3k * 30 times / year) DD 40,000": "133",
+        "MOCKA2-IPD+OPD(3k * 30 times / year) DD 100,000": "134",
+        "MOCKA2-IPD+OPD(3k * 30 times / year) DD 200,000": "135",
+        "MOCKA2-IPD+OPD(50k per year) DD 0": "136",
+        "MOCKA2-IPD+OPD(50k per year) DD 20,000": "137",
+        "MOCKA2-IPD+OPD(50k per year) DD 40,000": "138",
+        "MOCKA2-IPD+OPD(50k per year) DD 100,000": "139",
+        "MOCKA2-IPD+OPD(50k per year) DD 200,000": "140",
+        "MOCKA2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 0": "141",
+        "MOCKA2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 20,000": "142",
+        "MOCKA2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 40,000": "143",
+        "MOCKA2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 100,000": "144",
+        "MOCKA2-IPD+OPD+WELLNESS(3k * 30 times / year) DD 200,000": "145",
+        "MOCKA2-IPD+OPD+WELLNESS(50k per year) DD 0": "146",
+        "MOCKA2-IPD+OPD+WELLNESS(50k per year) DD 20,000": "147",
+        "MOCKA2-IPD+OPD+WELLNESS(50k per year) DD 40,000": "148",
+        "MOCKA2-IPD+OPD+WELLNESS(50k per year) DD 100,000": "149",
+        "MOCKA2-IPD+OPD+WELLNESS(50k per year) DD 200,000": "150",
+        "MOCKA3-IPD DD 0": "151",
+        "MOCKA3-IPD DD 20,000": "152",
+        "MOCKA3-IPD DD 40,000": "153",
+        "MOCKA3-IPD DD 100,000": "154",
+        "MOCKA3-IPD DD 200,000": "155",
+        "MOCKA3-IPD+OPD(3k * 30 times / year) DD 0": "156",
+        "MOCKA3-IPD+OPD(3k * 30 times / year) DD 20,000": "157",
+        "MOCKA3-IPD+OPD(3k * 30 times / year) DD 40,000": "158",
+        "MOCKA3-IPD+OPD(3k * 30 times / year) DD 100,000": "159",
+        "MOCKA3-IPD+OPD(3k * 30 times / year) DD 200,000": "160",
+        "MOCKA3-IPD+OPD(50k per year) DD 0": "161",
+        "MOCKA3-IPD+OPD(50k per year) DD 20,000": "162",
+        "MOCKA3-IPD+OPD(50k per year) DD 40,000": "163",
+        "MOCKA3-IPD+OPD(50k per year) DD 100,000": "164",
+        "MOCKA3-IPD+OPD(50k per year) DD 200,000": "165",
+        "MOCKA3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 0": "166",
+        "MOCKA3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 20,000": "167",
+        "MOCKA3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 40,000": "168",
+        "MOCKA3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 100,000": "169",
+        "MOCKA3-IPD+OPD+WELLNESS(3k * 30 times / year) DD 200,000": "170",
+        "MOCKA3-IPD+OPD+WELLNESS(50k per year) DD 0": "171",
+        "MOCKA3-IPD+OPD+WELLNESS(50k per year) DD 20,000": "172",
+        "MOCKA3-IPD+OPD+WELLNESS(50k per year) DD 40,000": "173",
+        "MOCKA3-IPD+OPD+WELLNESS(50k per year) DD 100,000": "174",
+        "MOCKA3-IPD+OPD+WELLNESS(50k per year) DD 200,000": "175",
+        "MOCKA4-IPD DD 0": "176",
+        "MOCKA4-IPD DD 20,000": "177",
+        "MOCKA4-IPD DD 40,000": "178",
+        "MOCKA4-IPD DD 100,000": "179",
+        "MOCKA4-IPD DD 200,000": "180",
+        "MOCKA4-IPD+OPD(3k * 30 times / year) DD 0": "181",
+        "MOCKA4-IPD+OPD(3k * 30 times / year) DD 20,000": "182",
+        "MOCKA4-IPD+OPD(3k * 30 times / year) DD 40,000": "183",
+        "MOCKA4-IPD+OPD(3k * 30 times / year) DD 100,000": "184",
+        "MOCKA4-IPD+OPD(3k * 30 times / year) DD 200,000": "185",
+        "MOCKA4-IPD+OPD(50k per year) DD 0": "186",
+        "MOCKA4-IPD+OPD(50k per year) DD 20,000": "187",
+        "MOCKA4-IPD+OPD(50k per year) DD 40,000": "188",
+        "MOCKA4-IPD+OPD(50k per year) DD 100,000": "189",
+        "MOCKA4-IPD+OPD(50k per year) DD 200,000": "190",
+        "MOCKA4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 0": "191",
+        "MOCKA4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 20,000": "192",
+        "MOCKA4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 40,000": "193",
+        "MOCKA4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 100,000": "194",
+        "MOCKA4-IPD+OPD+WELLNESS(3k * 30 times / year) DD 200,000": "195",
+        "MOCKA4-IPD+OPD+WELLNESS(50k per year) DD 0": "196",
+        "MOCKA4-IPD+OPD+WELLNESS(50k per year) DD 20,000": "197",
+        "MOCKA4-IPD+OPD+WELLNESS(50k per year) DD 40,000": "198",
+        "MOCKA4-IPD+OPD+WELLNESS(50k per year) DD 100,000": "199",
+        "MOCKA4-IPD+OPD+WELLNESS(50k per year) DD 200,000": "200",
+        "MOCKB1 DD 100,000": "201",
+        "MOCKB1 DD 200,000": "202",
+        "MOCKB1 DD 300,000": "203",
+        "MOCKB2 DD 100,000": "204",
+        "MOCKB2 DD 200,000": "205",
+        "MOCKB2 DD 300,000": "206"
+    },
+    "product_options": {
+        "product_name": {
+            "label": "Selected Product",
+            "bt_key": "product_name",
+            "choices": [
+                "MOCKA",
+                "MOCKB"
+            ]
+        },
+        "products": {
+            "MockCare Plan A": {
+                "plan_tier": {
+                    "label": "Plan Tier",
+                    "bt_key": "plan",
+                    "choices": [
+                        "MOCKA1",
+                        "MOCKA2",
+                        "MOCKA3",
+                        "MOCKA4"
+                    ]
+                },
+                "optional_benefit": {
+                    "label": "Optional Benefit",
+                    "bt_key": "plan",
+                    "choices": [
+                        "IPD",
+                        "IPD+OPD",
+                        "IPD+OPD+WELLNESS"
+                    ]
+                },
+                "opd_choice": {
+                    "label": "OPD Choice Limit",
+                    "bt_key": "plan",
+                    "choices": [
+                        "3k * 30 times / year",
+                        "50k per year"
+                    ]
+                },
+                "deductible": {
+                    "label": "Deductible",
+                    "bt_key": "deductible",
+                    "choices": [
+                        "0",
+                        "20k",
+                        "40k",
+                        "100k",
+                        "200k"
+                    ]
+                }
+            },
+            "MockCare Plan B": {
+                "plan_tier": {
+                    "label": "Plan Tier",
+                    "bt_key": "plan",
+                    "choices": [
+                        "MOCKB1",
+                        "MOCKB2"
+                    ]
+                },
+                "deductible": {
+                    "label": "Deductible",
+                    "bt_key": "deductible",
+                    "choices": [
+                        "100k",
+                        "200k",
+                        "300k"
+                    ]
+                }
+            }
+        }
     }
 }
