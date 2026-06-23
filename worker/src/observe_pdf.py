@@ -10,17 +10,46 @@ worker_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(worker_dir))
 sys.path.insert(0, str(worker_dir / "src"))
 
+
+def clean_coords(fields):
+    if isinstance(fields, (str, int)):
+        return fields
+    if isinstance(fields, list):
+        clean_fields = []
+        for field in fields:
+            clean_fields.append(clean_coords(field))
+        return clean_fields
+
+    if isinstance(fields, dict):
+        clean_fields = dict()
+        for k, v in fields.items():
+            if k == "coords":
+                continue
+            clean_fields[k] = clean_coords((v))
+        return clean_fields
+
+
 try:
     from pdf_processor.engine import process_pdf, load_registry
 except ImportError as e:
     print(f"Error: Could not import pdf_processor.engine. {e}", file=sys.stderr)
     sys.exit(1)
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Parse a PDF file and extract its ID and form fields as JSON."
     )
     parser.add_argument("pdf_path", help="Path to the PDF file to observe.")
+
+    # Add the optional flag for cleaning coordinates
+    parser.add_argument(
+        "-cc",
+        dest="clean",
+        action="store_true",
+        help="Clean the coordinates from the extracted fields.",
+    )
+
     args = parser.parse_args()
 
     pdf_path = Path(args.pdf_path)
@@ -34,23 +63,30 @@ def main():
 
         # Call process_pdf while redirecting its internal stdout prints to stderr
         with redirect_stdout(sys.stderr):
-            pdf_id, registry_dict, _ = process_pdf(str(pdf_path), existing_registry=registry)
+            pdf_id, registry_dict, _ = process_pdf(
+                str(pdf_path), existing_registry=registry
+            )
 
         # The registry_dict contains the pdf_id as a key
         pdf_data = registry_dict.get(pdf_id, {})
         fields = pdf_data.get("fields", [])
 
-        output = {
-            "pdf_id": pdf_id,
-            "fields": fields
-        }
+        # Only run clean_coords if the -c or -cc flag was provided
+        if args.clean:
+            fields = clean_coords(fields)
+
+        output = {"pdf_id": pdf_id, "fields": fields}
 
         # Print clean JSON to stdout
         print(json.dumps(output, indent=4, ensure_ascii=False))
 
     except Exception as e:
-        print(f"Error: An unexpected error occurred during processing: {e}", file=sys.stderr)
+        print(
+            f"Error: An unexpected error occurred during processing: {e}",
+            file=sys.stderr,
+        )
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
