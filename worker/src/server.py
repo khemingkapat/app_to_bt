@@ -16,7 +16,7 @@ sys.path.insert(0, str(worker_dir / "src"))
 
 from proto import document_pb2
 from proto import document_pb2_grpc
-from pdf_processor.engine import process_pdf
+from pdf_processor.engine import process_pdf, load_registry
 from pdf_processor.inverter import fill_acroform_pdf
 from blue_table_tools.docx_generator import fill_blue_table_docx
 from signature_gateway.pdf_stamping import stamp_signature_on_pdf
@@ -41,8 +41,9 @@ class DocumentServiceServicer(document_pb2_grpc.DocumentServiceServicer):
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "Payload exceeds 5MB limit")
 
         pdf_file = BytesIO(request.pdf_bytes)
+        registry = load_registry()
 
-        future = self.executor.submit(process_pdf, pdf_file)
+        future = self.executor.submit(process_pdf, pdf_file, existing_registry=registry)
         try:
             pdf_id, registry_dict, values_dict = future.result(timeout=TIMEOUT_SECONDS)
             return document_pb2.ProcessPdfResponse(
