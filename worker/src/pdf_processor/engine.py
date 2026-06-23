@@ -103,13 +103,41 @@ def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -
         structural_json = json.dumps(structural_data, sort_keys=True)
         structural_hash = hashlib.sha256(structural_json.encode("utf-8")).hexdigest()
 
-        # Check structural fallback (for prints that kept fields but changed ID)
+        # Check for template match in existing registry
+        matched_template_id = None
         if existing_registry:
-            for existing_id, existing_data in existing_registry.items():
-                if existing_data.get("structural_hash") == structural_hash:
-                    print(f"🔄 Structural match found. Falling back to existing ID: {existing_id}")
-                    pdf_id = existing_id
-                    break
+            # 1. Direct ID match (and validate anchors if possible)
+            if pdf_id in existing_registry:
+                existing_data = existing_registry[pdf_id]
+                existing_anchors = existing_data.get("word_anchors", [])
+                # If anchors match, we definitely have a template match
+                if _anchors_match(word_anchors, existing_anchors):
+                    matched_template_id = pdf_id
+
+            # 2. Structural hash fallback
+            if not matched_template_id:
+                for existing_id, existing_data in existing_registry.items():
+                    if existing_data.get("structural_hash") == structural_hash:
+                        print(f"🔄 Structural match found. Falling back to existing ID: {existing_id}")
+                        matched_template_id = existing_id
+                        break
+
+            # 3. Word anchor fallback (for corrupted/modified normal PDFs)
+            if not matched_template_id:
+                for existing_id, existing_data in existing_registry.items():
+                    existing_anchors = existing_data.get("word_anchors", [])
+                    if _anchors_match(word_anchors, existing_anchors):
+                        print(f"📄 Word Anchor match found for normal PDF! Falling back to ID: {existing_id}")
+                        matched_template_id = existing_id
+                        break
+
+        if matched_template_id and matched_template_id in existing_registry:
+            # Use clean template data instead of newly extracted (potentially corrupted) fields
+            pdf_id = matched_template_id
+            template_data = existing_registry[pdf_id]
+            clean_structural_fields = template_data.get("fields", clean_structural_fields)
+            pages_list = template_data.get("pages", pages_list)
+            structural_hash = template_data.get("structural_hash", structural_hash)
 
         registry_dict = {
             pdf_id: {

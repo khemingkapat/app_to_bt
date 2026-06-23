@@ -129,3 +129,38 @@ def test_flattened_pdf_no_match(mock_pdf_reader, mock_helpers):
     assert pdf_id == "NEW_PDF_ID"
     assert vals == {} # No fields to extract from
     assert reg["NEW_PDF_ID"]["word_anchors"] == ["Anchor1", "Anchor2"]
+
+@patch("pdf_processor.engine.walk_fields")
+def test_normal_pdf_anchor_match(mock_walk, mock_pdf_reader, mock_helpers):
+    """Test Case 5: Normal PDF (with fields) that matches a template via word anchors.
+    Should use the template's clean fields and ID.
+    """
+    # Mock AcroForm existence to enter the "Normal PDF" path
+    mock_pdf_reader.trailer = {"/Root": {"/AcroForm": {"/Fields": ["dummy"]}}}
+    mock_helpers["resolve"].side_effect = lambda x: x # Simplistic resolve for the dummy fields
+
+    # Simulate a "corrupted" PDF that has some fields but they might be misaligned
+    mock_walk.return_value = [
+        {"name": "field1", "value": "val1", "page": 1, "coords": {"x0": 0, "y0": 0, "x1": 10, "y1": 10}}
+    ]
+
+    registry = {
+        "TEMPLATE_ID": {
+            "word_anchors": ["Anchor1", "Anchor2"],
+            "fields": [
+                {"name": "field1", "page": 1, "coords": {"x0": 100, "y0": 100, "x1": 110, "y1": 110}}
+            ],
+            "structural_hash": "template_hash",
+            "pages": [{"page_num": 1, "page_w": 600, "page_h": 800}]
+        }
+    }
+
+    # PDF ID is PDF_ID_1 (from mock_helpers). Anchors are ["Anchor1", "Anchor2"].
+    # Even though it has fields (raw_fields), it should match TEMPLATE_ID via anchors.
+
+    pdf_id, reg, vals = process_pdf("fake.pdf", existing_registry=registry)
+
+    assert pdf_id == "TEMPLATE_ID"
+    # Fields in registry should be from the template, not the "corrupted" walk_fields ones
+    assert reg["TEMPLATE_ID"]["fields"][0]["coords"]["x0"] == 100
+    assert vals["field1"] == "val1"
