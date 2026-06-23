@@ -398,6 +398,17 @@
                 buildBlueTableForm();
                 
                 productOptions = data.product_options;
+                // Dynamically populate productLineSelect from config
+                const productSelect = document.getElementById('productLineSelect');
+                if (productSelect && productOptions && productOptions.products) {
+                    productSelect.innerHTML = '';
+                    for (const prodName of Object.keys(productOptions.products)) {
+                        const opt = document.createElement('option');
+                        opt.value = prodName;
+                        opt.innerText = prodName;
+                        productSelect.appendChild(opt);
+                    }
+                }
                 signatureField = "Not Mapped";
                 document.getElementById('mappedSignatureField').innerText = "Not Mapped";
 
