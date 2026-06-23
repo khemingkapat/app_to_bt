@@ -1,7 +1,8 @@
 from pypdf import PdfReader
 
-from ..utils.helpers import resolve, rect_to_dict
+from ..utils.helpers import resolve, rect_to_dict, get_page_dimensions
 from ..utils.pdf_info import get_page_info
+
 
 FLAG_RADIO = 1 << 15  # /Ff bit 16 distinguishes radio groups from checkboxes
 
@@ -58,6 +59,41 @@ def walk_fields(reader: PdfReader, fields_array, parent_ft=None) -> list[dict]:
                         "coords": rect_to_dict(kid_rect, kid_h_node),
                     }
                 )
+
+            # Fallback: if pages could not be detected for kids, scan page annotations for widgets pointing to this parent
+            if any(w["page"] is None for w in kid_widgets):
+                parent_id = field_ref.idnum if hasattr(field_ref, "idnum") else None
+                if parent_id:
+                    fallback_widgets = []
+                    for page_idx, page in enumerate(reader.pages):
+                        annots = page.get("/Annots")
+                        if annots:
+                            for annot_ref in resolve(annots):
+                                annot = resolve(annot_ref)
+                                parent = annot.get("/Parent")
+                                if parent and getattr(parent, "idnum", None) == parent_id:
+                                    w_rect = annot.get("/Rect")
+                                    _, w_h = get_page_dimensions(page)
+                                    
+                                    choice_value = ""
+                                    ap = resolve(annot.get("/AP"))
+                                    if ap:
+                                        n = resolve(ap.get("/N"))
+                                        if n:
+                                            try:
+                                                keys = [str(k) for k in n.keys() if str(k) != "/Off"]
+                                                if keys:
+                                                    choice_value = keys[0]
+                                            except Exception:
+                                                pass
+                                    
+                                    fallback_widgets.append({
+                                        "page": page_idx + 1,
+                                        "choice_value": choice_value,
+                                        "coords": rect_to_dict(w_rect, w_h),
+                                    })
+                    if fallback_widgets:
+                        kid_widgets = fallback_widgets
 
             results.append(
                 {
