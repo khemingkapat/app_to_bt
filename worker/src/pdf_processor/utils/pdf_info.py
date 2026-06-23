@@ -25,7 +25,21 @@ def get_page_info(reader: PdfReader, obj) -> tuple[int | None, float]:
     except Exception:
         pass
 
+    # Fallback: scan page annotations by name /T (for Apple PDFKit duplicated fields)
+    name = obj.get("/T")
+    if name:
+        name_str = str(name)
+        for idx, page in enumerate(reader.pages):
+            annots = page.get("/Annots")
+            if annots:
+                for annot_ref in resolve(annots):
+                    annot = resolve(annot_ref)
+                    if str(annot.get("/T")) == name_str:
+                        _, h = get_page_dimensions(page)
+                        return idx + 1, h
+
     return None, DEFAULT_HEIGHT
+
 
 
 def get_pdf_file_id(reader: PdfReader) -> str:
@@ -35,6 +49,8 @@ def get_pdf_file_id(reader: PdfReader) -> str:
         if "/ID" in trailer:
             id_array = trailer["/ID"]
             raw_id = id_array[0]
+            if hasattr(raw_id, "original_bytes"):
+                return raw_id.original_bytes.hex()
             if isinstance(raw_id, bytes):
                 return raw_id.hex()
             return str(raw_id)
