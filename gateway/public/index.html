@@ -290,13 +290,20 @@
         let pdfBytes = null;
 
         // Helper to get coordinates (prefers current page if available)
-        const getCoords = (f, pageNum = null) => {
+        const getCoords = (f, pageNum = null, wIdx = 0) => {
             if (f.coords) return f.coords;
             if (f.widgets && f.widgets.length > 0) {
+                // If a specific widget index is requested, use it ONLY if it matches the current page
+                if (f.widgets[wIdx]) {
+                    const w = f.widgets[wIdx];
+                    if (!pageNum || w.page === pageNum) return w.coords;
+                }
+                // Fallback to finding ANY widget on the requested page
                 if (pageNum) {
                     const w = f.widgets.find(w => w.page === pageNum);
                     if (w) return w.coords;
                 }
+                // Global fallback
                 return f.widgets[0].coords;
             }
             return null;
@@ -306,6 +313,7 @@
         let pdfRegistry = {};
         let allFields = [];
         let activeFieldIndex = 0;
+        let activeWidgetIndex = 0;
         let currentPageNum = 1;
         let btData = {};
         let productOptions = null;
@@ -495,9 +503,24 @@
             if (allFields.length === 0 || idx < 0 || idx >= allFields.length) return;
 
             const field = allFields[idx];
-            const fieldPage = field.page || (field.widgets && field.widgets[0] ? field.widgets[0].page : 1);
+            const widgets = field.widgets || [];
 
-            document.getElementById('activeFieldName').innerText = field.name || 'Unnamed';
+            // Clamp activeWidgetIndex
+            if (activeWidgetIndex < 0) activeWidgetIndex = 0;
+            if (widgets.length > 0 && activeWidgetIndex >= widgets.length) {
+                activeWidgetIndex = widgets.length - 1;
+            }
+
+            let fieldPage = field.page || (widgets[0] ? widgets[0].page : 1);
+            let displayTitle = field.name || 'Unnamed';
+
+            if (field.field_kind === 'radio' && widgets.length > 0) {
+                const w = widgets[activeWidgetIndex];
+                fieldPage = w.page;
+                displayTitle += ` (Choice ${activeWidgetIndex + 1}/${widgets.length}: ${w.choice_value || '?'})`;
+            }
+
+            document.getElementById('activeFieldName').innerText = displayTitle;
             document.getElementById('activeFieldKind').innerText = field.field_kind || 'unknown';
             document.getElementById('activeFieldPage').innerText = fieldPage;
 
@@ -520,8 +543,21 @@
             await renderPDFPage(currentPageNum, field);
 
             // Update Navigation Buttons state
-            document.getElementById('btnPrevField').disabled = (idx === 0);
-            document.getElementById('btnNextField').innerText = (idx === allFields.length - 1) ? 'Skip' : '⬇ Skip';
+            const isFirstField = (idx === 0);
+            const isLastField = (idx === allFields.length - 1);
+            const isFirstWidget = (activeWidgetIndex === 0);
+            const isLastWidget = (widgets.length === 0 || activeWidgetIndex === widgets.length - 1);
+
+            document.getElementById('btnPrevField').disabled = (isFirstField && isFirstWidget);
+            document.getElementById('btnPrevField').innerText = isFirstWidget ? '⬆ Previous Field' : '⬆ Previous Choice';
+
+            if (isLastField && isLastWidget) {
+                document.getElementById('btnNextField').innerText = 'Skip';
+            } else if (!isLastWidget) {
+                document.getElementById('btnNextField').innerText = '⬇ Skip Choice';
+            } else {
+                document.getElementById('btnNextField').innerText = '⬇ Skip';
+            }
         }
 
         async function renderPDFPage(pageNum, field) {
@@ -553,7 +589,7 @@
 
             // Handle coordinate highlight overlay
             const highlightBox = document.getElementById('highlightBox');
-            const coords = field ? getCoords(field, pageNum) : null;
+            const coords = field ? getCoords(field, pageNum, activeWidgetIndex) : null;
 
             if (field && coords) {
                 const page_w = pdfRegistry.pages && pdfRegistry.pages[pageNum - 1] ? pdfRegistry.pages[pageNum - 1].page_w : originalViewport.width;
@@ -600,9 +636,37 @@
         }
 
         function changeField(delta) {
+            const field = allFields[activeFieldIndex];
+            const widgets = (field && field.widgets) ? field.widgets : [];
+
+            // Choice-by-choice navigation for radio fields
+            if (field && field.field_kind === 'radio' && widgets.length > 1) {
+                if (delta === 1 && activeWidgetIndex < widgets.length - 1) {
+                    activeWidgetIndex++;
+                    displayField(activeFieldIndex);
+                    return;
+                }
+                if (delta === -1 && activeWidgetIndex > 0) {
+                    activeWidgetIndex--;
+                    displayField(activeFieldIndex);
+                    return;
+                }
+            }
+
             const nextIdx = activeFieldIndex + delta;
             if (nextIdx >= 0 && nextIdx < allFields.length) {
                 activeFieldIndex = nextIdx;
+                const nextField = allFields[activeFieldIndex];
+                if (delta === 1) {
+                    activeWidgetIndex = 0;
+                } else {
+                    // Going backwards: set to last widget if radio
+                    if (nextField && nextField.widgets && nextField.widgets.length > 0) {
+                        activeWidgetIndex = nextField.widgets.length - 1;
+                    } else {
+                        activeWidgetIndex = 0;
+                    }
+                }
                 displayField(activeFieldIndex);
             } else if (nextIdx >= allFields.length) {
                 finishMapping();
@@ -793,6 +857,7 @@
             pdfRegistry = {};
             allFields = [];
             activeFieldIndex = 0;
+            activeWidgetIndex = 0;
             currentPageNum = 1;
             btData = {};
             productOptions = null;
