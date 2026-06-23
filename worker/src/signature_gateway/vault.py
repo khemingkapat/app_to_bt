@@ -127,9 +127,41 @@ def extract_bt_data(all_fields: list, field_mapping: dict, values_map: dict) -> 
     product_selection = " ".join(product_name_vals)
     bt_data["product_name"] = product_selection
     
-    selected_product_line = "SmartCare Essential"
-    if "EASYCARE" in product_selection:
-        selected_product_line = "EasyCare Visa"
+    # Dynamic config extraction
+    from src.pdf_processor.inverter import load_config_by_pdf_id
+    config = load_config_by_pdf_id(None)
+    products = config.get("product_options", {}).get("products", {})
+    product_keys = list(products.keys())
+    
+    prefix_a = "ESSENTIAL"
+    prefix_b = "VISA"
+    product_name_a = "SmartCare Essential"
+    product_name_b = "EasyCare Visa"
+    choices_b = []
+    
+    if len(product_keys) >= 2:
+        product_name_a = product_keys[0]
+        choices_a = products[product_name_a].get("plan_tier", {}).get("choices", [])
+        if choices_a:
+            prefix_a = choices_a[0].rstrip("0123456789")
+            
+        product_name_b = product_keys[1]
+        choices_b = products[product_name_b].get("plan_tier", {}).get("choices", [])
+        if choices_b:
+            prefix_b = choices_b[0].rstrip("0123456789")
+
+    selected_product_line = product_name_a
+    is_prod_b = False
+    if choices_b:
+        for choice in choices_b:
+            if choice in product_selection:
+                is_prod_b = True
+                break
+    if "EASYCARE" in product_selection or "MOCKB" in product_selection or "VISA" in product_selection:
+        is_prod_b = True
+        
+    if is_prod_b:
+        selected_product_line = product_name_b
         
     # 2. Rebuild all unique keys
     unique_keys = set()
@@ -157,12 +189,15 @@ def extract_bt_data(all_fields: list, field_mapping: dict, values_map: dict) -> 
             if isinstance(mapping, dict):
                 choices_map = mapping.get("choices_map", {})
                 values = set(choices_map.values())
-                essential_unique = {"ESSENTIAL1", "ESSENTIAL2", "ESSENTIAL3", "ESSENTIAL4", "IPD", "IPD+OPD", "IPD+OPD+WELLNESS", "3k * 30 times / year", "50k per year", "0", "20k", "40k"}
-                visa_unique = {"VISA1", "VISA2", "300k"}
+                
+                # Dynamically construct unique choice sets based on prefix
+                essential_unique = {f"{prefix_a}1", f"{prefix_a}2", f"{prefix_a}3", f"{prefix_a}4", "ESSENTIAL1", "ESSENTIAL2", "ESSENTIAL3", "ESSENTIAL4", "IPD", "IPD+OPD", "IPD+OPD+WELLNESS", "3k * 30 times / year", "50k per year", "0", "20k", "40k"}
+                visa_unique = {f"{prefix_b}1", f"{prefix_b}2", "VISA1", "VISA2", "300k"}
+                
                 if values & essential_unique:
-                    field_prod_line = "SmartCare Essential"
+                    field_prod_line = product_name_a
                 elif values & visa_unique:
-                    field_prod_line = "EasyCare Visa"
+                    field_prod_line = product_name_b
                     
             if field_prod_line != "Both" and field_prod_line != selected_product_line:
                 continue

@@ -12,7 +12,7 @@
 <body>
 
     <div>
-        <h1>🏥 AXA Application Ingestion Portal</h1>
+        <h1>🏥 Application Ingestion Portal</h1>
         <div>Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
         <div>
             <a href="index.html">🏠 Home</a> |
@@ -32,8 +32,8 @@
         <div><label>Effective Date * </label><input type="text" name="effective_date" required placeholder="DD/MM/YYYY"></div>
         <div><label>Selected Product * </label>
             <select name="product_name">
-                <option value="ESSENTIAL">ESSENTIAL</option>
-                <option value="EASYCARE">EASYCARE</option>
+                <option value="MOCKA">MOCKA</option>
+                <option value="MOCKB">MOCKB</option>
             </select>
         </div>
         <div><label>Policy Version * </label>
@@ -42,7 +42,7 @@
                 <option value="English">English</option>
             </select>
         </div>
-        <div><label>Plan Tier * </label><input type="text" name="plan" required placeholder="E.g., ESSENTIAL1"></div>
+        <div><label>Plan Tier * </label><input type="text" name="plan" required placeholder="E.g., MOCKA1"></div>
         <div><label>Deductible * </label><input type="text" name="deductible" required placeholder="E.g., 0"></div>
         <div><label>Premium * </label><input type="text" name="premium" required placeholder="E.g., 35,000"></div>
         <hr>
@@ -231,8 +231,30 @@
         }
     }
 
+    async function loadConfigOptions() {
+        try {
+            const res = await fetch('/api/config-options');
+            if (!res.ok) throw new Error('Failed to load config options');
+            const data = await res.json();
+            const productSelect = document.querySelector('select[name="product_name"]');
+            if (productSelect && data.product_options && data.product_options.product_name) {
+                const choices = data.product_options.product_name.choices || [];
+                productSelect.innerHTML = '';
+                choices.forEach(choice => {
+                    const opt = document.createElement('option');
+                    opt.value = choice;
+                    opt.innerText = choice;
+                    productSelect.appendChild(opt);
+                });
+            }
+        } catch (err) {
+            console.error('Error loading config options:', err);
+        }
+    }
+
     // Init
     setupKeyboardNavigation();
+    loadConfigOptions();
 </script>
 </body>
 </html>

@@ -4,11 +4,21 @@ from src.blue_table_tools.pricing import get_age_bracket_key, get_deductible_dis
 
 def test_get_age_bracket_key():
     config = load_product_config()
-    assert get_age_bracket_key(5, config) == "0-5"
-    assert get_age_bracket_key(25, config) == "21-25"
-    assert get_age_bracket_key(40, config) == "36-40"
-    assert get_age_bracket_key(64, config) == "61-64"
-    assert get_age_bracket_key(70, config) is None
+    brackets = config.get("age_brackets", [])
+    if brackets:
+        for b in brackets:
+            assert get_age_bracket_key(b["min"], config) == b["key"]
+            assert get_age_bracket_key(b["max"], config) == b["key"]
+        
+        # Check out of bounds age
+        max_age = max(b["max"] for b in brackets)
+        assert get_age_bracket_key(max_age + 1, config) is None
+    else:
+        assert get_age_bracket_key(5, config) == "0-5"
+        assert get_age_bracket_key(25, config) == "21-25"
+        assert get_age_bracket_key(40, config) == "36-40"
+        assert get_age_bracket_key(64, config) == "61-64"
+        assert get_age_bracket_key(70, config) is None
 
 def test_get_deductible_discount():
     config = load_product_config()
@@ -33,8 +43,9 @@ def test_calculate_all_plans_premiums_single():
     # IPD only, deductible 0
     results = calculate_all_plans_premiums("ipd", 0, members, config)
 
-    # Expected: "21-25" bracket array: fetch from config
-    expected = config["premium_tables"]["ipd"]["21-25"]
+    # Expected: bracket array: fetch from config
+    bracket = get_age_bracket_key(25, config)
+    expected = config["premium_tables"]["ipd"][bracket]
     assert results[0]["total"] == expected[0]
     assert results[1]["total"] == expected[1]
     assert results[2]["total"] == expected[2]
@@ -52,23 +63,16 @@ def test_calculate_all_plans_premiums_family_deductible():
     results = calculate_all_plans_premiums("ipd_opd_3000", 20000, members, config)
 
     # Calculate expected totals dynamically
-    # 2 members (family discount 5% = 0.05)
-    # Member 1 (Age 40, deductible 20000):
-    # base IPD: table ipd "36-40" plan 1
-    # base IPD+OPD3000: table ipd_opd_3000 "36-40" plan 1
-    # discount h: deductible_discounts "0-40" "20000"
     import math
-    ipd_t = config["premium_tables"]["ipd"]["36-40"][0]
-    opd_t = config["premium_tables"]["ipd_opd_3000"]["36-40"][0] - ipd_t
-    h = config["deductible_discounts"]["0-40"]["20000"]
+    bracket_40 = get_age_bracket_key(40, config)
+    ipd_t = config["premium_tables"]["ipd"][bracket_40][0]
+    opd_t = config["premium_tables"]["ipd_opd_3000"][bracket_40][0] - ipd_t
+    h = get_deductible_discount(40, 20000, config)
     m1 = math.ceil(ipd_t * (1.0 - h)) + opd_t
 
-    # Member 2 (Age 30, deductible 20000):
-    # base IPD: table ipd "26-30" plan 1
-    # base IPD+OPD3000: table ipd_opd_3000 "26-30" plan 1
-    # discount h: deductible_discounts "0-40" "20000"
-    ipd_t2 = config["premium_tables"]["ipd"]["26-30"][0]
-    opd_t2 = config["premium_tables"]["ipd_opd_3000"]["26-30"][0] - ipd_t2
+    bracket_30 = get_age_bracket_key(30, config)
+    ipd_t2 = config["premium_tables"]["ipd"][bracket_30][0]
+    opd_t2 = config["premium_tables"]["ipd_opd_3000"][bracket_30][0] - ipd_t2
     m2 = math.ceil(ipd_t2 * (1.0 - h)) + opd_t2
 
     expected_total = math.ceil((m1 + m2) * 0.95)
