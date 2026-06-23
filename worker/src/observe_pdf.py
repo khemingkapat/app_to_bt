@@ -47,7 +47,7 @@ def main():
         "-m",
         "--metadata",
         action="store_true",
-        help="Include metadata, Apple markup flags, and stamp annotations."
+        help="Include metadata, special tags, and stamp annotations."
     )
     parser.add_argument(
         "-f",
@@ -116,7 +116,13 @@ def main():
                     clean_key = key.lstrip("/")
                     metadata_dict[clean_key] = str(val) if val else None
 
-            has_apple_markup = False
+            STANDARD_ANNOT_KEYS = {
+                "/Type", "/Subtype", "/Rect", "/Contents", "/P", "/NM", "/M", "/F", 
+                "/AP", "/AS", "/Border", "/C", "/StructParent", "/OC", "/T", "/DA", 
+                "/Q", "/MK", "/A", "/AA", "/Parent", "/H", "/PA", "/Opt", "/TI", 
+                "/I", "/DV", "/V", "/Sy", "/FS", "/Name", "/BS"
+            }
+            special_tags = set()
             stamps = []
             for page_idx, page in enumerate(reader.pages):
                 annots = page.get("/Annots")
@@ -125,8 +131,9 @@ def main():
                     for annot_ref in annots:
                         try:
                             annot = annot_ref.get_object()
-                            if "/AAPL:AKExtras" in annot:
-                                has_apple_markup = True
+                            for key in annot.keys():
+                                if key.startswith("/") and (":" in key or key not in STANDARD_ANNOT_KEYS):
+                                    special_tags.add(key)
                             subtype = annot.get("/Subtype")
                             if subtype == "/Stamp":
                                 rect = annot.get("/Rect")
@@ -139,7 +146,7 @@ def main():
                             pass
             
             output["metadata"] = metadata_dict
-            output["has_apple_markup"] = has_apple_markup
+            output["special_tags"] = sorted(list(special_tags))
             output["stamps"] = stamps
 
         if include_fields:
