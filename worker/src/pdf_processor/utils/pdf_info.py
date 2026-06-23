@@ -25,7 +25,7 @@ def get_page_info(reader: PdfReader, obj) -> tuple[int | None, float]:
     except Exception:
         pass
 
-    # Fallback: scan page annotations by name /T (for Apple PDFKit duplicated fields)
+    # Fallback: scan page annotations by name /T (for duplicated or mismapped fields)
     name = obj.get("/T")
     if name:
         name_str = str(name)
