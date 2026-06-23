@@ -288,6 +288,19 @@
         // Global State
         let uploadedPdfDoc = null;
         let pdfBytes = null;
+
+        // Helper to get coordinates (prefers current page if available)
+        const getCoords = (f, pageNum = null) => {
+            if (f.coords) return f.coords;
+            if (f.widgets && f.widgets.length > 0) {
+                if (pageNum) {
+                    const w = f.widgets.find(w => w.page === pageNum);
+                    if (w) return w.coords;
+                }
+                return f.widgets[0].coords;
+            }
+            return null;
+        };
         let pdfId = null;
         let extractedValues = {};
         let pdfRegistry = {};
@@ -364,18 +377,10 @@
                 // Gather fields to walk
                 allFields = pdfRegistry.fields || [];
 
-                // Helper to get coordinates
-                const getCoords = (f) => {
-                    if (f.field_kind === 'radio') {
-                        return f.widgets && f.widgets[0] ? f.widgets[0].coords : null;
-                    }
-                    return f.coords || null;
-                };
-
                 // Sort fields by page number, then rounded canvas_top (nearest 10), then x0
                 allFields.sort((a, b) => {
-                    const pA = a.page || 99;
-                    const pB = b.page || 99;
+                    const pA = a.page || (a.widgets && a.widgets[0] ? a.widgets[0].page : 99);
+                    const pB = b.page || (b.widgets && b.widgets[0] ? b.widgets[0].page : 99);
                     if (pA !== pB) return pA - pB;
 
                     const cA = getCoords(a);
@@ -479,9 +484,11 @@
             if (allFields.length === 0 || idx < 0 || idx >= allFields.length) return;
 
             const field = allFields[idx];
+            const fieldPage = field.page || (field.widgets && field.widgets[0] ? field.widgets[0].page : 1);
+
             document.getElementById('activeFieldName').innerText = field.name || 'Unnamed';
             document.getElementById('activeFieldKind').innerText = field.field_kind || 'unknown';
-            document.getElementById('activeFieldPage').innerText = field.page || 1;
+            document.getElementById('activeFieldPage').innerText = fieldPage;
 
             const rawVal = extractedValues[field.name] || '—';
             document.getElementById('activeFieldValue').innerText = rawVal;
@@ -498,7 +505,7 @@
             }
 
             // Update Page and Render PDF Page
-            currentPageNum = field.page || 1;
+            currentPageNum = fieldPage;
             await renderPDFPage(currentPageNum, field);
 
             // Update Navigation Buttons state
@@ -535,7 +542,8 @@
 
             // Handle coordinate highlight overlay
             const highlightBox = document.getElementById('highlightBox');
-            const coords = field ? (field.coords || (field.widgets && field.widgets[0] ? field.widgets[0].coords : null)) : null;
+            const coords = field ? getCoords(field, pageNum) : null;
+
             if (field && coords) {
                 const page_w = pdfRegistry.pages && pdfRegistry.pages[pageNum - 1] ? pdfRegistry.pages[pageNum - 1].page_w : originalViewport.width;
                 const page_h = pdfRegistry.pages && pdfRegistry.pages[pageNum - 1] ? pdfRegistry.pages[pageNum - 1].page_h : originalViewport.height;
