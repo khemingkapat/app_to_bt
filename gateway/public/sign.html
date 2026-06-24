@@ -49,23 +49,8 @@
 
     <div id="planSummary" style="margin-bottom: 30px; text-align: left; display: inline-block; min-width: 400px; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
         <h4 style="margin-top: 0;">📋 Plan Summary</h4>
-        <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-                <td style="padding: 5px; font-weight: bold; border-bottom: 1px solid #eee;">Plan Tier:</td>
-                <td id="tablePlanLabel" style="padding: 5px; border-bottom: 1px solid #eee;">-</td>
-            </tr>
-            <tr>
-                <td style="padding: 5px; font-weight: bold; border-bottom: 1px solid #eee;">Coverage:</td>
-                <td id="tableCoverage" style="padding: 5px; border-bottom: 1px solid #eee;">-</td>
-            </tr>
-            <tr>
-                <td style="padding: 5px; font-weight: bold; border-bottom: 1px solid #eee;">Room Limit:</td>
-                <td id="tableRoomLimit" style="padding: 5px; border-bottom: 1px solid #eee;">-</td>
-            </tr>
-            <tr>
-                <td style="padding: 5px; font-weight: bold;">Deductible:</td>
-                <td id="tableDeductible" style="padding: 5px;">-</td>
-            </tr>
+        <table id="planDetailsTable" style="width: 100%; border-collapse: collapse;">
+            <!-- Dynamic rows -->
         </table>
     </div>
 
@@ -225,10 +210,34 @@
     }
 
     function renderPlanTable(details) {
-        document.getElementById('tablePlanLabel').innerText = details.label || 'N/A';
-        document.getElementById('tableCoverage').innerText = details.coverage || 'N/A';
-        document.getElementById('tableRoomLimit').innerText = details.roomLimit || 'N/A';
-        document.getElementById('tableDeductible').innerText = details.deductible || 'None';
+        const table = document.getElementById('planDetailsTable');
+        table.innerHTML = ''; // Clear
+
+        const rows = [];
+
+        // Add specific details
+        if (details.label) rows.push({ label: 'Plan Label', value: details.label });
+        if (details.coverage) rows.push({ label: 'Coverage', value: details.coverage });
+        if (details.roomLimit) rows.push({ label: 'Room Limit', value: details.roomLimit });
+
+        // Add dynamic options
+        if (details.selectedOptions && details.selectedOptions.length > 0) {
+            details.selectedOptions.forEach(opt => {
+                rows.push({ label: opt.label, value: opt.value });
+            });
+        }
+
+        rows.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            const isLast = idx === rows.length - 1;
+            const borderStyle = isLast ? '' : 'border-bottom: 1px solid #eee;';
+
+            tr.innerHTML = `
+                <td style="padding: 5px; font-weight: bold; ${borderStyle}">${row.label}:</td>
+                <td style="padding: 5px; ${borderStyle}">${row.value}</td>
+            `;
+            table.appendChild(tr);
+        });
     }
 
     function clearCanvas() {
