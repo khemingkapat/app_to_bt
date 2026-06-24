@@ -21,6 +21,11 @@ def load_registry(registry_path: str = REGISTRY_FILE) -> dict:
     """Helper to load the registry."""
     with IO_LOCK:
         if not os.path.exists(registry_path):
+            parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", registry_path))
+            if os.path.exists(parent_path):
+                registry_path = parent_path
+
+        if not os.path.exists(registry_path):
             example_path = registry_path.replace(".json", ".example.json")
             if os.path.exists(example_path):
                 import shutil
@@ -37,6 +42,7 @@ def load_registry(registry_path: str = REGISTRY_FILE) -> dict:
                 print("⚠️ Registry file corrupt or empty. Creating a new one.")
                 pass
         return {}
+
 
 
 def _anchors_match(anchors1: list[str], anchors2: list[str]) -> bool:
@@ -183,9 +189,6 @@ def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -
             name = field["name"]
             values_dict[name] = field["value"]
 
-        # 4. Proximity matching for visual annotations (Apple Markup support)
-        _apply_proximity_matching(reader, raw_fields, values_dict)
-
         for field in raw_fields:
             name = field["name"]
             struct_field = json.loads(json.dumps(field))
@@ -233,6 +236,8 @@ def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -
                         matched_template_id = existing_id
                         break
 
+        # Resolve target fields for proximity matching (use matched template fields if available)
+        proximity_target_fields = raw_fields
         if matched_template_id and matched_template_id in existing_registry:
             # Use clean template data instead of newly extracted (potentially corrupted) fields
             pdf_id = matched_template_id
@@ -240,6 +245,10 @@ def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -
             clean_structural_fields = template_data.get("fields", clean_structural_fields)
             pages_list = template_data.get("pages", pages_list)
             structural_hash = template_data.get("structural_hash", structural_hash)
+            proximity_target_fields = clean_structural_fields
+
+        # 4. Proximity matching for visual annotations (Apple Markup support)
+        _apply_proximity_matching(reader, proximity_target_fields, values_dict)
 
         registry_dict = {
             pdf_id: {
