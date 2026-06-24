@@ -149,6 +149,14 @@ def main():
             output["special_tags"] = sorted(list(special_tags))
             output["stamps"] = stamps
 
+            try:
+                from pdf_processor.annotation_matcher import match_annotations_to_choices
+                unclean_fields = pdf_data.get("fields", [])
+                annot_choices = match_annotations_to_choices(str(pdf_path), unclean_fields)
+                output["annotation_choices"] = annot_choices
+            except Exception as e:
+                output["annotation_choices_error"] = str(e)
+
         if include_fields:
             output["fields"] = fields
 
