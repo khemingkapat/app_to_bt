@@ -387,6 +387,126 @@ func (h *HandlerContext) VaultCreateHandler(c echo.Context) error {
 	})
 }
 
+func (h *HandlerContext) VaultVerifyIdentityHandler(c echo.Context) error {
+	var req struct {
+		Token      string `json:"token"`
+		IdentityID string `json:"identityId"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	}
+
+	entry := GlobalVault.GetEntry(req.Token)
+	if entry == nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "Vault session expired or invalid"})
+	}
+
+	if NormalizeID(req.IdentityID) != NormalizeID(entry.IdentityID) {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "Identity verification failed"})
+	}
+
+	// Resolve plan and deductible from form data using mappings
+	var fieldMappings map[string]interface{}
+	if err := json.Unmarshal([]byte(entry.CacheMappingJSON), &fieldMappings); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to parse vault mapping config"})
+	}
+
+	var resolvedPlan, resolvedDeductible string
+	for pdfField, mapping := range fieldMappings {
+		var btKey string
+		var choicesMap map[string]interface{}
+		if mStr, ok := mapping.(string); ok {
+			btKey = mStr
+		} else if mObj, ok := mapping.(map[string]interface{}); ok {
+			if bk, ok := mObj["bt_key"].(string); ok {
+				btKey = bk
+			}
+			if cm, ok := mObj["choices_map"].(map[string]interface{}); ok {
+				choicesMap = cm
+			}
+		}
+
+		if (btKey == "plan" || btKey == "deductible") && entry.FormData[pdfField] != "" {
+			val := entry.FormData[pdfField]
+			finalVal := val
+			if choicesMap != nil && strings.HasPrefix(val, "/") {
+				if rVal, ok := choicesMap[val].(string); ok {
+					finalVal = rVal
+				}
+			}
+
+			if btKey == "plan" {
+				if strings.Contains(finalVal, " DD ") {
+					finalVal = strings.TrimSpace(strings.Split(finalVal, " DD ")[0])
+				}
+				// We take the first non-empty plan value as the main plan key for lookup
+				if resolvedPlan == "" {
+					resolvedPlan = finalVal
+				}
+			} else if btKey == "deductible" {
+				if resolvedDeductible == "" {
+					resolvedDeductible = finalVal
+				}
+			}
+		}
+	}
+
+	// Load product config to get plan details
+	configName := "health_and_accident_insurance.json"
+	cachePath := "../outputs/assignment_cache.json"
+	if cacheFile, err := os.Open(cachePath); err == nil {
+		defer cacheFile.Close()
+		var globalCache map[string]interface{}
+		if err := json.NewDecoder(cacheFile).Decode(&globalCache); err == nil {
+			if entryCache, ok := globalCache[entry.PdfId].(map[string]interface{}); ok {
+				if pc, ok := entryCache["product_config"].(string); ok && pc != "" {
+					configName = pc
+				}
+			}
+		}
+	}
+
+	configPath := "../config/" + configName
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		// Fallback to example if direct file is missing
+		configPath = "../config/health_and_accident_insurance.example.json"
+	}
+
+	var planLabel, coverage, roomLimit string
+	if configFile, err := os.Open(configPath); err == nil {
+		defer configFile.Close()
+		var fullConfig struct {
+			Plans []struct {
+				Key       string `json:"key"`
+				Label     string `json:"label"`
+				Coverage  string `json:"coverage"`
+				RoomLimit string `json:"room_limit"`
+			} `json:"plans"`
+		}
+		if err := json.NewDecoder(configFile).Decode(&fullConfig); err == nil {
+			for _, p := range fullConfig.Plans {
+				if p.Key == resolvedPlan {
+					planLabel = p.Label
+					coverage = p.Coverage
+					roomLimit = p.RoomLimit
+					break
+				}
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"customerName": entry.CustomerName,
+		"planDetails": map[string]string{
+			"label":      planLabel,
+			"coverage":   coverage,
+			"roomLimit":  roomLimit,
+			"deductible": resolvedDeductible,
+		},
+	})
+}
+
 func (h *HandlerContext) VaultVerifyHandler(c echo.Context) error {
 	token := c.QueryParam("token")
 	if token == "" {

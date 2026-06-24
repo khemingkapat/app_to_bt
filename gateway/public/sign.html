@@ -45,7 +45,30 @@
 </div>
 
 <div id="signState" class="hidden">
-    <h2>✍️ Sign Application</h2>
+    <h2>✍️ Review &amp; Sign Application</h2>
+
+    <div id="planSummary" style="margin-bottom: 30px; text-align: left; display: inline-block; min-width: 400px; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+        <h4 style="margin-top: 0;">📋 Plan Summary</h4>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="padding: 5px; font-weight: bold; border-bottom: 1px solid #eee;">Plan Tier:</td>
+                <td id="tablePlanLabel" style="padding: 5px; border-bottom: 1px solid #eee;">-</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px; font-weight: bold; border-bottom: 1px solid #eee;">Coverage:</td>
+                <td id="tableCoverage" style="padding: 5px; border-bottom: 1px solid #eee;">-</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px; font-weight: bold; border-bottom: 1px solid #eee;">Room Limit:</td>
+                <td id="tableRoomLimit" style="padding: 5px; border-bottom: 1px solid #eee;">-</td>
+            </tr>
+            <tr>
+                <td style="padding: 5px; font-weight: bold;">Deductible:</td>
+                <td id="tableDeductible" style="padding: 5px;">-</td>
+            </tr>
+        </table>
+    </div>
+
     <p>Please draw your signature using your finger, stylus, or mouse pointer in the box below.</p>
 
     <div id="signErrorMsg" class="alert-error hidden"></div>
@@ -105,21 +128,29 @@
         btn.disabled = true;
 
         try {
-            // Because we don't have a dedicated verify-only POST endpoint in the plan that doesn't sign,
-            // we will submit the signature with the identity ID. If identity is wrong, it fails.
-            // But to mimic the two-step process securely: we assume the user just needs to input the ID now,
-            // and we will validate it WHEN they submit the signature.
-            // BUT wait, Python does two step: `verify_identity` deletes truth_id on success.
-            // Since we combined it in node into `POST /api/vault/sign`, we'll just mock the transition visually here
-            // and enforce the real verify at the final sign step to prevent exposing data prematurely.
+            const res = await fetch('/api/vault/verify-identity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: token,
+                    identityId: idInput
+                })
+            });
 
-            // Actually, we can just proceed to canvas. The backend handles the real gate.
-            // If they entered the wrong ID, it will fail when they submit the canvas.
+            const data = await res.json();
+
+            if (!res.ok) {
+                showAuthError(data.error || 'Identity verification failed. Please check your ID number.');
+                return;
+            }
+
+            // Success
             window.customerIdentityId = idInput;
+            renderPlanTable(data.planDetails);
             initCanvas();
             showState('signState');
         } catch (e) {
-            showAuthError('Error verifying identity.');
+            showAuthError('Error verifying identity. Please try again.');
         } finally {
             btn.disabled = false;
         }
@@ -191,6 +222,13 @@
 
     function stopDrawing() {
         isDrawing = false;
+    }
+
+    function renderPlanTable(details) {
+        document.getElementById('tablePlanLabel').innerText = details.label || 'N/A';
+        document.getElementById('tableCoverage').innerText = details.coverage || 'N/A';
+        document.getElementById('tableRoomLimit').innerText = details.roomLimit || 'N/A';
+        document.getElementById('tableDeductible').innerText = details.deductible || 'None';
     }
 
     function clearCanvas() {

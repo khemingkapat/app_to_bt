@@ -68,6 +68,7 @@ func main() {
 	api.POST("/stamp-signature", hCtx.StampSignatureHandler)
 	api.POST("/vault/create", hCtx.VaultCreateHandler)
 	api.GET("/vault/verify", hCtx.VaultVerifyHandler)
+	api.POST("/vault/verify-identity", hCtx.VaultVerifyIdentityHandler)
 	api.GET("/vault/status", hCtx.VaultStatusHandler)
 	api.POST("/vault/sign", hCtx.VaultSignHandler)
 	api.GET("/vault/download/:token/:type", hCtx.VaultDownloadHandler)
