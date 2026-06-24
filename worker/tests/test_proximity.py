@@ -162,3 +162,92 @@ def test_proximity_matching_wrong_page(mock_pdf_stuff):
     pdf_id, reg, values = process_pdf("fake.pdf")
 
     assert values.get("Check1") == ""
+
+def test_annotation_choice_mapping_with_metadata(mock_pdf_stuff):
+    reader = mock_pdf_stuff["reader"]
+    m_walk = mock_pdf_stuff["m_walk"]
+
+    # Mock metadata containing 'stamp'
+    reader.metadata = {"/stamp": "true"}
+
+    page = MagicMock()
+    reader.pages = [page]
+
+    # Mock a radio field
+    m_walk.return_value = [
+        {
+            "field_kind": "radio",
+            "name": "RadioGrp",
+            "value": "",
+            "page": 1,
+            "widgets": [
+                {
+                    "page": 1,
+                    "choice_value": "ValA",
+                    "coords": {"x0": 100, "canvas_top": 100, "x1": 110, "canvas_bottom": 110, "y0": 100, "y1": 110}
+                },
+                {
+                    "page": 1,
+                    "choice_value": "ValB",
+                    "coords": {"x0": 200, "canvas_top": 200, "x1": 210, "canvas_bottom": 210, "y0": 200, "y1": 210}
+                }
+            ]
+        }
+    ]
+
+    # Mock extract_pdf_annotations to return one annotation matching ValB coordinates
+    mock_annots = [
+        {
+            "page": 1,
+            "rect": [190, 190, 220, 220],
+            "matrix": [[120 if (12 <= y < 18 and 12 <= x < 18) else 255 for x in range(30)] for y in range(30)]
+        }
+    ]
+
+    with patch("pdf_processor.annotation_matcher.extract_pdf_annotations", return_value=mock_annots):
+        pdf_id, reg, values = process_pdf("fake.pdf")
+
+    assert values.get("RadioGrp") == "ValB"
+
+def test_annotation_choice_mapping_without_metadata(mock_pdf_stuff):
+    reader = mock_pdf_stuff["reader"]
+    m_walk = mock_pdf_stuff["m_walk"]
+
+    # Metadata does not contain stamp or annotation
+    reader.metadata = {"/Author": "Tester"}
+
+    page = MagicMock()
+    reader.pages = [page]
+
+    # Mock a radio field
+    m_walk.return_value = [
+        {
+            "field_kind": "radio",
+            "name": "RadioGrp",
+            "value": "",
+            "page": 1,
+            "widgets": [
+                {
+                    "page": 1,
+                    "choice_value": "ValA",
+                    "coords": {"x0": 100, "canvas_top": 100, "x1": 110, "canvas_bottom": 110, "y0": 100, "y1": 110}
+                }
+            ]
+        }
+    ]
+
+    mock_annots = [
+        {
+            "page": 1,
+            "rect": [90, 90, 120, 120],
+            "matrix": [[120 for x in range(30)] for y in range(30)]
+        }
+    ]
+
+    with patch("pdf_processor.annotation_matcher.extract_pdf_annotations", return_value=mock_annots):
+        pdf_id, reg, values = process_pdf("fake.pdf")
+
+    # Since metadata check fails, flow shouldn't execute and RadioGrp should be empty/unchanged
+    assert values.get("RadioGrp") == ""
+
+

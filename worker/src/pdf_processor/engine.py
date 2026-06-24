@@ -303,7 +303,42 @@ def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -
             }
         }
 
+    # Conditional Annotation-to-Choice Mapping
+    meta = reader.metadata or {}
+    has_annotation_or_stamp = False
+    for key, val in meta.items():
+        key_clean = key.lower().lstrip('/')
+        val_str = str(val).lower() if val else ""
+        if "annotation" in key_clean or "stamp" in key_clean or "annotation" in val_str or "stamp" in val_str:
+            has_annotation_or_stamp = True
+            break
+
+    if not has_annotation_or_stamp:
+        for page in reader.pages:
+            annots = page.get("/Annots")
+            if annots:
+                try:
+                    annots_list = resolve(annots)
+                    for annot_ref in annots_list:
+                        annot = resolve(annot_ref)
+                        subtype = str(annot.get("/Subtype", ""))
+                        if "/Stamp" in subtype or "/Ink" in subtype or "stamp" in subtype.lower() or "annot" in subtype.lower():
+                            has_annotation_or_stamp = True
+                            break
+                except Exception:
+                    pass
+            if has_annotation_or_stamp:
+                break
+
+    if has_annotation_or_stamp and clean_structural_fields:
+        from .annotation_matcher import match_annotations_to_choices
+        annot_values = match_annotations_to_choices(pdf_file, clean_structural_fields)
+        for name, val in annot_values.items():
+            values_dict[name] = val
+
+
     return pdf_id, registry_dict, values_dict
+
 
 
 def update_pdf_registry(
