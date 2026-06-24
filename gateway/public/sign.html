@@ -45,7 +45,15 @@
 </div>
 
 <div id="signState" class="hidden">
-    <h2>✍️ Sign Application</h2>
+    <h2>✍️ Review &amp; Sign Application</h2>
+
+    <div id="planSummary" style="margin-bottom: 30px; text-align: left; display: inline-block; min-width: 400px; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+        <h4 style="margin-top: 0;">📋 Plan Summary</h4>
+        <table id="planDetailsTable" style="width: 100%; border-collapse: collapse;">
+            <!-- Dynamic rows -->
+        </table>
+    </div>
+
     <p>Please draw your signature using your finger, stylus, or mouse pointer in the box below.</p>
 
     <div id="signErrorMsg" class="alert-error hidden"></div>
@@ -105,21 +113,29 @@
         btn.disabled = true;
 
         try {
-            // Because we don't have a dedicated verify-only POST endpoint in the plan that doesn't sign,
-            // we will submit the signature with the identity ID. If identity is wrong, it fails.
-            // But to mimic the two-step process securely: we assume the user just needs to input the ID now,
-            // and we will validate it WHEN they submit the signature.
-            // BUT wait, Python does two step: `verify_identity` deletes truth_id on success.
-            // Since we combined it in node into `POST /api/vault/sign`, we'll just mock the transition visually here
-            // and enforce the real verify at the final sign step to prevent exposing data prematurely.
+            const res = await fetch('/api/vault/verify-identity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: token,
+                    identityId: idInput
+                })
+            });
 
-            // Actually, we can just proceed to canvas. The backend handles the real gate.
-            // If they entered the wrong ID, it will fail when they submit the canvas.
+            const data = await res.json();
+
+            if (!res.ok) {
+                showAuthError(data.error || 'Identity verification failed. Please check your ID number.');
+                return;
+            }
+
+            // Success
             window.customerIdentityId = idInput;
+            renderPlanTable(data.planDetails);
             initCanvas();
             showState('signState');
         } catch (e) {
-            showAuthError('Error verifying identity.');
+            showAuthError('Error verifying identity. Please try again.');
         } finally {
             btn.disabled = false;
         }
@@ -191,6 +207,37 @@
 
     function stopDrawing() {
         isDrawing = false;
+    }
+
+    function renderPlanTable(details) {
+        const table = document.getElementById('planDetailsTable');
+        table.innerHTML = ''; // Clear
+
+        const rows = [];
+
+        // Add specific details
+        if (details.label) rows.push({ label: 'Plan Label', value: details.label });
+        if (details.coverage) rows.push({ label: 'Coverage', value: details.coverage });
+        if (details.roomLimit) rows.push({ label: 'Room Limit', value: details.roomLimit });
+
+        // Add dynamic options
+        if (details.selectedOptions && details.selectedOptions.length > 0) {
+            details.selectedOptions.forEach(opt => {
+                rows.push({ label: opt.label, value: opt.value });
+            });
+        }
+
+        rows.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            const isLast = idx === rows.length - 1;
+            const borderStyle = isLast ? '' : 'border-bottom: 1px solid #eee;';
+
+            tr.innerHTML = `
+                <td style="padding: 5px; font-weight: bold; ${borderStyle}">${row.label}:</td>
+                <td style="padding: 5px; ${borderStyle}">${row.value}</td>
+            `;
+            table.appendChild(tr);
+        });
     }
 
     function clearCanvas() {

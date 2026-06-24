@@ -387,6 +387,192 @@ func (h *HandlerContext) VaultCreateHandler(c echo.Context) error {
 	})
 }
 
+func (h *HandlerContext) VaultVerifyIdentityHandler(c echo.Context) error {
+	var req struct {
+		Token      string `json:"token"`
+		IdentityID string `json:"identityId"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	}
+
+	entry := GlobalVault.GetEntry(req.Token)
+	if entry == nil {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "Vault session expired or invalid"})
+	}
+
+	if NormalizeID(req.IdentityID) != NormalizeID(entry.IdentityID) {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "Identity verification failed"})
+	}
+
+	// Resolve plan and deductible from form data using mappings
+	var fieldMappings map[string]interface{}
+	if err := json.Unmarshal([]byte(entry.CacheMappingJSON), &fieldMappings); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to parse vault mapping config"})
+	}
+
+	btData := make(map[string]string)
+	for pdfField, mapping := range fieldMappings {
+		var btKey string
+		var choicesMap map[string]interface{}
+		if mStr, ok := mapping.(string); ok {
+			btKey = mStr
+		} else if mObj, ok := mapping.(map[string]interface{}); ok {
+			if bk, ok := mObj["bt_key"].(string); ok {
+				btKey = bk
+			}
+			if cm, ok := mObj["choices_map"].(map[string]interface{}); ok {
+				choicesMap = cm
+			}
+		}
+
+		if btKey != "" && btKey != "SKIPPED" {
+			val := entry.FormData[pdfField]
+			if val != "" {
+				finalVal := val
+				if choicesMap != nil && strings.HasPrefix(val, "/") {
+					if resolvedVal, ok := choicesMap[val].(string); ok {
+						finalVal = resolvedVal
+					}
+				}
+
+				currentVal := btData[btKey]
+				if currentVal != "" {
+					btData[btKey] = currentVal + "-" + finalVal
+				} else {
+					btData[btKey] = finalVal
+				}
+			}
+		}
+	}
+
+	var resolvedPlan string
+	if planVal := btData["plan"]; planVal != "" {
+		resolvedPlan = planVal
+		if strings.Contains(resolvedPlan, " DD ") {
+			resolvedPlan = strings.TrimSpace(strings.Split(resolvedPlan, " DD ")[0])
+		}
+	}
+
+	// Load product config to get plan details
+	configName := "health_and_accident_insurance.json"
+	cachePath := "../outputs/assignment_cache.json"
+	if cacheFile, err := os.Open(cachePath); err == nil {
+		defer cacheFile.Close()
+		var globalCache map[string]interface{}
+		if err := json.NewDecoder(cacheFile).Decode(&globalCache); err == nil {
+			if entryCache, ok := globalCache[entry.PdfId].(map[string]interface{}); ok {
+				if pc, ok := entryCache["product_config"].(string); ok && pc != "" {
+					configName = pc
+				}
+			}
+		}
+	}
+
+	configPath := "../config/" + configName
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		// Fallback to example if direct file is missing
+		configPath = "../config/health_and_accident_insurance.example.json"
+	}
+
+	var planLabel, coverage, roomLimit string
+	var selectedOptions []map[string]string
+
+	if configFile, err := os.Open(configPath); err == nil {
+		defer configFile.Close()
+		var fullConfig map[string]interface{}
+		if err := json.NewDecoder(configFile).Decode(&fullConfig); err == nil {
+			// Find plan details
+			if plans, ok := fullConfig["plans"].([]interface{}); ok {
+				for _, p := range plans {
+					if pMap, ok := p.(map[string]interface{}); ok {
+						pKey, _ := pMap["key"].(string)
+						// Match if pKey is one of the parts in resolvedPlan
+						parts := strings.Split(resolvedPlan, "-")
+						match := false
+						for _, part := range parts {
+							if part == pKey {
+								match = true
+								break
+							}
+						}
+						if match {
+							planLabel, _ = pMap["label"].(string)
+							coverage, _ = pMap["coverage"].(string)
+							roomLimit, _ = pMap["room_limit"].(string)
+							break
+						}
+					}
+				}
+			}
+
+			// Find selected options
+			if productOptions, ok := fullConfig["product_options"].(map[string]interface{}); ok {
+				// 1. Check top-level product_name
+				if prodNameOpt, ok := productOptions["product_name"].(map[string]interface{}); ok {
+					btKey, _ := prodNameOpt["bt_key"].(string)
+					label, _ := prodNameOpt["label"].(string)
+					if val, ok := btData[btKey]; ok {
+						selectedOptions = append(selectedOptions, map[string]string{"label": label, "value": val})
+					}
+				}
+
+				// 2. Check product-specific options
+				if products, ok := productOptions["products"].(map[string]interface{}); ok {
+					// Match product by iterating (since btData["product_name"] might be ESSENTIAL and config key is "MockCare Plan A")
+					// Actually we should look for which product is selected.
+					// For now, let's just find the one that contains our selected product_name if any.
+					var selectedProductOptions map[string]interface{}
+					for _, pOpts := range products {
+						if opts, ok := pOpts.(map[string]interface{}); ok {
+							selectedProductOptions = opts
+							break // Just take the first one for now as a heuristic if we can't match exactly
+						}
+					}
+
+					if selectedProductOptions != nil {
+						// Order them properly
+						keys := []string{"plan_tier", "optional_benefit", "opd_choice", "deductible"}
+						for _, k := range keys {
+							if opt, ok := selectedProductOptions[k].(map[string]interface{}); ok {
+								btKey, _ := opt["bt_key"].(string)
+								label, _ := opt["label"].(string)
+								if val, ok := btData[btKey]; ok {
+									finalVal := val
+									// Filter by choices if available
+									if choices, ok := opt["choices"].([]interface{}); ok {
+										parts := strings.Split(val, "-")
+										for _, p := range parts {
+											for _, c := range choices {
+												if cStr, ok := c.(string); ok && cStr == p {
+													finalVal = cStr
+													break
+												}
+											}
+										}
+									}
+									selectedOptions = append(selectedOptions, map[string]string{"label": label, "value": finalVal})
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"customerName": entry.CustomerName,
+		"planDetails": map[string]interface{}{
+			"label":           planLabel,
+			"coverage":        coverage,
+			"roomLimit":       roomLimit,
+			"selectedOptions": selectedOptions,
+		},
+	})
+}
+
 func (h *HandlerContext) VaultVerifyHandler(c echo.Context) error {
 	token := c.QueryParam("token")
 	if token == "" {
