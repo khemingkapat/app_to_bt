@@ -1,5 +1,6 @@
 import os
 import json
+import math
 import threading
 from io import BytesIO
 from typing import Union
@@ -49,6 +50,102 @@ def _anchors_match(anchors1: list[str], anchors2: list[str]) -> bool:
     return False
 
 
+def _calculate_center(coords: dict) -> tuple[float, float]:
+    """Calculate the (x, y) center of a coordinate dictionary."""
+    return (coords["x0"] + coords["x1"]) / 2, (coords["y0"] + coords["y1"]) / 2
+
+
+def _dist(p1: tuple[float, float], p2: tuple[float, float]) -> float:
+    """Calculate Euclidean distance between two points."""
+    return math.sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
+
+
+def _apply_proximity_matching(reader, raw_fields: list[dict], values_dict: dict):
+    """
+    Resolves visual annotations (like /Stamp, /Ink) to the nearest form widgets.
+    Apple Markup checkmarks are often saved as visual annotations rather than AcroForm values.
+    """
+    THRESHOLD = 30.0
+
+    # Map target widgets (checkboxes and radio choices) by page for efficient lookup
+    # Each entry: {"center": (x, y), "name": str, "kind": str, "choice_value": optional}
+    page_widgets = {}
+
+    for field in raw_fields:
+        kind = field.get("field_kind")
+        name = field.get("name")
+        if kind == "checkbox":
+            page = field.get("page")
+            coords = field.get("coords")
+            if page and coords:
+                page_widgets.setdefault(page, []).append({
+                    "center": _calculate_center(coords),
+                    "name": name,
+                    "kind": kind
+                })
+        elif kind == "radio":
+            for widget in field.get("widgets", []):
+                page = widget.get("page")
+                coords = widget.get("coords")
+                if page and coords:
+                    page_widgets.setdefault(page, []).append({
+                        "center": _calculate_center(coords),
+                        "name": name,
+                        "kind": kind,
+                        "choice_value": widget.get("choice_value")
+                    })
+
+    for page_idx, page in enumerate(reader.pages):
+        page_num = page_idx + 1
+        annots = page.get("/Annots")
+        if not annots:
+            continue
+
+        target_widgets = page_widgets.get(page_num, [])
+        if not target_widgets:
+            continue
+
+        for annot_ref in resolve(annots):
+            annot = resolve(annot_ref)
+            subtype = annot.get("/Subtype")
+
+            # Skip /Widget annotations as they are already handled by AcroForm parsing
+            if subtype == "/Widget":
+                continue
+
+            rect = annot.get("/Rect")
+            if not rect:
+                continue
+
+            # Calculate center of the visual annotation
+            try:
+                x0, y0, x1, y1 = [float(v) for v in rect]
+                annot_center = ((x0 + x1) / 2, (y0 + y1) / 2)
+            except (ValueError, TypeError, IndexError):
+                continue
+
+            closest_widget = None
+            min_dist = float("inf")
+
+            for widget in target_widgets:
+                d = _dist(annot_center, widget["center"])
+                if d < min_dist:
+                    min_dist = d
+                    closest_widget = widget
+
+            if closest_widget and min_dist <= THRESHOLD:
+                name = closest_widget["name"]
+                kind = closest_widget["kind"]
+
+                # Only update if the field is currently empty or unselected
+                current_val = values_dict.get(name, "")
+                if not current_val or current_val in ("", "/Off", "Off"):
+                    if kind == "checkbox":
+                        values_dict[name] = "/Yes"
+                    elif kind == "radio":
+                        values_dict[name] = closest_widget.get("choice_value", "")
+
+
 def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -> tuple[str, dict, dict]:
     """
     Parses a PDF file and extracts its structure and values.
@@ -86,6 +183,11 @@ def process_pdf(pdf_file: Union[str, BytesIO], existing_registry: dict = None) -
             name = field["name"]
             values_dict[name] = field["value"]
 
+        # 4. Proximity matching for visual annotations (Apple Markup support)
+        _apply_proximity_matching(reader, raw_fields, values_dict)
+
+        for field in raw_fields:
+            name = field["name"]
             struct_field = json.loads(json.dumps(field))
             struct_field.pop("value", None)
 
