@@ -47,25 +47,25 @@ def main():
         "-m",
         "--metadata",
         action="store_true",
-        help="Include metadata, special tags, and stamp annotations."
+        help="Include metadata, special tags, and stamp annotations.",
     )
     parser.add_argument(
         "-f",
         "--fields",
         action="store_true",
-        help="Include form fields with coordinates."
+        help="Include form fields with coordinates.",
     )
     parser.add_argument(
         "-cf",
         "--clean-fields",
         action="store_true",
-        help="Include form fields with coordinates cleaned/removed."
+        help="Include form fields with coordinates cleaned/removed.",
     )
     parser.add_argument(
         "-v",
         "--values",
         action="store_true",
-        help="Include extracted values mapped with the assignment cache."
+        help="Include extracted values mapped with the assignment cache.",
     )
 
     args = parser.parse_args()
@@ -91,7 +91,9 @@ def main():
 
         # Determine output parts based on flags
         # If no flags are provided, show metadata, original fields, and mapped values by default
-        show_default = not (args.metadata or args.fields or args.clean_fields or args.values)
+        show_default = not (
+            args.metadata or args.fields or args.clean_fields or args.values
+        )
         include_metadata = args.metadata or show_default
         include_fields = args.fields or args.clean_fields or show_default
         clean = args.clean_fields
@@ -100,15 +102,14 @@ def main():
         if include_fields and clean:
             fields = clean_coords(fields)
 
-        output = {
-            "pdf_id": pdf_id
-        }
+        output = {"pdf_id": pdf_id}
 
         if include_metadata:
             # Extract extra PDF metadata and annotations
             from pypdf import PdfReader
+
             reader = PdfReader(str(pdf_path))
-            
+
             meta = reader.metadata
             metadata_dict = {}
             if meta:
@@ -117,10 +118,38 @@ def main():
                     metadata_dict[clean_key] = str(val) if val else None
 
             STANDARD_ANNOT_KEYS = {
-                "/Type", "/Subtype", "/Rect", "/Contents", "/P", "/NM", "/M", "/F", 
-                "/AP", "/AS", "/Border", "/C", "/StructParent", "/OC", "/T", "/DA", 
-                "/Q", "/MK", "/A", "/AA", "/Parent", "/H", "/PA", "/Opt", "/TI", 
-                "/I", "/DV", "/V", "/Sy", "/FS", "/Name", "/BS"
+                "/Type",
+                "/Subtype",
+                "/Rect",
+                "/Contents",
+                "/P",
+                "/NM",
+                "/M",
+                "/F",
+                "/AP",
+                "/AS",
+                "/Border",
+                "/C",
+                "/StructParent",
+                "/OC",
+                "/T",
+                "/DA",
+                "/Q",
+                "/MK",
+                "/A",
+                "/AA",
+                "/Parent",
+                "/H",
+                "/PA",
+                "/Opt",
+                "/TI",
+                "/I",
+                "/DV",
+                "/V",
+                "/Sy",
+                "/FS",
+                "/Name",
+                "/BS",
             }
             special_tags = set()
             stamps = []
@@ -132,27 +161,42 @@ def main():
                         try:
                             annot = annot_ref.get_object()
                             for key in annot.keys():
-                                if key.startswith("/") and (":" in key or key not in STANDARD_ANNOT_KEYS):
+                                if key.startswith("/") and (
+                                    ":" in key or key not in STANDARD_ANNOT_KEYS
+                                ):
                                     special_tags.add(key)
                             subtype = annot.get("/Subtype")
                             if subtype == "/Stamp":
                                 rect = annot.get("/Rect")
-                                stamps.append({
-                                    "page": page_idx + 1,
-                                    "name": str(annot.get("/T")) if annot.get("/T") else None,
-                                    "rect": [float(x) for x in rect] if rect else None
-                                })
+                                stamps.append(
+                                    {
+                                        "page": page_idx + 1,
+                                        "name": (
+                                            str(annot.get("/T"))
+                                            if annot.get("/T")
+                                            else None
+                                        ),
+                                        "rect": (
+                                            [float(x) for x in rect] if rect else None
+                                        ),
+                                    }
+                                )
                         except Exception:
                             pass
-            
+
             output["metadata"] = metadata_dict
             output["special_tags"] = sorted(list(special_tags))
             output["stamps"] = stamps
 
             try:
-                from pdf_processor.annotation_matcher import match_annotations_to_choices
+                from pdf_processor.annotation_matcher import (
+                    match_annotations_to_choices,
+                )
+
                 unclean_fields = pdf_data.get("fields", [])
-                annot_choices = match_annotations_to_choices(str(pdf_path), unclean_fields)
+                annot_choices = match_annotations_to_choices(
+                    str(pdf_path), unclean_fields
+                )
                 output["annotation_choices"] = annot_choices
             except Exception as e:
                 output["annotation_choices_error"] = str(e)
@@ -169,7 +213,7 @@ def main():
                         cache_data = json.load(f)
                 except Exception:
                     pass
-            
+
             pdf_cache = cache_data.get(pdf_id)
             if not pdf_cache:
                 pdf_cache = cache_data.get("UNKNOWN_ID", {})
@@ -186,7 +230,7 @@ def main():
                     mapped_values[f_name] = [f_val, mapped_field]
                 else:
                     mapped_values[f_name] = [f_val]
-            
+
             output["values"] = mapped_values
 
         # Print clean JSON to stdout
