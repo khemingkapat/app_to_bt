@@ -4,11 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"mime/multipart"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"gateway/client"
 
@@ -20,8 +24,48 @@ import (
 func setupTestServer(t *testing.T) (*echo.Echo, *HandlerContext) {
 	e := echo.New()
 
+	// Check if port 50051 is already open
+	conn, err := net.DialTimeout("tcp", "localhost:50051", 500*time.Millisecond)
+	var cmd *exec.Cmd
+	if err != nil {
+		// Start worker
+		cwd, _ := os.Getwd()
+		repoRoot, err := filepath.Abs(filepath.Join(cwd, "../.."))
+		require.NoError(t, err)
+		workerDir := filepath.Join(repoRoot, "worker")
+
+		cmd = exec.Command("uv", "run", "python", "src/server.py")
+		cmd.Dir = workerDir
+		cmd.Stdout = nil
+		cmd.Stderr = nil
+		err = cmd.Start()
+		require.NoError(t, err)
+
+		// Wait for it to become ready
+		ready := false
+		for i := 0; i < 15; i++ {
+			time.Sleep(500 * time.Millisecond)
+			c, err := net.Dial("tcp", "localhost:50051")
+			if err == nil {
+				c.Close()
+				ready = true
+				break
+			}
+		}
+		require.True(t, ready, "Failed to start Python worker for integration tests")
+	} else {
+		conn.Close()
+	}
+
 	docClient, err := client.NewDocumentClient()
 	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		if cmd != nil && cmd.Process != nil {
+			cmd.Process.Kill()
+			cmd.Wait()
+		}
+	})
 
 	hCtx := &HandlerContext{
 		DocClient:        docClient,
