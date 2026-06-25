@@ -91,8 +91,8 @@ def match_annotations_to_choices(pdf_file: Union[str, BytesIO], fields: list[dic
             field_bounded = False
             group_name = field["name"]
             choices = field.get("widgets", [])
-            max_field_val = 0
-            max_field_name = ""
+            min_field_val = 1.0
+            min_field_name = ""
 
             for choice in choices:
                 coords = choice.get("coords", {})
@@ -134,11 +134,11 @@ def match_annotations_to_choices(pdf_file: Union[str, BytesIO], fields: list[dic
                     if bounded_x1 > bounded_x0 and bounded_y1 > bounded_y0:
                         choice_bitmap = bitmap[bounded_y0:bounded_y1, bounded_x0:bounded_x1]
                         choice_bitmap_mean = choice_bitmap.mean()
-                        if choice_bitmap_mean > max_field_val:
-                            max_field_val = choice_bitmap_mean
-                            max_field_name = choice.get("choice_value", "")
+                        if choice_bitmap_mean < min_field_val:
+                            min_field_val = choice_bitmap_mean
+                            min_field_name = choice.get("choice_value", "")
 
-            if field_bounded and max_field_name:
-                detected_values[group_name] = max_field_name
+            if field_bounded and min_field_name:
+                detected_values[group_name] = min_field_name
 
     return detected_values
