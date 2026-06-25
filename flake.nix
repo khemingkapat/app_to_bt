@@ -8,9 +8,9 @@
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
-      # Script 1: Clean up non-example JSON files
-      clean-outputs = pkgs.writeScriptBin "clean-outputs" ''
-        #!/usr/bin/env bash
+
+      # Define commands as binary scripts so they persist in zsh
+      clean-json = pkgs.writeShellScriptBin "clean-json" ''
         if [ -d "outputs" ]; then
           echo "Cleaning JSON files in outputs/ (excluding *.example.json)..."
           find outputs/ -type f -name "*.json" ! -name "*.example.*" -delete
@@ -19,15 +19,13 @@
           echo "Directory 'outputs/' does not exist."
         fi
       '';
-      # Script 2: Copy .example.json files to .json files
-      setup-examples = pkgs.writeScriptBin "setup-examples" ''
-        #!/usr/bin/env bash
+
+      setup-json = pkgs.writeShellScriptBin "setup-json" ''
         if [ -d "outputs" ]; then
           echo "Copying .example.json files to .json..."
           for file in outputs/*.example.json; do
-            # Check if any matching files actually exist
             [ -e "$file" ] || continue
-
+            
             # Create the new filename by removing '.example'
             new_file="''${file/.example./.}"
 
@@ -39,6 +37,7 @@
           echo "Directory 'outputs/' does not exist."
         fi
       '';
+
     in
     {
       devShells.${system}.default = pkgs.mkShell {
@@ -49,28 +48,27 @@
           protoc-gen-go-grpc
           uv
           python311
-          # Added system libraries needed by pre-compiled Python wheels (Jupyter, Pandas, etc.)
+          # System libraries needed by pre-compiled Python wheels
           stdenv.cc.cc.lib
           zlib
-          # Include both custom scripts
-          clean-outputs
-          setup-examples
+          # Include your custom binary scripts here
+          clean-json
+          setup-json
         ];
-        # Tell the environment exactly where to find those libraries
+
         env = {
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
             pkgs.stdenv.cc.cc.lib
             pkgs.zlib
           ];
         };
+
         shellHook = ''
-          echo "Automation of Application form to Blue Table"
+          echo "🚀 Automation of Application form to Blue Table"
           echo "Run 'uv sync' to install dependencies"
           echo "Run 'uv run jupyter lab' to start"
-          alias clean-json="clean-outputs"
-          alias setup-json="setup-examples"
           echo ""
-          echo "Available commands:"
+          echo "✅ Available commands loaded:"
           echo "  clean-json - Clear target JSON files in outputs/"
           echo "  setup-json - Copy *.example.json files to *.json"
 
