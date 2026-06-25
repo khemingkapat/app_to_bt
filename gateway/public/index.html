@@ -624,14 +624,36 @@
         async function prevPage() {
             if (currentPageNum > 1) {
                 currentPageNum--;
-                await renderPDFPage(currentPageNum, null);
+                const firstFieldOnPageIdx = allFields.findIndex(f => {
+                    const p = f.page || (f.widgets && f.widgets[0] ? f.widgets[0].page : null);
+                    return p === currentPageNum;
+                });
+
+                if (firstFieldOnPageIdx !== -1) {
+                    activeFieldIndex = firstFieldOnPageIdx;
+                    activeWidgetIndex = 0;
+                    await displayField(activeFieldIndex);
+                } else {
+                    await renderPDFPage(currentPageNum, null);
+                }
             }
         }
 
         async function nextPage() {
             if (uploadedPdfDoc && currentPageNum < uploadedPdfDoc.numPages) {
                 currentPageNum++;
-                await renderPDFPage(currentPageNum, null);
+                const firstFieldOnPageIdx = allFields.findIndex(f => {
+                    const p = f.page || (f.widgets && f.widgets[0] ? f.widgets[0].page : null);
+                    return p === currentPageNum;
+                });
+
+                if (firstFieldOnPageIdx !== -1) {
+                    activeFieldIndex = firstFieldOnPageIdx;
+                    activeWidgetIndex = 0;
+                    await displayField(activeFieldIndex);
+                } else {
+                    await renderPDFPage(currentPageNum, null);
+                }
             }
         }
 
