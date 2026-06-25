@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AXA Application Ingestion Portal</title>
+    <!-- Include PDF.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <style>
+        body {
+            margin: 20px;
+            text-align: center;
+        }
+        .header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        .nav-links {
+            margin-top: 10px;
+        }
+        .nav-links a {
+            margin-right: 15px;
+        }
+        .split-layout {
+            display: flex;
+            gap: 20px;
+            text-align: left;
+        }
+        .pdf-viewer-card, .mapper-card {
+            flex: 1;
+        }
+        .pdf-viewport {
+            position: relative;
+            overflow: auto;
+            max-height: 800px;
+            border: 1px solid #ccc;
+        }
+        .pdf-canvas-wrapper {
+            position: relative;
+        }
+        .highlight-overlay {
+            position: absolute;
+            border: 3px solid red;
+            background-color: rgba(255, 0, 0, 0.25);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .tabs-header {
+            margin: 15px 0;
+            border-bottom: 1px solid #ccc;
+        }
+        .tab-btn {
+            background: none;
+            border: 1px solid #ccc;
+            border-bottom: none;
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            font-weight: bold;
+            background: #eee;
+        }
+        .tab-content.hidden, .hidden {
+            display: none !important;
+        }
+        .bt-field-container {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .bt-row {
+            margin: 10px 0;
+        }
+        .bt-input-wrapper {
+            display: inline-flex;
+            gap: 5px;
+        }
+        .upload-section {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .radio-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 5px;
+        }
+        .radio-row-label {
+            width: 120px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🏥 AXA Application Ingestion Portal</h1>
+        <div class="desc">Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
+        <div class="nav-links">
+            <a href="index.html">🏠 Home</a>
+            <a href="config_manager.html">⚙️ Config Manager</a>
+            <a href="internal_eform.html">⌨️ Internal Fast-Entry E-Form</a>
+            <a href="signature_gateway.html">✍️ Signature Gateway</a>
+        </div>
+    </div>
+
+    <div class="main-container">
+
+        <!-- STEP 1: UPLOAD -->
+        <div id="stepUpload" class="upload-section" onclick="document.getElementById('pdfFileInput').click()">
+            <div>📄</div>
+            <h2>Drag &amp; Drop Insured's Application PDF here</h2>
+            <p>Or click to browse files (accepts standard PDFs up to 5MB)</p>
+            <input type="file" id="pdfFileInput" accept="application/pdf" onchange="handleFileUpload(event)">
+        </div>
+
+        <!-- LOADING STATE -->
+        <div id="stepLoading" class="hidden">
+            <h3 id="loadingText">⏳ Processing PDF &amp; extracting layout structure...</h3>
+        </div>
+
+        <!-- STEP 2: FIELD MAPPING (SPLIT LAYOUT) -->
+        <div id="stepMapping" class="split-layout hidden">
+            <!-- LEFT PANE: PDF VIEW -->
+            <div class="pdf-viewer-card">
+                <div>
+                    <button onclick="prevPage()">◀ Previous Page</button>
+                    <span id="pageInfo">Page 1 of 1</span>
+                    <button onclick="nextPage()">Next Page ▶</button>
+                </div>
+                <div class="pdf-viewport" id="viewport">
+                    <div class="pdf-canvas-wrapper">
+                        <canvas id="pdfCanvas"></canvas>
+                        <div id="highlightBox" class="highlight-overlay hidden"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANE: MAPPER CONTROL -->
+            <div class="mapper-card">
+                <div>
+                    <h3>Active Field: <span id="activeFieldName">-</span></h3>
+                    <div>Kind: <code id="activeFieldKind">-</code> (Page <span id="activeFieldPage">-</span>)</div>
+                    <div>Detected Value:</div>
+                    <div id="activeFieldValue">-</div>
+                </div>
+
+                <div>
+                    <button id="btnPrevField" onclick="changeField(-1)">⬆ Previous Field</button>
+                    <button id="btnNextField" onclick="changeField(1)">⬇ Skip</button>
+                    <button onclick="finishMapping()">Finish Mapping ✅</button>
+                </div>
+
+                <!-- TABS CONTAINER -->
+                <div class="tabs-header">
+                    <button id="tabBtnPlan" class="tab-btn active" onclick="switchTab('plan')">📋 Plan Options</button>
+                    <button id="tabBtnFields" class="tab-btn" onclick="switchTab('fields')">✍️ Fields &amp; Signature</button>
+                </div>
+
+                <!-- PLAN OPTIONS TAB CONTENT -->
+                <div id="tabContentPlan" class="tab-content">
+                    <!-- Radio Choice mapping container -->
+                    <div id="radioChoiceContainer" class="hidden">
+                        <h4>📻 Plan Option Choice Wizard</h4>
+                        <div>
+                            <span>Product Line:</span>
+                            <select id="productLineSelect" onchange="renderRadioChoices()">
+                                <option value="SmartCare Essential">SmartCare Essential</option>
+                                <option value="EasyCare Visa">EasyCare Visa</option>
+                            </select>
+                        </div>
+                        <div id="radioOptionsList">
+                            <!-- Options & Choice buttons will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FIELDS & SIGNATURE TAB CONTENT -->
+                <div id="tabContentFields" class="tab-content hidden">
+                    <!-- Signature Field Map -->
+                    <div>
+                        <div>
+                            <strong>✍️ Mapped Signature Field:</strong>
+                            <span id="mappedSignatureField">Not Mapped</span>
+                        </div>
+                        <div>
+                            <button onclick="assignSignatureField()">Assign Sig</button>
+                            <button onclick="clearSignatureField()">Clear</button>
+                        </div>
+                    </div>
+
+                    <!-- BT Target Fields Form -->
+                    <div>
+                        <h3>BlueTable Intake Target Form</h3>
+                        <div class="bt-field-container" id="btFieldsContainer">
+                            <!-- Fields list will be dynamically populated -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STEP 3: DONE STATE -->
+        <div id="stepDone" class="hidden">
+            <h2>🎉 Field Mapping Complete!</h2>
+            <p>The layout mapping cache has been successfully updated. You can now download the outputs below.</p>
+
+            <div>
+                <button onclick="downloadDocx()">📝 Download Filled BlueTable DOCX</button>
+                <button onclick="downloadPdf()">📄 Download Pre-Filled AcroForm PDF</button>
+            </div>
+
+            <button onclick="resetPortal()">🔄 Ingest Another Document</button>
+        </div>
+
+    </div>
+
+    <script>
+        // Setup PDF.js
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+        // BlueTable Fields Schema
+        const BLUETABLE_FIELDS = [
+            ["Main Insured", "name"],
+            ["Date of Birth", "dob"],
+            ["Age", "age"],
+            ["ID No./Passport No.", "id_card_no"],
+            ["Nationality", "nationality"],
+            ["Beneficiary Name", "beneficiary"],
+            ["Relation", "bene_relation"],
+            ["Occupation", "occupation"],
+            ["Agent CODE/Name", "agent"],
+            ["Product Name", "product_name"],
+            ["Policy Version", "policy_version"],
+            ["Plan", "plan"],
+            ["Deductible", "deductible"],
+            ["Premium", "premium"],
+            ["Effective Date", "effective_date"],
+            ["Personal Address", "present_address"],
+            ["Tel", "tel"],
+            ["Email", "email"],
+            ["Payor Name", "payor_name"],
+            ["Payor Address", "payor_address"],
+            ["TAX ID", "tax_id"],
+            ["Acceptance Conditions", "acceptance_conditions"],
+            ["Exclusions", "exclusions"],
+            ["Spouse Name", "sp_name"],
+            ["Spouse DOB", "sp_dob"],
+            ["Spouse ID", "sp_id_card_no"],
+            ["Spouse Nationality", "sp_nationality"],
+            ["Spouse Beneficiary", "sp_beneficiary"],
+            ["Spouse Relation", "sp_bene_relation"],
+            ["Spouse Occupation", "sp_occupation"],
+            ["Spouse Acceptance Conditions", "sp_acceptance_conditions"],
+            ["Spouse Exclusions", "sp_exclusions"],
+            ["Child 1 Name", "c1_name"],
+            ["Child 1 DOB", "c1_dob"],
+            ["Child 1 ID", "c1_id_card_no"],
+            ["Child 1 Nationality", "c1_nationality"],
+            ["Child 1 Beneficiary", "c1_beneficiary"],
+            ["Child 1 Relation", "c1_bene_relation"],
+            ["Child 1 Occupation", "c1_occupation"],
+            ["Child 1 Acceptance Conditions", "c1_acceptance_conditions"],
+            ["Child 1 Exclusions", "c1_exclusions"],
+            ["Child 2 Name", "c2_name"],
+            ["Child 2 DOB", "c2_dob"],
+            ["Child 2 ID", "c2_id_card_no"],
+            ["Child 2 Nationality", "c2_nationality"],
+            ["Child 2 Beneficiary", "c2_beneficiary"],
+            ["Child 2 Relation", "c2_bene_relation"],
+            ["Child 2 Occupation", "c2_occupation"],
+            ["Child 2 Acceptance Conditions", "c2_acceptance_conditions"],
+            ["Child 2 Exclusions", "c2_exclusions"],
+            ["Child 3 Name", "c3_name"],
+            ["Child 3 DOB", "c3_dob"],
+            ["Child 3 ID", "c3_id_card_no"],
+            ["Child 3 Nationality", "c3_nationality"],
+            ["Child 3 Beneficiary", "c3_beneficiary"],
+            ["Child 3 Relation", "c3_bene_relation"],
+            ["Child 3 Occupation", "c3_occupation"],
+            ["Child 3 Acceptance Conditions", "c3_acceptance_conditions"],
+            ["Child 3 Exclusions", "c3_exclusions"]
+        ];
+
+        // Global State
+        let uploadedPdfDoc = null;
+        let pdfBytes = null;
+
+        // Helper to get coordinates (prefers current page if available)
+        const getCoords = (f, pageNum = null, wIdx = 0) => {
+            if (f.coords) return f.coords;
+            if (f.widgets && f.widgets.length > 0) {
+                // If a specific widget index is requested, use it ONLY if it matches the current page
+                if (f.widgets[wIdx]) {
+                    const w = f.widgets[wIdx];
+                    if (!pageNum || w.page === pageNum) return w.coords;
+                }
+                // Fallback to finding ANY widget on the requested page
+                if (pageNum) {
+                    const w = f.widgets.find(w => w.page === pageNum);
+                    if (w) return w.coords;
+                }
+                // Global fallback
+                return f.widgets[0].coords;
+            }
+            return null;
+        };
+        let pdfId = null;
+        let extractedValues = {};
+        let pdfRegistry = {};
+        let allFields = [];
+        let activeFieldIndex = 0;
+        let activeWidgetIndex = 0;
+        let currentPageNum = 1;
+        let btData = {};
+        let productOptions = null;
+        let signatureField = "Not Mapped";
+
+        // Setup BlueTable fields in UI form
+        function buildBlueTableForm() {
+            const container = document.getElementById('btFieldsContainer');
+            container.innerHTML = '';
+            
+            BLUETABLE_FIELDS.forEach(([label, key]) => {
+                btData[key] = ""; // Initialize
+                
+                const row = document.createElement('div');
+                row.className = 'bt-row';
+                
+                row.innerHTML = `
+                    <div>${label}</div>
+                    <div class="bt-input-wrapper">
+                        <input type="text" id="bt-input-${key}" oninput="handleManualEdit('${key}', this.value)" placeholder="—">
+                        <button onclick="assignActiveField('${key}', '${label}')">Assign</button>
+                        <button onclick="clearFieldVal('${key}')">Clear</button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById('stepUpload').classList.add('hidden');
+            const stepLoading = document.getElementById('stepLoading');
+            stepLoading.classList.remove('hidden');
+
+            const fileReader = new FileReader();
+            fileReader.onload = async function() {
+                pdfBytes = new Uint8Array(this.result);
+                // Load PDF doc for local rendering
+                uploadedPdfDoc = await pdfjsLib.getDocument({data: pdfBytes}).promise;
+                
+                // Upload and process PDF
+                uploadAndProcessPDF(file);
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        async function uploadAndProcessPDF(file) {
+            const formData = new FormData();
+            formData.append('pdf', file);
+
+            try {
+                const response = await fetch('/api/process-pdf', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error || 'Processing failed');
+
+                pdfId = data.pdf_id;
+                extractedValues = data.values;
+                
+                // Parse registry_json
+                const registryObj = JSON.parse(data.registry_json);
+                pdfRegistry = registryObj[pdfId] || registryObj;
+                
+                // Gather fields to walk
+                allFields = pdfRegistry.fields || [];
+
+                // Sort fields by page number, then rounded canvas_top (nearest 10), then x0
+                allFields.sort((a, b) => {
+                    const pA = a.page || (a.widgets && a.widgets[0] ? a.widgets[0].page : 99);
+                    const pB = b.page || (b.widgets && b.widgets[0] ? b.widgets[0].page : 99);
+                    if (pA !== pB) return pA - pB;
+
+                    const cA = getCoords(a);
+                    const cB = getCoords(b);
+
+                    const tA = cA ? Math.round((cA.canvas_top || 9999) / 10) * 10 : 9999;
+                    const tB = cB ? Math.round((cB.canvas_top || 9999) / 10) * 10 : 9999;
+                    if (tA !== tB) return tA - tB;
+
+                    const xA = cA ? (cA.x0 || 9999) : 9999;
+                    const xB = cB ? (cB.x0 || 9999) : 9999;
+                    return xA - xB;
+                });
+
+                buildBlueTableForm();
+                
+                productOptions = data.product_options;
+                // Dynamically populate productLineSelect from config
+                const productSelect = document.getElementById('productLineSelect');
+                if (productSelect && productOptions && productOptions.products) {
+                    productSelect.innerHTML = '';
+                    for (const prodName of Object.keys(productOptions.products)) {
+                        const opt = document.createElement('option');
+                        opt.value = prodName;
+                        opt.innerText = prodName;
+                        productSelect.appendChild(opt);
+                    }
+                }
+                signatureField = "Not Mapped";
+                document.getElementById('mappedSignatureField').innerText = "Not Mapped";
+
+                // Perform Auto Mapping using assignment_cache
+                if (data.assignment_cache) {
+                    const cache = data.assignment_cache;
+                    for (const [pdfField, mapping] of Object.entries(cache)) {
+                        let btKey = "";
+                        let choicesMap = null;
+                        if (typeof mapping === "string") {
+                            btKey = mapping;
+                        } else if (mapping && typeof mapping === "object") {
+                            btKey = mapping.bt_key;
+                            choicesMap = mapping.choices_map;
+                        }
+
+                        if (btKey === "signature") {
+                            signatureField = pdfField;
+                            document.getElementById('mappedSignatureField').innerText = pdfField;
+                        } else if (btKey && btKey !== "SKIPPED") {
+                            const val = extractedValues[pdfField];
+                            if (val !== undefined && val !== null) {
+                                // For radio groups with choices map: if the value matches a choice mapping, resolve it
+                                let finalVal = val;
+                                if (choicesMap && val.startsWith("/")) {
+                                    if (choicesMap[val]) {
+                                        finalVal = choicesMap[val];
+                                    }
+                                }
+
+                                // Plan field cleaning logic
+                                if (btKey === "plan" && finalVal.includes(" DD ")) {
+                                    finalVal = finalVal.split(" DD ")[0].trim();
+                                }
+
+                                // Append or assign
+                                const currentVal = btData[btKey];
+                                const newVal = currentVal ? `${currentVal}-${finalVal}` : finalVal;
+                                btData[btKey] = newVal;
+                                const inputEl = document.getElementById(`bt-input-${btKey}`);
+                                if (inputEl) {
+                                    inputEl.value = newVal;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Display first field
+                document.getElementById('stepLoading').classList.add('hidden');
+                document.getElementById('stepMapping').classList.remove('hidden');
+                
+                activeFieldIndex = 0;
+                setTimeout(() => {
+                    displayField(activeFieldIndex);
+                }, 100);
+
+            } catch (err) {
+                alert('Error: ' + err.message);
+                resetPortal();
+            }
+        }
+
+        function switchTab(tabName) {
+            const btnPlan = document.getElementById('tabBtnPlan');
+            const btnFields = document.getElementById('tabBtnFields');
+            const contentPlan = document.getElementById('tabContentPlan');
+            const contentFields = document.getElementById('tabContentFields');
+
+            if (tabName === 'plan') {
+                btnPlan.classList.add('active');
+                btnFields.classList.remove('active');
+                contentPlan.classList.remove('hidden');
+                contentFields.classList.add('hidden');
+            } else {
+                btnPlan.classList.remove('active');
+                btnFields.classList.add('active');
+                contentPlan.classList.add('hidden');
+                contentFields.classList.remove('hidden');
+            }
+        }
+
+        async function displayField(idx) {
+            if (allFields.length === 0 || idx < 0 || idx >= allFields.length) return;
+
+            const field = allFields[idx];
+            const widgets = field.widgets || [];
+
+            // Clamp activeWidgetIndex
+            if (activeWidgetIndex < 0) activeWidgetIndex = 0;
+            if (widgets.length > 0 && activeWidgetIndex >= widgets.length) {
+                activeWidgetIndex = widgets.length - 1;
+            }
+
+            let fieldPage = field.page || (widgets[0] ? widgets[0].page : 1);
+            let displayTitle = field.name || 'Unnamed';
+
+            if (field.field_kind === 'radio' && widgets.length > 0) {
+                const w = widgets[activeWidgetIndex];
+                fieldPage = w.page;
+                displayTitle += ` (Choice ${activeWidgetIndex + 1}/${widgets.length}: ${w.choice_value || '?'})`;
+            }
+
+            document.getElementById('activeFieldName').innerText = displayTitle;
+            document.getElementById('activeFieldKind').innerText = field.field_kind || 'unknown';
+            document.getElementById('activeFieldPage').innerText = fieldPage;
+
+            const rawVal = extractedValues[field.name] || '—';
+            document.getElementById('activeFieldValue').innerText = rawVal;
+
+            // Show/hide radio choices wizard
+            const radioChoiceContainer = document.getElementById('radioChoiceContainer');
+            if (field.field_kind === 'radio' && productOptions) {
+                radioChoiceContainer.classList.remove('hidden');
+                renderRadioChoices();
+                switchTab('plan');
+            } else {
+                radioChoiceContainer.classList.add('hidden');
+                switchTab('fields');
+            }
+
+            // Update Page and Render PDF Page
+            currentPageNum = fieldPage;
+            await renderPDFPage(currentPageNum, field);
+
+            // Update Navigation Buttons state
+            const isFirstField = (idx === 0);
+            const isLastField = (idx === allFields.length - 1);
+            const isFirstWidget = (activeWidgetIndex === 0);
+            const isLastWidget = (widgets.length === 0 || activeWidgetIndex === widgets.length - 1);
+
+            document.getElementById('btnPrevField').disabled = (isFirstField && isFirstWidget);
+            document.getElementById('btnPrevField').innerText = isFirstWidget ? '⬆ Previous Field' : '⬆ Previous Choice';
+
+            if (isLastField && isLastWidget) {
+                document.getElementById('btnNextField').innerText = 'Skip';
+            } else if (!isLastWidget) {
+                document.getElementById('btnNextField').innerText = '⬇ Skip Choice';
+            } else {
+                document.getElementById('btnNextField').innerText = '⬇ Skip';
+            }
+        }
+
+        async function renderPDFPage(pageNum, field) {
+            if (!uploadedPdfDoc) return;
+            const page = await uploadedPdfDoc.getPage(pageNum);
+            
+            const viewportContainer = document.getElementById('viewport');
+            let targetWidth = viewportContainer.clientWidth - 40;
+            if (targetWidth <= 0) {
+                targetWidth = 600;
+            }
+            const originalViewport = page.getViewport({ scale: 1.0 });
+            const scale = targetWidth / originalViewport.width;
+            
+            const viewport = page.getViewport({ scale: scale });
+            const canvas = document.getElementById('pdfCanvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: viewport
+            };
+
+            await page.render(renderContext).promise;
+            document.getElementById('pageInfo').innerText = `Page ${pageNum} of ${uploadedPdfDoc.numPages}`;
+
+            // Handle coordinate highlight overlay
+            const highlightBox = document.getElementById('highlightBox');
+            const coords = field ? getCoords(field, pageNum, activeWidgetIndex) : null;
+
+            if (field && coords) {
+                const page_w = pdfRegistry.pages && pdfRegistry.pages[pageNum - 1] ? pdfRegistry.pages[pageNum - 1].page_w : originalViewport.width;
+                const page_h = pdfRegistry.pages && pdfRegistry.pages[pageNum - 1] ? pdfRegistry.pages[pageNum - 1].page_h : originalViewport.height;
+
+                const scaleX = canvas.width / page_w;
+                const scaleY = canvas.height / page_h;
+
+                const left = coords.x0 * scaleX;
+                const top = coords.canvas_top * scaleY;
+                const width = (coords.x1 - coords.x0) * scaleX;
+                const height = (coords.canvas_bottom - coords.canvas_top) * scaleY;
+
+                highlightBox.style.left = `${left}px`;
+                highlightBox.style.top = `${top}px`;
+                highlightBox.style.width = `${width}px`;
+                highlightBox.style.height = `${height}px`;
+                highlightBox.classList.remove('hidden');
+
+                // Smooth scroll viewport to the highlighted element
+                setTimeout(() => {
+                    viewportContainer.scrollTo({
+                        top: top - 100,
+                        behavior: 'smooth'
+                    });
+                }, 100);
+            } else {
+                highlightBox.classList.add('hidden');
+            }
+        }
+
+        async function prevPage() {
+            if (currentPageNum > 1) {
+                currentPageNum--;
+                const firstFieldOnPageIdx = allFields.findIndex(f => {
+                    const p = f.page || (f.widgets && f.widgets[0] ? f.widgets[0].page : null);
+                    return p === currentPageNum;
+                });
+
+                if (firstFieldOnPageIdx !== -1) {
+                    activeFieldIndex = firstFieldOnPageIdx;
+                    activeWidgetIndex = 0;
+                    await displayField(activeFieldIndex);
+                } else {
+                    await renderPDFPage(currentPageNum, null);
+                }
+            }
+        }
+
+        async function nextPage() {
+            if (uploadedPdfDoc && currentPageNum < uploadedPdfDoc.numPages) {
+                currentPageNum++;
+                const firstFieldOnPageIdx = allFields.findIndex(f => {
+                    const p = f.page || (f.widgets && f.widgets[0] ? f.widgets[0].page : null);
+                    return p === currentPageNum;
+                });
+
+                if (firstFieldOnPageIdx !== -1) {
+                    activeFieldIndex = firstFieldOnPageIdx;
+                    activeWidgetIndex = 0;
+                    await displayField(activeFieldIndex);
+                } else {
+                    await renderPDFPage(currentPageNum, null);
+                }
+            }
+        }
+
+        function changeField(delta) {
+            const field = allFields[activeFieldIndex];
+            const widgets = (field && field.widgets) ? field.widgets : [];
+
+            // Choice-by-choice navigation for radio fields
+            if (field && field.field_kind === 'radio' && widgets.length > 1) {
+                if (delta === 1 && activeWidgetIndex < widgets.length - 1) {
+                    activeWidgetIndex++;
+                    displayField(activeFieldIndex);
+                    return;
+                }
+                if (delta === -1 && activeWidgetIndex > 0) {
+                    activeWidgetIndex--;
+                    displayField(activeFieldIndex);
+                    return;
+                }
+            }
+
+            const nextIdx = activeFieldIndex + delta;
+            if (nextIdx >= 0 && nextIdx < allFields.length) {
+                activeFieldIndex = nextIdx;
+                const nextField = allFields[activeFieldIndex];
+                if (delta === 1) {
+                    activeWidgetIndex = 0;
+                } else {
+                    // Going backwards: set to last widget if radio
+                    if (nextField && nextField.widgets && nextField.widgets.length > 0) {
+                        activeWidgetIndex = nextField.widgets.length - 1;
+                    } else {
+                        activeWidgetIndex = 0;
+                    }
+                }
+                displayField(activeFieldIndex);
+            } else if (nextIdx >= allFields.length) {
+                finishMapping();
+            }
+        }
+
+        function assignActiveField(btKey, label) {
+            const currentField = allFields[activeFieldIndex];
+            if (!currentField) return;
+
+            const val = extractedValues[currentField.name] || "";
+            let currentVal = btData[btKey] || "";
+            
+            // Clean up plan details if present
+            let assignVal = val;
+            if (btKey === "plan" && val.includes(" DD ")) {
+                assignVal = val.split(" DD ")[0].trim();
+            }
+
+            // Append or assign
+            const newVal = currentVal ? `${currentVal}-${assignVal}` : assignVal;
+            
+            btData[btKey] = newVal;
+            const inputEl = document.getElementById(`bt-input-${btKey}`);
+            if (inputEl) {
+                inputEl.value = newVal;
+            }
+
+            // Auto advance
+            changeField(1);
+        }
+
+        function clearFieldVal(btKey) {
+            btData[btKey] = "";
+            const inputEl = document.getElementById(`bt-input-${btKey}`);
+            if (inputEl) {
+                inputEl.value = "";
+            }
+        }
+
+        function handleManualEdit(btKey, value) {
+            btData[btKey] = value;
+        }
+
+        function finishMapping() {
+            document.getElementById('stepMapping').classList.add('hidden');
+            document.getElementById('stepDone').classList.remove('hidden');
+        }
+
+        function renderRadioChoices() {
+            const list = document.getElementById('radioOptionsList');
+            list.innerHTML = '';
+            if (!productOptions) return;
+
+            const selectedProduct = document.getElementById('productLineSelect').value;
+
+            // 1. Selected Product name option
+            const productNameOpt = productOptions.product_name;
+            if (productNameOpt) {
+                const label = productNameOpt.label || "Selected Product";
+                const btKey = productNameOpt.bt_key || "product_name";
+                const choices = productNameOpt.choices || [];
+                renderChoiceRow(label, btKey, choices);
+            }
+
+            // 2. Policy Version option
+            const policyVersionOpt = productOptions.policy_version;
+            if (policyVersionOpt) {
+                const label = policyVersionOpt.label || "Policy Version";
+                const btKey = policyVersionOpt.bt_key || "policy_version";
+                const choices = policyVersionOpt.choices || [];
+                renderChoiceRow(label, btKey, choices);
+            }
+
+            // 3. Product line-specific options
+            const opts = productOptions.products ? productOptions.products[selectedProduct] : null;
+            if (opts) {
+                for (const [optKey, optData] of Object.entries(opts)) {
+                    const label = optData.label || optKey;
+                    const btKey = optData.bt_key || "plan";
+                    const choices = optData.choices || [];
+                    renderChoiceRow(label, btKey, choices);
+                }
+            }
+        }
+
+        function renderChoiceRow(label, btKey, choices) {
+            const list = document.getElementById('radioOptionsList');
+            const row = document.createElement('div');
+            row.className = 'radio-row';
+
+            const labelEl = document.createElement('span');
+            labelEl.className = 'radio-row-label';
+            labelEl.innerText = label;
+            row.appendChild(labelEl);
+
+            choices.forEach(val => {
+                const btn = document.createElement('button');
+                btn.innerText = val;
+                btn.onclick = () => assignRadioChoice(val, btKey);
+                row.appendChild(btn);
+            });
+
+            list.appendChild(row);
+        }
+
+        function assignRadioChoice(choiceValue, btKey) {
+            btData[btKey] = choiceValue;
+            const inputEl = document.getElementById(`bt-input-${btKey}`);
+            if (inputEl) {
+                inputEl.value = choiceValue;
+            }
+            changeField(1);
+        }
+
+        function assignSignatureField() {
+            const currentField = allFields[activeFieldIndex];
+            if (!currentField) return;
+
+            signatureField = currentField.name;
+            document.getElementById('mappedSignatureField').innerText = signatureField;
+            changeField(1);
+        }
+
+        function clearSignatureField() {
+            signatureField = "Not Mapped";
+            document.getElementById('mappedSignatureField').innerText = "Not Mapped";
+        }
+
+        async function downloadDocx() {
+            try {
+                btData["signature"] = signatureField;
+                const response = await fetch('/api/generate-docx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pdf_id: pdfId,
+                        form_data: btData
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to generate DOCX');
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'bluetable_filled.docx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function downloadPdf() {
+            try {
+                btData["signature"] = signatureField;
+                const response = await fetch('/api/generate-pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        form_data: btData
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to generate PDF');
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'PreFilled_Application.pdf';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        function resetPortal() {
+            uploadedPdfDoc = null;
+            pdfBytes = null;
+            pdfId = null;
+            extractedValues = {};
+            pdfRegistry = {};
+            allFields = [];
+            activeFieldIndex = 0;
+            activeWidgetIndex = 0;
+            currentPageNum = 1;
+            btData = {};
+            productOptions = null;
+            signatureField = "Not Mapped";
+
+            document.getElementById('pdfFileInput').value = '';
+            document.getElementById('stepUpload').classList.remove('hidden');
+            document.getElementById('stepMapping').classList.add('hidden');
+            document.getElementById('stepDone').classList.add('hidden');
+            document.getElementById('stepLoading').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

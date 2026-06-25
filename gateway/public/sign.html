@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Application - AXA Signature Gateway</title>
+    <style>
+        body {
+            margin: 20px;
+            text-align: center;
+        }
+        .hidden { display: none !important; }
+        .alert-error { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; }
+        canvas { border: 1px dashed #000; touch-action: none; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div id="loadingState">
+    <h3>⏳ Loading Session...</h3>
+</div>
+
+<div id="errorState" class="hidden">
+    <h3>❌ Secure Link Invalid or Expired</h3>
+    <p>This secure signing link is single-use, has expired, or is invalid. Please request your sales representative to generate a new signing link.</p>
+</div>
+
+<div id="signedState" class="hidden">
+    <h3>✍️ Document Already Signed</h3>
+    <p id="signedMsg"></p>
+</div>
+
+<div id="identityState" class="hidden">
+    <h3>🔐 Identity Verification</h3>
+    <p id="welcomeMsg"></p>
+
+    <div id="authErrorMsg" class="alert-error hidden"></div>
+
+    <input type="password" id="idInput" placeholder="Enter your ID / Passport Number">
+    <button onclick="verifyIdentity()" id="verifyBtn">Verify &amp; Proceed</button>
+
+    <p>
+        Disclaimer: This verification check gates access to your filled application. Raw details are encrypted and deleted immediately upon success.
+    </p>
+</div>
+
+<div id="signState" class="hidden">
+    <h2>✍️ Review &amp; Sign Application</h2>
+
+    <div id="planSummary" style="margin-bottom: 30px; text-align: left; display: inline-block; min-width: 400px; border: 1px solid #eee; padding: 15px; border-radius: 8px;">
+        <h4 style="margin-top: 0;">📋 Plan Summary</h4>
+        <table id="planDetailsTable" style="width: 100%; border-collapse: collapse;">
+            <!-- Dynamic rows -->
+        </table>
+    </div>
+
+    <p>Please draw your signature using your finger, stylus, or mouse pointer in the box below.</p>
+
+    <div id="signErrorMsg" class="alert-error hidden"></div>
+
+    <canvas id="sigCanvas" width="500" height="200"></canvas>
+
+    <div>
+        <button onclick="submitSignature()" id="submitBtn">Submit Secure Signature</button>
+        <button onclick="clearCanvas()">Clear</button>
+    </div>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    let canvas, ctx;
+    let isDrawing = false;
+    let hasDrawn = false;
+
+    async function init() {
+        if (!token) {
+            showState('errorState');
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/vault/verify?token=${token}`);
+            const data = await res.json();
+
+            if (!res.ok) {
+                showState('errorState');
+                return;
+            }
+
+            if (data.status === 'signed') {
+                document.getElementById('signedMsg').innerText = `Thank you, ${data.customerName}. Your signature has already been submitted successfully, and the sales representative has been notified. You may close this browser tab.`;
+                showState('signedState');
+            } else if (data.status === 'pending') {
+                document.getElementById('welcomeMsg').innerHTML = `Welcome, <b>${data.customerName}</b>. For security purposes, please confirm your identity to review and sign your application.`;
+                showState('identityState');
+            }
+
+        } catch (e) {
+            showState('errorState');
+        }
+    }
+
+    async function verifyIdentity() {
+        const idInput = document.getElementById('idInput').value;
+        if (!idInput) {
+            showAuthError('Please enter your ID number.');
+            return;
+        }
+
+        const btn = document.getElementById('verifyBtn');
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/vault/verify-identity', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: token,
+                    identityId: idInput
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showAuthError(data.error || 'Identity verification failed. Please check your ID number.');
+                return;
+            }
+
+            // Success
+            window.customerIdentityId = idInput;
+            renderPlanTable(data.planDetails);
+            initCanvas();
+            showState('signState');
+        } catch (e) {
+            showAuthError('Error verifying identity. Please try again.');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function initCanvas() {
+        canvas = document.getElementById('sigCanvas');
+        ctx = canvas.getContext('2d');
+
+        ctx.strokeStyle = '#0b132b';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch events
+        canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+        canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+        canvas.addEventListener('touchend', stopDrawing);
+    }
+
+    function getMousePos(evt) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (evt.clientX - rect.left) * (canvas.width / rect.width),
+            y: (evt.clientY - rect.top) * (canvas.height / rect.height)
+        };
+    }
+
+    function startDrawing(e) {
+        isDrawing = true;
+        hasDrawn = true;
+        const pos = getMousePos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+    }
+
+    function draw(e) {
+        if (!isDrawing) return;
+        const pos = getMousePos(e);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+    }
+
+    function handleTouchStart(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent("mousedown", {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+    }
+
+    function handleTouchMove(e) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const mouseEvent = new MouseEvent("mousemove", {
+            clientX: touch.clientX,
+            clientY: touch.clientY
+        });
+        canvas.dispatchEvent(mouseEvent);
+    }
+
+    function stopDrawing() {
+        isDrawing = false;
+    }
+
+    function renderPlanTable(details) {
+        const table = document.getElementById('planDetailsTable');
+        table.innerHTML = ''; // Clear
+
+        const rows = [];
+
+        // Add specific details
+        if (details.label) rows.push({ label: 'Plan Label', value: details.label });
+        if (details.coverage) rows.push({ label: 'Coverage', value: details.coverage });
+        if (details.roomLimit) rows.push({ label: 'Room Limit', value: details.roomLimit });
+
+        // Add dynamic options
+        if (details.selectedOptions && details.selectedOptions.length > 0) {
+            details.selectedOptions.forEach(opt => {
+                rows.push({ label: opt.label, value: opt.value });
+            });
+        }
+
+        rows.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            const isLast = idx === rows.length - 1;
+            const borderStyle = isLast ? '' : 'border-bottom: 1px solid #eee;';
+
+            tr.innerHTML = `
+                <td style="padding: 5px; font-weight: bold; ${borderStyle}">${row.label}:</td>
+                <td style="padding: 5px; ${borderStyle}">${row.value}</td>
+            `;
+            table.appendChild(tr);
+        });
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        hasDrawn = false;
+    }
+
+    async function submitSignature() {
+        if (!hasDrawn) {
+            showSignError("⚠️ Please draw your signature in the box before submitting.");
+            return;
+        }
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = "Processing...";
+
+        try {
+            // Get base64 PNG data
+            const dataUrl = canvas.toDataURL('image/png');
+
+            const res = await fetch('/api/vault/sign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    token: token,
+                    identityId: window.customerIdentityId,
+                    signatureImageBase64: dataUrl
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                if (res.status === 403) {
+                    showState('identityState');
+                    showAuthError('❌ Identity verification failed. Please enter the correct ID/Passport number.');
+                    document.getElementById('idInput').value = '';
+                } else {
+                    showSignError(data.error || 'Failed to sign document');
+                }
+                return;
+            }
+
+            // Success
+            document.getElementById('signedMsg').innerText = `Signature has been submitted successfully. You may close this browser tab.`;
+            showState('signedState');
+
+        } catch (e) {
+            showSignError(e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Submit Secure Signature";
+        }
+    }
+
+    function showState(id) {
+        ['loadingState', 'errorState', 'signedState', 'identityState', 'signState'].forEach(stateId => {
+            document.getElementById(stateId).classList.add('hidden');
+        });
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    function showAuthError(msg) {
+        const el = document.getElementById('authErrorMsg');
+        el.innerText = msg;
+        el.classList.remove('hidden');
+    }
+
+    function showSignError(msg) {
+        const el = document.getElementById('signErrorMsg');
+        el.innerText = msg;
+        el.classList.remove('hidden');
+    }
+
+    init();
+</script>
+
+</body>
+</html>

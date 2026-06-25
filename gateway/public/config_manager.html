@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Config Manager</title>
+    <style>
+        body { text-align: center; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div>
+        <h1>🏥 AXA Application Ingestion Portal</h1>
+        <div>Pathway A: Stateless Layout-Driven PDF-to-BlueTable Intake Pipeline</div>
+        <div>
+            <a href="index.html">🏠 Home</a> |
+            <a href="config_manager.html">⚙️ Config Manager</a> |
+            <a href="internal_eform.html">⌨️ Internal Fast-Entry E-Form</a> |
+            <a href="signature_gateway.html">✍️ Signature Gateway</a>
+        </div>
+        <hr>
+    </div>
+
+    <h2>⚙️ Product Config Manager</h2>
+    <p>
+        Administrator portal to associate product configuration parameters (pricing, underwriting, etc.) with PDF structural templates.
+    </p>
+
+    <div id="statusMessage" class="hidden"></div>
+
+    <div id="mainContent" class="hidden">
+        <h2>1. Select PDF Template</h2>
+        <div>
+            <label for="pdfSelect">Choose registered PDF:</label>
+            <select id="pdfSelect" onchange="updatePdfInfo()"></select>
+        </div>
+        <div id="pdfInfo"></div>
+        <hr>
+
+        <h2>2. Provide Product JSON Config</h2>
+        <div>
+            <span onclick="switchTab('upload')">📤 Upload JSON File</span> |
+            <span onclick="switchTab('paste')">✍️ Paste JSON Text</span>
+        </div>
+
+        <div id="uploadTab">
+            <br>
+            <input type="file" id="jsonFile" accept=".json" onchange="handleFileUpload(event)">
+        </div>
+
+        <div id="pasteTab" class="hidden">
+            <br>
+            <textarea id="jsonText" rows="10" cols="50" placeholder='{\n    "product_name": "Health and Accident Insurance",\n    "pricing": { ... }\n}' oninput="handleTextPasted(event)"></textarea>
+        </div>
+        <hr>
+
+        <h2>3. Save Configuration</h2>
+        <div>
+            <label for="targetFilename">Target Config Filename:</label>
+            <input type="text" id="targetFilename" value="health_and_accident_insurance.json">
+        </div>
+        <br>
+
+        <button id="saveBtn" onclick="saveConfig()">🔗 Link &amp; Save Configuration</button>
+    </div>
+
+<script>
+    let registryData = {};
+    let parsedJsonConfig = null;
+
+    async function init() {
+        try {
+            const res = await fetch('/api/registry');
+            registryData = await res.json();
+
+            if (Object.keys(registryData).length === 0) {
+                showStatus('⚠️ No PDFs are registered yet. Process a PDF via the Portal first.');
+                return;
+            }
+
+            const select = document.getElementById('pdfSelect');
+            for (const [pdfId, data] of Object.entries(registryData)) {
+                const anchors = data.word_anchors || [];
+                const preview = anchors.slice(0, 3).join(', ') || 'No anchors';
+                const fieldsCount = (data.fields || []).length;
+
+                const option = document.createElement('option');
+                option.value = pdfId;
+                option.text = `ID: ${pdfId.substring(0,8)}... (${fieldsCount} fields) - Words: [${preview}]`;
+                select.appendChild(option);
+            }
+
+            document.getElementById('mainContent').classList.remove('hidden');
+            updatePdfInfo();
+        } catch (err) {
+            showStatus('Error fetching registry: ' + err.message);
+        }
+    }
+
+    function updatePdfInfo() {
+        const selectedId = document.getElementById('pdfSelect').value;
+        const data = registryData[selectedId];
+        if (data) {
+            const pages = (data.pages || []).length;
+            const fields = (data.fields || []).length;
+            document.getElementById('pdfInfo').innerHTML = `<strong>Selected PDF ID:</strong> <code>${selectedId}</code><br><strong>Detected Pages:</strong> ${pages} | <strong>Detected Fields:</strong> ${fields}`;
+        }
+    }
+
+    function switchTab(tab) {
+        if (tab === 'upload') {
+            document.getElementById('uploadTab').classList.remove('hidden');
+            document.getElementById('pasteTab').classList.add('hidden');
+        } else {
+            document.getElementById('uploadTab').classList.add('hidden');
+            document.getElementById('pasteTab').classList.remove('hidden');
+        }
+    }
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                parsedJsonConfig = JSON.parse(e.target.result);
+                updateFilenameSuggestion();
+                showStatus('File uploaded and parsed successfully!');
+            } catch (err) {
+                parsedJsonConfig = null;
+                showStatus('Invalid JSON file: ' + err.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function handleTextPasted(event) {
+        const text = event.target.value.trim();
+        if (!text) {
+            parsedJsonConfig = null;
+            return;
+        }
+        try {
+            parsedJsonConfig = JSON.parse(text);
+            updateFilenameSuggestion();
+            showStatus('JSON text parsed successfully!');
+        } catch (err) {
+            parsedJsonConfig = null;
+            showStatus('Invalid JSON text: ' + err.message);
+        }
+    }
+
+    function updateFilenameSuggestion() {
+        if (parsedJsonConfig && parsedJsonConfig.product_name) {
+            const cleanName = parsedJsonConfig.product_name.toLowerCase().replace(/\s+/g, '_');
+            document.getElementById('targetFilename').value = `${cleanName}.json`;
+        }
+    }
+
+    async function saveConfig() {
+        if (!parsedJsonConfig) {
+            showStatus('Please upload or paste a valid JSON config first.');
+            return;
+        }
+
+        const pdfId = document.getElementById('pdfSelect').value;
+        const filename = document.getElementById('targetFilename').value.trim();
+
+        if (!filename) {
+            showStatus('Please specify a target filename.');
+            return;
+        }
+
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.innerText = 'Saving...';
+
+        try {
+            const res = await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    pdf_id: pdfId,
+                    filename: filename,
+                    config_body: parsedJsonConfig
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to save configuration');
+
+            showStatus(`🎉 Configuration successfully saved to config/${filename} and linked to PDF ID ${pdfId}!`);
+        } catch (err) {
+            showStatus('Error saving configuration: ' + err.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = '🔗 Link & Save Configuration';
+        }
+    }
+
+    function showStatus(msg) {
+        const el = document.getElementById('statusMessage');
+        el.classList.remove('hidden');
+        el.innerText = msg;
+    }
+
+    // Run initialization
+    init();
+</script>
+
+</body>
+</html>

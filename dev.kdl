@@ -13,13 +13,6 @@ layout {
         }
     }
 
-    // Tab 2: Streamlit
-    tab name="streamlit" {
-        pane command="nix" {
-            args "develop" "--command" "uv" "run" "streamlit" "run" "app.py"
-        }
-    }
-
     tab name="agy" {
         pane command="nix" {
             args "develop" "--command" "agy" "-c"
@@ -30,5 +23,11 @@ layout {
         pane command="nix" {
             args "develop" "--command" "lazygit"
         }
+    }
+
+    tab name="terminal" {
+	pane command="nix" {
+	    args "develop"
+	}
     }
 }
