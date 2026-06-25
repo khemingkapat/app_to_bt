@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"gateway/client"
 	"gateway/proto/document"
@@ -189,6 +190,15 @@ func TestStampSignatureHandler(t *testing.T) {
 		DocClient: &client.DocumentClient{Client: mockClient},
 	}
 
+	token := GenerateSecureToken()
+	GlobalVault.AddEntry(&VaultEntry{
+		Token:      token,
+		IdentityID: "ID123",
+		Status:     "pending",
+		CreatedAt:  time.Now(),
+		TTLSeconds: 900,
+	})
+
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -198,6 +208,8 @@ func TestStampSignatureHandler(t *testing.T) {
 	sigPart, _ := writer.CreateFormFile("signature", "sig.png")
 	sigPart.Write([]byte("\x89PNG\r\n\x1a\n-dummy"))
 
+	writer.WriteField("token", token)
+	writer.WriteField("identity_id", "ID123")
 	writer.WriteField("pdf_id", "test-id")
 	writer.WriteField("registry_json", "{}")
 	writer.WriteField("cache_mapping_json", "{}")
@@ -218,6 +230,44 @@ func TestStampSignatureHandler(t *testing.T) {
 		assert.Equal(t, "stamped-pdf", rec.Body.String())
 	}
 
+	// Unauthorized (missing token)
+	body = &bytes.Buffer{}
+	writer = multipart.NewWriter(body)
+	pdfPart, _ = writer.CreateFormFile("pdf", "test.pdf")
+	pdfPart.Write([]byte("%PDF-dummy"))
+	sigPart, _ = writer.CreateFormFile("signature", "sig.png")
+	sigPart.Write([]byte("\x89PNG\r\n\x1a\n-dummy"))
+	writer.WriteField("pdf_id", "test-id")
+	writer.Close()
+
+	req = httptest.NewRequest(http.MethodPost, "/api/stamp-signature", body)
+	req.Header.Set(echo.HeaderContentType, writer.FormDataContentType())
+	rec = httptest.NewRecorder()
+	c = e.NewContext(req, rec)
+
+	h.StampSignatureHandler(c)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+
+	// Forbidden (wrong ID)
+	body = &bytes.Buffer{}
+	writer = multipart.NewWriter(body)
+	pdfPart, _ = writer.CreateFormFile("pdf", "test.pdf")
+	pdfPart.Write([]byte("%PDF-dummy"))
+	sigPart, _ = writer.CreateFormFile("signature", "sig.png")
+	sigPart.Write([]byte("\x89PNG\r\n\x1a\n-dummy"))
+	writer.WriteField("token", token)
+	writer.WriteField("identity_id", "WRONG")
+	writer.WriteField("pdf_id", "test-id")
+	writer.Close()
+
+	req = httptest.NewRequest(http.MethodPost, "/api/stamp-signature", body)
+	req.Header.Set(echo.HeaderContentType, writer.FormDataContentType())
+	rec = httptest.NewRecorder()
+	c = e.NewContext(req, rec)
+
+	h.StampSignatureHandler(c)
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+
 	// Invalid signature (not PNG)
 	body = &bytes.Buffer{}
 	writer = multipart.NewWriter(body)
@@ -225,6 +275,8 @@ func TestStampSignatureHandler(t *testing.T) {
 	pdfPart.Write([]byte("%PDF-dummy"))
 	sigPart, _ = writer.CreateFormFile("signature", "sig.png")
 	sigPart.Write([]byte("not-a-png"))
+	writer.WriteField("token", token)
+	writer.WriteField("identity_id", "ID123")
 	writer.WriteField("pdf_id", "test-id")
 	writer.WriteField("registry_json", "{}")
 	writer.WriteField("cache_mapping_json", "{}")

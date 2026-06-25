@@ -191,6 +191,23 @@ func (h *HandlerContext) GenerateDocxHandler(c echo.Context) error {
 }
 
 func (h *HandlerContext) StampSignatureHandler(c echo.Context) error {
+	// Authorization check
+	token := c.FormValue("token")
+	identityId := c.FormValue("identity_id")
+
+	if token == "" || identityId == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "token and identity_id are required for authorization"})
+	}
+
+	entry := GlobalVault.GetEntry(token)
+	if entry == nil {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid or expired token"})
+	}
+
+	if NormalizeID(identityId) != NormalizeID(entry.IdentityID) {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "identity verification failed"})
+	}
+
 	pdfFile, err := c.FormFile("pdf")
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "pdf file is required"})
