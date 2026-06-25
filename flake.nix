@@ -46,6 +46,7 @@
           protobuf
           protoc-gen-go
           protoc-gen-go-grpc
+          nodejs_22
           uv
           python311
           # System libraries needed by pre-compiled Python wheels

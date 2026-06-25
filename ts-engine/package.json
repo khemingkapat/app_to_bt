@@ -1,0 +1,23 @@
+{
+  "name": "app-to-bt-engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Core PDF/DOCX processing engine for Application-to-BlueTable (TypeScript port)",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "mupdf": "*",
+    "docxtemplater": "^3.50.0",
+    "pizzip": "^3.1.7"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0",
+    "@types/node": "^22.0.0"
+  }
+}
