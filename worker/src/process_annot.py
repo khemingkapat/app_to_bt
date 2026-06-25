@@ -41,8 +41,9 @@ for field in page_radio_fields:
     field_bounded = False
     group_name = field["name"]
     choices = field["widgets"]
-    max_field_val = 0
-    max_field_name = ""
+    min_field_val = 1
+    min_field_name = ""
+    print(f"observing {group_name} field")
     for choice in choices:
         c_x0, c_y0, c_x1, c_y1 = (
             choice["coords"]["x0"],
@@ -73,12 +74,19 @@ for field in page_radio_fields:
             choice_bitmap = bitmap[bounded_y0:bounded_y1, bounded_x0:bounded_x1]
 
             choice_bitmap_mean = choice_bitmap.mean()
-            if choice_bitmap_mean > max_field_val:
-                max_field_val = choice_bitmap_mean
-                max_field_name = choice["choice_value"]
+            print(
+                f"\tchoice {choice['choice_value']} has value of {choice_bitmap_mean}",
+                end=" ",
+            )
+            if choice_bitmap_mean < min_field_val:
+                min_field_val = choice_bitmap_mean
+                min_field_name = choice["choice_value"]
+                print("and it is min")
+            else:
+                print("")
 
     if field_bounded:
         choice_map = field.get("choices_map", {})
         print(
-            f"field {group_name} selected {max_field_name} as {choice_map.get(max_field_name,'')}"
+            f"field {group_name} selected {min_field_name} as {choice_map.get(min_field_name,'')}"
         )
