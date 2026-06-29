@@ -75,6 +75,7 @@ func main() {
 	api.POST("/vault/clear", hCtx.VaultClearHandler)
 	api.GET("/registry", hCtx.RegistryHandler)
 	api.POST("/config", hCtx.SaveConfigHandler)
+	api.POST("/save-mapping", hCtx.SaveMappingHandler)
 	api.GET("/config-options", hCtx.ConfigOptionsHandler)
 
 	// Get port from environment variable or default to 8080

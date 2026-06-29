@@ -318,6 +318,7 @@
         let btData = {};
         let productOptions = null;
         let signatureField = "Not Mapped";
+        let manualMappings = {};
 
         // Setup BlueTable fields in UI form
         function buildBlueTableForm() {
@@ -711,6 +712,7 @@
             // Append or assign
             const newVal = currentVal ? `${currentVal}-${assignVal}` : assignVal;
             
+            manualMappings[currentField.name] = btKey;
             btData[btKey] = newVal;
             const inputEl = document.getElementById(`bt-input-${btKey}`);
             if (inputEl) {
@@ -733,8 +735,24 @@
             btData[btKey] = value;
         }
 
-        function finishMapping() {
+        async function finishMapping() {
             document.getElementById('stepMapping').classList.add('hidden');
+            
+            if (Object.keys(manualMappings).length > 0) {
+                try {
+                    await fetch('/api/save-mapping', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            pdf_id: pdfId,
+                            field_mappings: manualMappings
+                        })
+                    });
+                } catch (e) {
+                    console.error("Failed to save mapping:", e);
+                }
+            }
+            
             document.getElementById('stepDone').classList.remove('hidden');
         }
 
@@ -796,6 +814,17 @@
         }
 
         function assignRadioChoice(choiceValue, btKey) {
+            const currentField = allFields[activeFieldIndex];
+            if (currentField && currentField.widgets) {
+                const widget = currentField.widgets[activeWidgetIndex];
+                if (widget && widget.value) {
+                    if (!manualMappings[currentField.name] || typeof manualMappings[currentField.name] === 'string') {
+                        manualMappings[currentField.name] = { bt_key: btKey, choices_map: {} };
+                    }
+                    manualMappings[currentField.name].choices_map[widget.value] = choiceValue;
+                    manualMappings[currentField.name].bt_key = btKey;
+                }
+            }
             btData[btKey] = choiceValue;
             const inputEl = document.getElementById(`bt-input-${btKey}`);
             if (inputEl) {
@@ -809,6 +838,7 @@
             if (!currentField) return;
 
             signatureField = currentField.name;
+            manualMappings[currentField.name] = "signature";
             document.getElementById('mappedSignatureField').innerText = signatureField;
             changeField(1);
         }

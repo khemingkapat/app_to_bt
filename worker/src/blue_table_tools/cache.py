@@ -9,17 +9,16 @@ def ensure_cache_file(cache_path: str):
         # Resolve parent path when running inside worker/ directory
         if not os.path.exists(cache_path) and not cache_path.startswith("/"):
             parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", cache_path))
-            if os.path.exists(parent_path):
+            if os.path.exists(os.path.dirname(parent_path)):
                 cache_path = parent_path
 
         if not os.path.exists(cache_path):
-            example_path = cache_path.replace(".json", ".example.json")
-            if os.path.exists(example_path):
-                try:
-                    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-                    shutil.copy(example_path, cache_path)
-                except Exception:
-                    pass
+            try:
+                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                with open(cache_path, "w", encoding="utf-8") as f:
+                    f.write("{}")
+            except Exception:
+                pass
 
 
 def load_cache(pdf_id: str, cache_path: str = "outputs/assignment_cache.json") -> dict:
@@ -31,7 +30,7 @@ def load_cache(pdf_id: str, cache_path: str = "outputs/assignment_cache.json") -
         # Resolve parent path when running inside worker/ directory
         if not os.path.exists(cache_path) and not cache_path.startswith("/"):
             parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", cache_path))
-            if os.path.exists(parent_path):
+            if os.path.exists(os.path.dirname(parent_path)):
                 cache_path = parent_path
 
         ensure_cache_file(cache_path)
@@ -58,7 +57,7 @@ def save_cache(pdf_id: str, field_mapping: dict, cache_path: str = "outputs/assi
         # Resolve parent path when running inside worker/ directory
         if not os.path.exists(cache_path) and not cache_path.startswith("/"):
             parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", cache_path))
-            if os.path.exists(parent_path):
+            if os.path.exists(os.path.dirname(parent_path)):
                 cache_path = parent_path
 
         ensure_cache_file(cache_path)
@@ -98,7 +97,7 @@ def get_product_config_name(pdf_id: str, cache_path: str = "outputs/assignment_c
         # Resolve parent path when running inside worker/ directory
         if not os.path.exists(cache_path) and not cache_path.startswith("/"):
             parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", cache_path))
-            if os.path.exists(parent_path):
+            if os.path.exists(os.path.dirname(parent_path)):
                 cache_path = parent_path
 
         ensure_cache_file(cache_path)

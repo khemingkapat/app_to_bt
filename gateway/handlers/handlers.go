@@ -25,6 +25,15 @@ type HandlerContext struct {
 	TemplateDocxPath string
 }
 
+func ensureCacheFile(path string) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		if dst, err := os.Create(path); err == nil {
+			defer dst.Close()
+			dst.WriteString("{}")
+		}
+	}
+}
+
 func (h *HandlerContext) ProcessPdfHandler(c echo.Context) error {
 	file, err := c.FormFile("pdf")
 	if err != nil {
@@ -71,6 +80,7 @@ func (h *HandlerContext) ProcessPdfHandler(c echo.Context) error {
 	var cacheMappings interface{}
 	var productOptions interface{}
 	cachePath := "../outputs/assignment_cache.json"
+	ensureCacheFile(cachePath)
 	configName := "health_and_accident_insurance.json"
 
 	if cacheFile, err := os.Open(cachePath); err == nil {
@@ -335,6 +345,7 @@ func (h *HandlerContext) VaultCreateHandler(c echo.Context) error {
 
 	var fieldMappings map[string]interface{}
 	cachePath := "../outputs/assignment_cache.json"
+	ensureCacheFile(cachePath)
 	if cacheFile, err := os.Open(cachePath); err == nil {
 		defer cacheFile.Close()
 		var globalCache map[string]interface{}
@@ -475,6 +486,7 @@ func (h *HandlerContext) VaultVerifyIdentityHandler(c echo.Context) error {
 	// Load product config to get plan details
 	configName := "health_and_accident_insurance.json"
 	cachePath := "../outputs/assignment_cache.json"
+	ensureCacheFile(cachePath)
 	if cacheFile, err := os.Open(cachePath); err == nil {
 		defer cacheFile.Close()
 		var globalCache map[string]interface{}
@@ -840,6 +852,7 @@ func (h *HandlerContext) SaveConfigHandler(c echo.Context) error {
 	}
 
 	cachePath := "../outputs/assignment_cache.json"
+	ensureCacheFile(cachePath)
 	globalCache := make(map[string]interface{})
 	if cacheData, err := os.ReadFile(cachePath); err == nil {
 		_ = json.Unmarshal(cacheData, &globalCache)
@@ -858,6 +871,73 @@ func (h *HandlerContext) SaveConfigHandler(c echo.Context) error {
 	}
 
 	entryMap["product_config"] = req.Filename
+	globalCache[req.PdfId] = entryMap
+
+	newCacheData, err := json.MarshalIndent(globalCache, "", "    ")
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to serialize assignment cache"})
+	}
+
+	if err := os.WriteFile(cachePath, newCacheData, 0644); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to update assignment cache"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"status": "success"})
+}
+
+func (h *HandlerContext) SaveMappingHandler(c echo.Context) error {
+	var req struct {
+		PdfId         string                 `json:"pdf_id"`
+		FieldMappings map[string]interface{} `json:"field_mappings"`
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid JSON body"})
+	}
+
+	if req.PdfId == "" || req.FieldMappings == nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "pdf_id and field_mappings are required"})
+	}
+
+	cachePath := "../outputs/assignment_cache.json"
+	ensureCacheFile(cachePath)
+	globalCache := make(map[string]interface{})
+	if cacheData, err := os.ReadFile(cachePath); err == nil {
+		_ = json.Unmarshal(cacheData, &globalCache)
+	}
+
+	var entryMap map[string]interface{}
+	if entry, ok := globalCache[req.PdfId]; ok {
+		if em, ok := entry.(map[string]interface{}); ok {
+			entryMap = em
+		}
+	}
+
+	if entryMap == nil {
+		entryMap = make(map[string]interface{})
+		entryMap["product_config"] = "health_and_accident_insurance.json"
+	}
+
+	// Merge with existing field mappings if they exist
+	existingMappings := make(map[string]interface{})
+	if fm, ok := entryMap["field_mappings"].(map[string]interface{}); ok {
+		for k, v := range fm {
+			existingMappings[k] = v
+		}
+	} else if fm, ok := entryMap["field_mappings"]; ok {
+		// handle legacy flat format
+		if fmMap, ok := fm.(map[string]interface{}); ok {
+			for k, v := range fmMap {
+				existingMappings[k] = v
+			}
+		}
+	}
+	
+	// Update with new mappings
+	for k, v := range req.FieldMappings {
+		existingMappings[k] = v
+	}
+	entryMap["field_mappings"] = existingMappings
 	globalCache[req.PdfId] = entryMap
 
 	newCacheData, err := json.MarshalIndent(globalCache, "", "    ")

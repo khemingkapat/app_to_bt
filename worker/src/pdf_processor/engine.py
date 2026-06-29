@@ -22,18 +22,16 @@ def load_registry(registry_path: str = REGISTRY_FILE) -> dict:
     with IO_LOCK:
         if not os.path.exists(registry_path):
             parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", registry_path))
-            if os.path.exists(parent_path):
+            if os.path.exists(os.path.dirname(parent_path)):
                 registry_path = parent_path
 
         if not os.path.exists(registry_path):
-            example_path = registry_path.replace(".json", ".example.json")
-            if os.path.exists(example_path):
-                import shutil
-                try:
-                    os.makedirs(os.path.dirname(registry_path), exist_ok=True)
-                    shutil.copy(example_path, registry_path)
-                except Exception:
-                    pass
+            try:
+                os.makedirs(os.path.dirname(registry_path), exist_ok=True)
+                with open(registry_path, "w", encoding="utf-8") as f:
+                    f.write("{}")
+            except Exception:
+                pass
         if os.path.exists(registry_path):
             try:
                 with open(registry_path, "r", encoding="utf-8") as f:
@@ -350,6 +348,11 @@ def update_pdf_registry(
     Processes the PDF, saves the structural and extraction records locally,
     and returns both dictionaries for Streamlit UI consumption.
     """
+    if not os.path.exists(registry_path) and not registry_path.startswith("/"):
+        parent_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", registry_path))
+        if os.path.exists(os.path.dirname(parent_path)):
+            registry_path = parent_path
+
     print(f"🔍 Processing: {pdf_file}")
 
     # Load or create the big registry file
